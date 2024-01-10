@@ -10,6 +10,7 @@ import asyncio
 import dataclasses
 import enum
 import hashlib
+import itertools
 import json
 import os
 import pathlib
@@ -18,6 +19,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
+import time
 import typing
 
 import llvm
@@ -208,7 +210,7 @@ class Target(typing.Generic[_S, _R]):
         objdump = llvm.find_tool("llvm-objdump", echo=self.verbose)
         if objdump is not None:
             flags = ["--disassemble", "--reloc"]
-            output = await run(objdump, *flags, path, capture=True, echo=self.verbose)
+            output = await run(objdump, *flags, path, capture=False, echo=self.verbose)
             assert output is not None
             group.code.disassembly.extend(
                 line.expandtabs().strip()
@@ -299,6 +301,8 @@ class Target(typing.Generic[_S, _R]):
             f"-I{PYTHON}",
             "-O3",
             "-c",
+            "-w",
+            "-Wno-deprecated-pragma",
             "-fno-asynchronous-unwind-tables",
             # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
             "-fno-jump-tables",
@@ -371,10 +375,13 @@ class Target(typing.Generic[_S, _R]):
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                first, second = opnames[0], opnames[1]
-                coro = self._compile2(first, second, TOOLS_JIT_TEMPLATE_2_C, work)
-                tasks.append(group.create_task(coro, name=f"{first}plus{second}"))
-            breakpoint()
+                #for first, second in itertools.combinations_with_replacement(opnames, 2):
+                for first in opnames:
+                    start = time.perf_counter()
+                    for second in opnames[:10]:
+                        coro = self._compile2(first, second, TOOLS_JIT_TEMPLATE_2_C, work)
+                        tasks.append(group.create_task(coro, name=f"{first}plus{second}"))
+                    print(f">>>>> Finished with opcode {first} in {time.perf_counter() - start}")
 
         return {task.get_name(): task.result() for task in tasks}
 
@@ -729,8 +736,9 @@ def format_addend(addend: int) -> str:
 
 
 def main() -> None:
+    start = time.perf_counter()
     parser = argparse.ArgumentParser()
-    parser.add_argument("target", help="a PEP 11 target triple to compile for")
+    parser.add_argument("target", help="a PEP 11 target triple to compile for", default="x86_64-unknown-linux-gnu")
     parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"
     )
@@ -741,6 +749,7 @@ def main() -> None:
     args.target = "x86_64-unknown-linux-gnu"
     target = get_target(args.target, debug=args.debug, verbose=args.verbose)
     target.build(pathlib.Path.cwd())
+    print(f"Process completed in {time.perf_counter() - start}")
 
 
 if __name__ == "__main__":
