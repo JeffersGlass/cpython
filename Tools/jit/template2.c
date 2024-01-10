@@ -1,5 +1,7 @@
 #include "Python.h"
 
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+
 #include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_dict.h"

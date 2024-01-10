@@ -210,7 +210,7 @@ class Target(typing.Generic[_S, _R]):
         objdump = llvm.find_tool("llvm-objdump", echo=self.verbose)
         if objdump is not None:
             flags = ["--disassemble", "--reloc"]
-            output = await run(objdump, *flags, path, capture=False, echo=self.verbose)
+            output = await run(objdump, *flags, path, capture=True, echo=self.verbose)
             assert output is not None
             group.code.disassembly.extend(
                 line.expandtabs().strip()
@@ -302,7 +302,7 @@ class Target(typing.Generic[_S, _R]):
             "-O3",
             "-c",
             "-w",
-            "-Wno-deprecated-pragma",
+            "-Wdeprecated-pragma",
             "-fno-asynchronous-unwind-tables",
             # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
             "-fno-jump-tables",
@@ -335,6 +335,7 @@ class Target(typing.Generic[_S, _R]):
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
             "-I.",
+            "-Wdeprecated-pragma",
             f"-I{INCLUDE}",
             f"-I{INCLUDE_INTERNAL}",
             f"-I{INCLUDE_INTERNAL_MIMALLOC}",
@@ -367,23 +368,16 @@ class Target(typing.Generic[_S, _R]):
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                for opname in opnames:
-                    coro = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
-                    tasks.append(group.create_task(coro, name=opname))
-
-        # Generate Paired Opcodes:
-        with tempfile.TemporaryDirectory() as tempdir:
-            work = pathlib.Path(tempdir).resolve()
-            async with asyncio.TaskGroup() as group:
-                #for first, second in itertools.combinations_with_replacement(opnames, 2):
                 for first in opnames:
-                    start = time.perf_counter()
+                    coro = self._compile(first, TOOLS_JIT_TEMPLATE_C, work)
+                    tasks.append(group.create_task(coro, name=first))
                     for second in opnames[:10]:
                         coro = self._compile2(first, second, TOOLS_JIT_TEMPLATE_2_C, work)
                         tasks.append(group.create_task(coro, name=f"{first}plus{second}"))
-                    print(f">>>>> Finished with opcode {first} in {time.perf_counter() - start}")
 
-        return {task.get_name(): task.result() for task in tasks}
+        print("DONE COMPILING DUAL OPS")
+
+        return{task.get_name(): task.result() for task in tasks}
 
     def build(self, out: pathlib.Path) -> None:
         jit_stencils = out / "jit_stencils.h"
@@ -675,9 +669,11 @@ def dump_footer(opnames: list[str]) -> typing.Iterator[str]:
 
 
 def dump(stencil_groups: dict[str, StencilGroup]) -> typing.Iterator[str]:
+    print("Dumping Header")
     yield from dump_header()
     opnames = []
     for opname, stencil in sorted(stencil_groups.items()):
+        print(f"Dumping {opname}")
         opnames.append(opname)
         yield f"// {opname}"
         assert stencil.code
