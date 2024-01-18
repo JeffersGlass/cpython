@@ -21,11 +21,12 @@ from build import get_target, dump, StencilGroup, run
 from build import INCLUDE, INCLUDE_INTERNAL, INCLUDE_INTERNAL_MIMALLOC, PYTHON, PYTHON_EXECUTOR_CASES_C_H, TOOLS_JIT
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template2.c"
 
-def main() -> None:
+async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("target", help="a PEP 11 target triple to compile for")
+    #parser.add_argument("--all_targets", action="store_true", help="Compile for all PEP 11 triples for Tier 1 CPython Platforms")
     parser.add_argument("first_opcode", nargs="?", help="A valid opcode name to generate opcode pairs for")
-    parser.add_argument("-a", "--all", action="store_true", help="Build all opcodes")
+    parser.add_argument("-a", "--all_ops", action="store_true", help="Build all opcodes")
     parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"
     )
@@ -34,8 +35,11 @@ def main() -> None:
     )
     
     args = parser.parse_args()
-    if not args.first_opcode and not args.all:
-        raise ValueError("Must specific one of first_opcode (by position) or --all")
+
+    if not args.first_opcode and not args.all_ops:
+        raise ValueError("Must specify one of first_opcode (by position) or --all_ops")
+    #if not args.target and not args.all_targets:
+    #    raise ValueError("Must specify one of target (by position) or --all_targets")
 
     target = get_target(args.target, debug=args.debug, verbose=args.verbose)
 
@@ -45,23 +49,23 @@ def main() -> None:
     target._compile = _compile2.__get__(target, target.__class__)
 
     if args.first_opcode:
-        target.build(pathlib.Path.cwd(), args.first_opcode)
+        await target.build(pathlib.Path.cwd(), args.first_opcode)
     else: # --all
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
         for first in opnames:
-            target.build(pathlib.Path.cwd(), first)
+            await target.build(pathlib.Path.cwd(), first)
 
 
-def build_2(self, out: pathlib.Path, first_opcode) -> None:
-    print(f"Building stencils for all pairs of opcodes with {first_opcode} as the first opcode", end = " ")
+async def build_2(self, out: pathlib.Path, first_opcode) -> None:
+    print(f"Building  ({first_opcode}, *) pairs...", end = " ", flush=True)
     start = time.time()
     os.makedirs( out / "stencils" / self.triple , exist_ok=True)
-    stencil_groups = asyncio.run(self.build_stencils(first_opcode))
+    stencil_groups = await self.build_stencils(first_opcode)
     with (out / "stencils" / self.triple / f"{first_opcode}.h").open("w") as file:
         for line in dump(stencil_groups):
             file.write(f"{line}\n")
-    print(f"DONE in {time.time() - start} seconds")
+    print(f"DONE in {time.time() - start} seconds. Total time {time.time() - main_start}")
 
 async def build_dual_stencils(self, first_opcode) -> dict[str, StencilGroup]:
     generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
@@ -74,7 +78,7 @@ async def build_dual_stencils(self, first_opcode) -> dict[str, StencilGroup]:
                 coro = self._compile(first_opcode, second, TOOLS_JIT_TEMPLATE_C, work)
                 tasks.append(group.create_task(coro, name=f"{first_opcode}plus{second}"))
 
-    return{task.get_name(): task.result() for task in tasks}
+    return {task.get_name(): task.result() for task in tasks}
 
 async def _compile2(
         self, first: str, second: str, c: pathlib.Path, tempdir: pathlib.Path
@@ -116,4 +120,5 @@ async def _compile2(
         return await self.parse(o)
 
 if __name__ == "__main__":
-    main()
+    main_start = time.time()
+    asyncio.run(main())
