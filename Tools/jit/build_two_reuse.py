@@ -74,7 +74,7 @@ async def build_2(self, out: pathlib.Path) -> None:
         print(f"DONE in {time.time() - start} seconds. Total time {time.time() - main_start}")
 
     #footer
-    with open(out / "jit_stencils.h", "w+") as file:
+    with open(out / "jit_stencils.h", "a") as file:
         for line in dump_footer(op1 + "plus" + op2 for op1 in opnames for op2 in opnames):
             file.write(f"{line}\n")
 
@@ -139,7 +139,7 @@ def dump_footer(opnames: list[str]) -> typing.Iterator[str]:
     yield "    .data = INIT_STENCIL(OP##_data), \\"
     yield "}"
     yield ""
-    yield "static const StencilGroup stencil_groups[131072] = {"
+    yield "static const StencilGroup stencil_groups[65535] = {"
     for opname in opnames:
         yield f"    [{opname}] = INIT_STENCIL_GROUP({opname}),"
     yield "};"
