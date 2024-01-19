@@ -1,5 +1,6 @@
 import argparse
 import collections
+import csv
 from dataclasses import dataclass
 import os
 import pathlib
@@ -20,7 +21,7 @@ class OpcodeData:
     data_body_length: int = -1
     code_body_length: int = -1
 
-def main():
+def generate():
     parser = argparse.ArgumentParser()
     parser.add_argument("target", help="a PEP 11 target triple to compile for")
     args = parser.parse_args()
@@ -42,9 +43,12 @@ def main():
     if not os.path.isdir(folder):
         raise ValueError(f"{folder} folder does not exist")
     
-    run_data_file = pathlib.Path.cwd() / "data.csv"
-    data_files = pathlib.Path.iterdir(folder)
-    for file_path in data_files:
+    run_data_file = pathlib.Path.cwd() / "dual_opcode_data.csv"
+    with open(run_data_file, 'w+', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(['first_opcode', 'second_opcode', 'first_length', 'second_length', 'sum', 'combined'])
+
+    for file_path in pathlib.Path.iterdir(folder):
         if (path:= pathlib.Path(file_path)).suffix != '.h': continue
 
         first_opcode = path.stem
@@ -56,19 +60,26 @@ def main():
         
         TABLE = "{kind: <17}{first: >30}:{first_val:<3}  {second: >30}:{second_val:<3}  {combined: >69}:{combined_val:<3}  {math}"
         for second_opcode in second_opcode_data:
-            print_comparison(first_opcode, second_opcode, single_ops, second_opcode_data, "data_body_length", TABLE)
-            print_comparison(first_opcode, second_opcode, single_ops, second_opcode_data, "code_body_length", TABLE)
+            c = format_comparison(first_opcode, second_opcode, single_ops, second_opcode_data, "code_body_length", TABLE)
+            print(c)
+            with open(run_data_file, "a+", newline='') as f:
+                writer = csv.writer(f)
+                first_length = single_ops[first_opcode].code_body_length
+                second_length = single_ops[second_opcode].code_body_length
+                writer.writerow([first_opcode, second_opcode, first_length, second_length, first_length + second_length, second_opcode_data[second_opcode].code_body_length])
 
         
-        
-def print_comparison(first_opcode: str, second_opcode: str, single_ops, second_opcode_data, attribute, TABLE):
-    first_length = getattr(single_ops[second_opcode], attribute)
+def format_comparison(first_opcode: str, second_opcode: str, single_ops, second_opcode_data, attribute, TABLE):
+    first_length = getattr(single_ops [first_opcode], attribute)
     second_length = getattr(single_ops[second_opcode], attribute)
+
     seperate_total = first_length + second_length
     combined_length = getattr(second_opcode_data[second_opcode], attribute)
+
     color = colors.GREEN if seperate_total > combined_length else (colors.NUETRAL if seperate_total == combined_length else colors.RED)
     math = f"{color}{first_length} + {second_length} {">" if seperate_total > combined_length else ("=" if seperate_total == combined_length else "<")} \t{combined_length}{colors.ENDC}"
-    print(TABLE.format(kind=attribute,
+
+    return TABLE.format(kind=attribute,
                         first=first_opcode,
                         first_val=first_length,
                         second=second_opcode,
@@ -76,7 +87,7 @@ def print_comparison(first_opcode: str, second_opcode: str, single_ops, second_o
                         combined=f"{first_opcode}{second_opcode}",
                         combined_val = combined_length,
                         math=math
-                        ))
+                        )
         
 def extract_opcode_data(header: list[str]) -> dict[str: OpcodeData]:
     result = {}
@@ -88,16 +99,7 @@ def extract_opcode_data(header: list[str]) -> dict[str: OpcodeData]:
             if (name:= m.group("name")) in result: result[name].data_body_length = int(m.group("num"))
             else: result[name] = OpcodeData(data_body_length=int(m.group("num")))
     
-    return result
-    
-
-                
-    
-
-    
-
-
-    
+    return result    
 
 if __name__ == "__main__":
-    main()
+    generate()
