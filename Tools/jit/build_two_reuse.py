@@ -1,8 +1,10 @@
 import argparse
 import asyncio
 import dataclasses
+import datetime
 import enum
 import hashlib
+import itertools
 import json
 import os
 import pathlib
@@ -18,7 +20,7 @@ import llvm
 import schema
 
 from build import get_target, StencilGroup, run, format_addend, HoleValue
-from build import INCLUDE, INCLUDE_INTERNAL, INCLUDE_INTERNAL_MIMALLOC, PYTHON, PYTHON_EXECUTOR_CASES_C_H, TOOLS_JIT
+from build import INCLUDE, INCLUDE_INTERNAL, INCLUDE_INTERNAL_MIMALLOC, PYTHON, CPYTHON, PYTHON_EXECUTOR_CASES_C_H, TOOLS_JIT
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template2.c"
 
 async def main() -> None:
@@ -42,11 +44,7 @@ async def main() -> None:
     #    raise ValueError("Must specify one of target (by position) or --all_targets")
 
     target = get_target(args.target, debug=args.debug, verbose=args.verbose)
-
-    # Patch build(), build_stencils(), and _compile() to take an initial opcode argument
     target.build = build_2.__get__(target, target.__class__)
-    target.build_stencils = build_dual_stencils.__get__(target, target.__class__)
-    target._compile = _compile2.__get__(target, target.__class__)
 
     if args.first_opcode:
         raise ValueError("No longer valid")
@@ -55,32 +53,55 @@ async def main() -> None:
         await target.build(pathlib.Path.cwd())
 
 async def build_2(self, out: pathlib.Path) -> None:
+    jit_stencils = out / "jit_stencils.h"
     generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
     opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
+    num_ops = len(opnames)
 
     #header
-    with open(out / "jit_stencils.h", "w+") as file:
+    with open(jit_stencils, "w") as file:
         for line in dump_header():
             file.write(f"{line}\n")
 
-    for first_opcode in opnames:
-        print(f"Building  ({first_opcode}, *) pairs...", end = " ", flush=True)
-        start = time.time()
-        os.makedirs( out / "stencils" / self.triple , exist_ok=True)
-        stencil_groups = await self.build_stencils(first_opcode)
-        with open(out / "jit_stencils.h", "a") as file:
-            for line in dump(stencil_groups):
-                file.write(f"{line}\n")
-        print(f"DONE in {time.time() - start} seconds. Total time {time.time() - main_start}")
+    single_stencil_groups = await self.build_stencils() 
 
-    #footer
-    with open(out / "jit_stencils.h", "a") as file:
-        for line in dump_footer(op1 + "plus" + op2 for op1 in opnames for op2 in opnames):
+    with open(jit_stencils, "a") as file:
+        for line in dump(single_stencil_groups):
             file.write(f"{line}\n")
 
-async def build_dual_stencils(self, first_opcode) -> dict[str, StencilGroup]:
-    generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
-    opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
+    # Patch build(), build_stencils(), and _compile() to take an initial opcode argument
+    self.build_stencils_2 = build_dual_stencils.__get__(self, self.__class__)
+    self._compile = _compile2.__get__(self, self.__class__)
+
+    compiliation_start = time.time()
+
+    for index, first_opcode in enumerate(opnames):
+        print(f"Building  ({first_opcode}, *) pairs...", end = " ", flush=True)
+        start = time.time()
+        stencil_groups = await self.build_stencils_2(first_opcode, opnames)
+        with open(jit_stencils, "a") as file:    
+            for line in dump(stencil_groups):
+                file.write(f"{line}\n")
+        
+        print(f"DONE in {round(time.time() - start, 2)} seconds. Total time {round(time.time() - main_start, 2)}.", end = " ")
+        if index < num_ops - 1: print(f"Projected remaining: {str(datetime.timedelta(seconds=((time.time() - compiliation_start) / (index+1)) * (num_ops-index-1)))}")
+        else: print("DONE")
+
+    with open (jit_stencils, "a") as file:
+        file.write("\n// Injected opcode constants\n")
+        max_id = int(max_uop_id())
+        op_values = get_op_values()
+        for first in opnames:
+            for second in opnames:
+                file.write(f"# define {first}plus{second} {max_id * op_values[first] + op_values[second] + max_id + 1 + 1}\n")
+            print(f"Wrote all constants for ({first}, ) pairs")
+
+    #footer
+    with open(jit_stencils, "a") as file:
+        for line in dump_footer(itertools.chain(opnames, (op1 + "plus" + op2 for op1 in opnames for op2 in opnames))):
+            file.write(f"{line}\n")
+
+async def build_dual_stencils(self, first_opcode, opnames) -> dict[str, StencilGroup]:
     tasks = []
     with tempfile.TemporaryDirectory() as tempdir:
         async with asyncio.TaskGroup() as group:
@@ -127,7 +148,8 @@ def dump_header() -> typing.Iterator[str]:
 
 
 def dump_footer(opnames: list[str]) -> typing.Iterator[str]:
-    yield "#define INIT_STENCIL(STENCIL) {                         \\"
+    max_id = int(max_uop_id())
+    yield "\n#define INIT_STENCIL(STENCIL) {                         \\"
     yield "    .body_size = Py_ARRAY_LENGTH(STENCIL##_body) - 1,   \\"
     yield "    .body = STENCIL##_body,                             \\"
     yield "    .holes_size = Py_ARRAY_LENGTH(STENCIL##_holes) - 1, \\"
@@ -139,7 +161,9 @@ def dump_footer(opnames: list[str]) -> typing.Iterator[str]:
     yield "    .data = INIT_STENCIL(OP##_data), \\"
     yield "}"
     yield ""
-    yield "static const StencilGroup stencil_groups[65535] = {"
+    array_size = max_id ** 2 + 2*max_id + 1 + 1 + 1
+    print(f"{array_size=}")
+    yield f"static const StencilGroup stencil_groups[{array_size}] = {{"
     for opname in opnames:
         yield f"    [{opname}] = INIT_STENCIL_GROUP({opname}),"
     yield "};"
@@ -241,6 +265,29 @@ async def _compile2(
         clang = llvm.require_tool("clang", echo=self.verbose)
         await run(clang, *flags, "-o", o, c, echo=self.verbose)
         return await self.parse(o)
+
+def max_uop_id():
+    with open(CPYTHON / "Include" / "internal" / "pycore_uop_ids.h") as file:
+        for line in file.readlines():
+            if m:= re.match(r"#define MAX_UOP_ID (?P<id>\d+)", line):
+                return m.group("id")
+            
+def get_op_values() -> dict[str, int]:
+    values = {}
+    with open(CPYTHON / "Include" / "opcode_ids.h") as f:
+        for line in f.readlines():
+            if m:= re.match(r"#define (?P<opname>[A-Z0-9_]+)\s+(?P<index>\d+)", line):
+                values["_" + m.group('opname')] = int(m.group('index'))
+
+    with open(CPYTHON / "Include" / "internal" / "pycore_uop_ids.h") as f:
+        for line in f.readlines():
+            if m:= re.match(r"#define (?P<opname>[A-Z0-9_]+)\s+(?P<index>\d+)", line):
+                values[m.group('opname')] = int(m.group('index'))
+
+    print(values)
+    return values
+
+
 
 if __name__ == "__main__":
     main_start = time.time()

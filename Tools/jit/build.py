@@ -48,6 +48,9 @@ class HoleValue(enum.Enum):
     OPARG = enum.auto()
     OPERAND = enum.auto()
     TARGET = enum.auto()
+    OPARG2 = enum.auto()
+    OPERAND2 = enum.auto()
+    TARGET2 = enum.auto()
     TOP = enum.auto()
     ZERO = enum.auto()
 

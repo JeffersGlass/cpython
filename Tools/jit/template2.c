@@ -49,6 +49,10 @@
     extern void ALIAS;                  \
     TYPE NAME = (TYPE)(uint64_t)&ALIAS;
 
+#define REPATCH_VALUE(TYPE, NAME, ALIAS)  \
+    extern void ALIAS;                    \
+    NAME = (TYPE)(uint64_t)&ALIAS;
+
 #define PATCH_JUMP(ALIAS)                                    \
     extern void ALIAS;                                       \
     __attribute__((musttail))                                \
@@ -77,6 +81,9 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
         default:
             Py_UNREACHABLE();
     }
+    PATCH_VALUE(uint16_t, _oparg2, _JIT_OPARG2)
+    PATCH_VALUE(uint64_t, _operand2, _JIT_OPERAND2)
+    PATCH_VALUE(uint32_t, _target2, _JIT_TARGET2)
     switch (opcode2) {
 #include "executor_cases.c.h"
         default:

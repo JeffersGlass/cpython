@@ -305,6 +305,9 @@ execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
     return next_instr;
 }
 
+// This matches the indexing in 'build_two_reuse'
+# define JIT_INDEX(FIRST, SECOND) (MAX_UOP_ID * FIRST) + SECOND + MAX_UOP_ID + 2
+
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
 _PyJIT_Compile(_PyUOpExecutorObject *executor)
@@ -312,8 +315,16 @@ _PyJIT_Compile(_PyUOpExecutorObject *executor)
     // Loop once to find the total compiled size:
     size_t code_size = 0;
     size_t data_size = 0;
-    for (Py_ssize_t i = 0; i < Py_SIZE(executor); i++) {
-        _PyUOpInstruction *instruction = &executor->trace[i];
+    Py_ssize_t executor_size = Py_SIZE(executor);
+    for (Py_ssize_t i = 0; i < executor_size; i+= 2) {
+        _PyUOpInstruction *instruction1 = &executor->trace[i];
+        _PyUOpInstruction *instruction2 = &executor->trace[i+1];
+        const StencilGroup *group = &stencil_groups[JIT_INDEX(instruction1->opcode, instruction2->opcode)];
+        code_size += group->code.body_size;
+        data_size += group->data.body_size;
+    }
+    if (executor_size % 2){
+        _PyUOpInstruction *instruction = &executor->trace[executor_size-1];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         code_size += group->code.body_size;
         data_size += group->data.body_size;
@@ -330,8 +341,30 @@ _PyJIT_Compile(_PyUOpExecutorObject *executor)
     // Loop again to emit the code:
     char *code = memory;
     char *data = memory + code_size;
-    for (Py_ssize_t i = 0; i < Py_SIZE(executor); i++) {
-        _PyUOpInstruction *instruction = &executor->trace[i];
+    for (Py_ssize_t i = 0; i < executor_size; i+= 2) {
+        _PyUOpInstruction *instruction1 = &executor->trace[i];
+        _PyUOpInstruction *instruction2 = &executor->trace[i+1];
+        const StencilGroup *group = &stencil_groups[(380 * instruction1->opcode) + instruction2->opcode + 380 + 2];
+        // Think of patches as a dictionary mapping HoleValue to uint64_t:
+        uint64_t patches[] = GET_PATCHES();
+        patches[HoleValue_CODE] = (uint64_t)code;
+        patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
+        patches[HoleValue_DATA] = (uint64_t)data;
+        patches[HoleValue_EXECUTOR] = (uint64_t)executor;
+        patches[HoleValue_OPARG] = instruction1->oparg;
+        patches[HoleValue_OPERAND] = instruction1->operand;
+        patches[HoleValue_TARGET] = instruction1->target;
+        patches[HoleValue_OPARG2] = instruction2->oparg;
+        patches[HoleValue_OPERAND2] = instruction2->operand;
+        patches[HoleValue_TARGET2] = instruction2->target;
+        patches[HoleValue_TOP] = (uint64_t)memory;
+        patches[HoleValue_ZERO] = 0;
+        emit(group, patches);
+        code += group->code.body_size;
+        data += group->data.body_size;
+    }
+    if (executor_size % 2){
+        _PyUOpInstruction *instruction = &executor->trace[executor_size - 1];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         // Think of patches as a dictionary mapping HoleValue to uint64_t:
         uint64_t patches[] = GET_PATCHES();
