@@ -21,7 +21,7 @@ import schema
 
 from build import get_target, StencilGroup, run, format_addend, HoleValue
 from build import INCLUDE, INCLUDE_INTERNAL, INCLUDE_INTERNAL_MIMALLOC, PYTHON, CPYTHON, PYTHON_EXECUTOR_CASES_C_H, TOOLS_JIT
-TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template2.c"
+TOOLS_JIT_TEMPLATE_C2 = TOOLS_JIT / "template2.c"
 
 async def main() -> None:
     parser = argparse.ArgumentParser()
@@ -44,13 +44,13 @@ async def main() -> None:
     #    raise ValueError("Must specify one of target (by position) or --all_targets")
 
     target = get_target(args.target, debug=args.debug, verbose=args.verbose)
-    target.build = build_2.__get__(target, target.__class__)
+    target.build = build_singles_plus_selected.__get__(target, target.__class__)
 
     if args.first_opcode:
         raise ValueError("No longer valid")
         await target.build(pathlib.Path.cwd(), args.first_opcode)
     else: # --all      
-        await target.build(pathlib.Path.cwd())
+        await target.build(pathlib.Path.cwd(), )
 
 async def build_2(self, out: pathlib.Path) -> None:
     jit_stencils = out / "jit_stencils.h"
@@ -101,16 +101,64 @@ async def build_2(self, out: pathlib.Path) -> None:
         for line in dump_footer(itertools.chain(opnames, (op1 + "plus" + op2 for op1 in opnames for op2 in opnames))):
             file.write(f"{line}\n")
 
+async def build_singles_plus_selected(self, out: pathlib.Path, selected: typing.Iterable[tuple[str, str]]):
+    selected = list(selected)
+    jit_stencils = out / "jit_stencils.h"
+    generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
+    opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
+    num_ops = len(opnames)
+
+    #header
+    with open(jit_stencils, "w") as file:
+        for line in dump_header():
+            file.write(f"{line}\n")
+
+    single_stencil_groups = await self.build_stencils() 
+
+    with open(jit_stencils, "a") as file:
+        for line in dump(single_stencil_groups):
+            file.write(f"{line}\n")
+
+    # Patch build(), build_stencils(), and _compile() to take an initial opcode argument
+    self.build_single_dual_stencil = build_single_dual_stencil.__get__(self, self.__class__)
+    self._compile = _compile2.__get__(self, self.__class__)
+
+    compiliation_start = time.time()
+
+    for first_opcode, second_opcode in selected:
+        stencil_groups = await self.build_single_dual_stencil(first_opcode, second_opcode)
+        with open(jit_stencils, "a") as file:    
+            for line in dump(stencil_groups):
+                file.write(f"{line}\n")
+    with open (jit_stencils, "a") as file:
+        file.write("\n// Injected opcode constants\n")
+        max_id = int(max_uop_id())
+        op_values = get_op_values()
+        for first, second in selected:
+            file.write(f"# define {first}plus{second} {max_id * op_values[first] + op_values[second] + max_id + 1 + 1}\n")
+
+    #footer
+    with open(jit_stencils, "a") as file:
+        for line in dump_footer(itertools.chain(opnames, (op1 + "plus" + op2 for (op1, op2) in selected))):
+            file.write(f"{line}\n")
+
 async def build_dual_stencils(self, first_opcode, opnames) -> dict[str, StencilGroup]:
     tasks = []
     with tempfile.TemporaryDirectory() as tempdir:
         async with asyncio.TaskGroup() as group:
             for second in opnames:
                 work = pathlib.Path(tempdir).resolve()
-                coro = self._compile(first_opcode, second, TOOLS_JIT_TEMPLATE_C, work)
+                coro = self._compile(first_opcode, second, TOOLS_JIT_TEMPLATE_C2, work)
                 tasks.append(group.create_task(coro, name=f"{first_opcode}plus{second}"))
 
     return {task.get_name(): task.result() for task in tasks}
+
+async def build_single_dual_stencil(self, first_opcode, second_opcode) -> dict[str, StencilGroup]:
+    with tempfile.TemporaryDirectory() as tempdir:
+        work = pathlib.Path(tempdir).resolve()
+        result = await self._compile(first_opcode, second_opcode, TOOLS_JIT_TEMPLATE_C2, work)
+        
+    return {f"{first_opcode}plus{second_opcode": result}
 
 def dump_header() -> typing.Iterator[str]:
     yield f"// $ {shlex.join([sys.executable, *sys.argv])}"
