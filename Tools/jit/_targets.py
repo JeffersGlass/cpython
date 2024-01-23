@@ -11,6 +11,7 @@ import sys
 import tempfile
 import typing
 
+import _jit_c
 import _llvm
 import _schema
 import _stencils
@@ -160,7 +161,6 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name=opname))
 
         if ops:
-            print("About to build supernodes")
             supernodes_stencils = await self._build_multiple_ops(ops)
         else:
             supernodes_stencils = []
@@ -195,6 +195,8 @@ class _Target(typing.Generic[_S, _R]):
                 f.write("\n// Supernode Indices\n")
                 for name, index in op_indices.items():
                     f.write(f"#define {name} {index}\n")
+
+        _jit_c._patch_jit_c(supernode_ops, max_id)
 
         jit_stencils = out / "jit_stencils.h"
         # TODO make this check all touched files - jit_stencils, jit_defines, in future jit.c

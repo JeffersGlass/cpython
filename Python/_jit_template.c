@@ -364,4 +364,9 @@ _PyJIT_Free(_PyExecutorObject *executor)
     }
 }
 
+int
+_JIT_INDEX(){
+    //* This is a placeholder for
+}
+
 #endif  // _Py_JIT
