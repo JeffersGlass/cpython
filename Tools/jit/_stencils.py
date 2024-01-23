@@ -35,7 +35,20 @@ class HoleValue(enum.Enum):
     TOP = enum.auto()
     # A hardcoded value of zero (used for symbol lookups):
     ZERO = enum.auto()
-
+    # Additional hole types for supernodes
+    # TODO: Make this auto-generate instead of a hack
+    OPARG2 = enum.auto()
+    OPERAND2 = enum.auto()
+    TARGET2 = enum.auto()
+    OPARG3 = enum.auto()
+    OPERAND3 = enum.auto()
+    TARGET3 = enum.auto()
+    OPARG4 = enum.auto()
+    OPERAND4 = enum.auto()
+    TARGET4 = enum.auto()
+    OPARG5 = enum.auto()
+    OPERAND5 = enum.auto()
+    TARGET5 = enum.auto()
 
 @dataclasses.dataclass
 class Hole:

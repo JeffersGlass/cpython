@@ -90,10 +90,16 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
             yield f"static const Hole {opname}_{part}_holes[1];"
     yield ""
 
+def _dump_define(name: str, value: int):
+    yield f"#define {name} {value}"
 
-def dump(groups: dict[str, _stencils.StencilGroup]) -> typing.Iterator[str]:
+
+def dump(groups: dict[str, _stencils.StencilGroup], defines: dict[str, int] = None) -> typing.Iterator[str]:
     """Yiild a JIT compiler line-by-line as a C header file."""
     yield from _dump_header()
     for opname, group in groups.items():
         yield from _dump_stencil(opname, group)
+    if defines:
+        for name, value in defines.items():
+            yield from _dump_define(name, value)
     yield from _dump_footer(groups)
