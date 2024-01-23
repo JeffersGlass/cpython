@@ -4,6 +4,7 @@ import argparse
 import pathlib
 
 import _targets
+import _opfile
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
@@ -11,7 +12,7 @@ if __name__ == "__main__":
         "target", type=_targets.get_target, help="a PEP 11 target triple to compile for"
     )
     parser.add_argument(
-        "-f", "--opfile", type=pathlib.Path, default='', help="Filepath to a csv of opname combinations to build" 
+        "-f", "--opfile", default='', help="Filepath to a csv of opname combinations to build" 
     )
     parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"
@@ -22,4 +23,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.target.debug = args.debug
     args.target.verbose = args.verbose
-    args.target.build(pathlib.Path.cwd(), args.opfile)
+    args.target.build(pathlib.Path.cwd(), _opfile._retrieve_ops_from_path(args.opfile) if args.opfile else None)

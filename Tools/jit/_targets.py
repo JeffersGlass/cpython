@@ -182,15 +182,12 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name='plus'.join(op for op in opset)))
         return {task.get_name(): task.result() for task in tasks}
 
-    def build(self, out: pathlib.Path, opfile: pathlib.Path | None) -> None:
+    def build(self, out: pathlib.Path, supernode_ops: list[typing.Iterable[str]] | None) -> None:
         """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
         jit_stencils = out / "jit_stencils.h"
         if not jit_stencils.exists() or not jit_stencils.read_text().startswith(digest):
-            if opfile:
-                with open(opfile, "r") as f:
-                    supernode_ops = [line for line in csv.reader(f)]
-            else: supernode_ops = []
+            if not supernode_ops: supernode_ops = []
             stencil_groups = asyncio.run(self._build_stencils(supernode_ops))
             with jit_stencils.open("w") as file:
                 file.write(digest)
