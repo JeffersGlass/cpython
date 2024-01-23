@@ -10,6 +10,7 @@
 #include "pycore_long.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
+#include "Include/internal/pycore_uop_metadata.h"
 #include "pycore_optimizer.h"
 #include "pycore_pyerrors.h"
 #include "pycore_setobject.h"
@@ -23,6 +24,15 @@
 #ifndef MS_WINDOWS
     #include <sys/mman.h>
 #endif
+
+#ifdef Py_DEBUG
+#define DPRINTF(...) \
+    { printf(__VA_ARGS__); }
+#else
+#define DPRINTF(...)
+#endif
+
+extern const char *_PyUOpName(int index);
 
 static size_t
 get_page_size(void)
@@ -312,6 +322,7 @@ execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
 int
 _PyJIT_Compile(_PyUOpExecutorObject *executor)
 {
+    DPRINTF("=== _PyJIT_COMPILE ===\n")
     // Loop once to find the total compiled size:
     size_t code_size = 0;
     size_t data_size = 0;
@@ -319,12 +330,30 @@ _PyJIT_Compile(_PyUOpExecutorObject *executor)
     for (Py_ssize_t i = 0; i < executor_size; i+= 2) {
         _PyUOpInstruction *instruction1 = &executor->trace[i];
         _PyUOpInstruction *instruction2 = &executor->trace[i+1];
+        DPRINTF("%4d: uop %s, oparg %d, operand %" PRIu64 ", target %d\n   +\n%4d: uop %s, oparg %d, operand %" PRIu64 ", target %d\n",
+            i,
+            _PyUOpName(instruction1->opcode),
+            instruction1->oparg,
+            instruction1->operand,
+            instruction1->target,
+            i+1,
+            _PyUOpName(instruction2->opcode),
+            instruction2->oparg,
+            instruction2->operand,
+            instruction2->target,
+            1
+            );
         const StencilGroup *group = &stencil_groups[JIT_INDEX(instruction1->opcode, instruction2->opcode)];
         code_size += group->code.body_size;
         data_size += group->data.body_size;
     }
     if (executor_size % 2){
         _PyUOpInstruction *instruction = &executor->trace[executor_size-1];
+        DPRINTF("Final: uop %s, oparg %d, operand %" PRIu64 ", target %d\n",
+                _PyUOpName(instruction->opcode),
+                instruction->oparg,
+                instruction->operand,
+                instruction->target);
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         code_size += group->code.body_size;
         data_size += group->data.body_size;
