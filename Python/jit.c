@@ -10,6 +10,8 @@
 #include "pycore_long.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
+#include "Include/internal/pycore_uop_metadata.h"
+#include "pycore_uop_ids.h"
 #include "pycore_optimizer.h"
 #include "pycore_pyerrors.h"
 #include "pycore_setobject.h"
@@ -23,6 +25,15 @@
 #ifndef MS_WINDOWS
     #include <sys/mman.h>
 #endif
+
+#ifdef Py_DEBUG
+#define DPRINTF(...) \
+    { printf(__VA_ARGS__); }
+#else
+#define DPRINTF(...)
+#endif
+
+extern const char *_PyUOpName(int index);
 
 static size_t
 get_page_size(void)
@@ -312,22 +323,52 @@ execute(_PyExecutorObject *executor, _PyInterpreterFrame *frame,
 int
 _PyJIT_Compile(_PyUOpExecutorObject *executor)
 {
-    // Loop once to find the total compiled size:
+    DPRINTF("=== _PyJIT_COMPILE ===\n")
+    // Loop once to find the total compiled sizeTo:
     size_t code_size = 0;
     size_t data_size = 0;
     Py_ssize_t executor_size = Py_SIZE(executor);
-    for (Py_ssize_t i = 0; i < executor_size; i+= 2) {
+    for (Py_ssize_t i = 0; i < executor_size; ) {
         _PyUOpInstruction *instruction1 = &executor->trace[i];
-        _PyUOpInstruction *instruction2 = &executor->trace[i+1];
-        const StencilGroup *group = &stencil_groups[JIT_INDEX(instruction1->opcode, instruction2->opcode)];
-        code_size += group->code.body_size;
-        data_size += group->data.body_size;
-    }
-    if (executor_size % 2){
-        _PyUOpInstruction *instruction = &executor->trace[executor_size-1];
-        const StencilGroup *group = &stencil_groups[instruction->opcode];
-        code_size += group->code.body_size;
-        data_size += group->data.body_size;
+        int maybe_double = 0;
+        if (i < executor_size - 1){
+            maybe_double = 1;
+            _PyUOpInstruction *instruction2 = &executor->trace[i+1];
+            if (instruction1->opcode == _GUARD_BOTH_INT && instruction2->opcode == _BINARY_OP_ADD_INT){
+                DPRINTF("    \033[0;32mJitted |\033[0m %4d: uop %s, oparg %d, operand %" PRIu64 ", target %d\n  \033[0;32mTogether |\033[0m %4d: uop %s, oparg %d, operand %" PRIu64 ", target %d\n",
+                    i,
+                    _PyUOpName(instruction1->opcode),
+                    instruction1->oparg,
+                    instruction1->operand,
+                    instruction1->target,
+                    i+1,
+                    _PyUOpName(instruction2->opcode),
+                    instruction2->oparg,
+                    instruction2->operand,
+                    instruction2->target,
+                    1
+                    );
+            const StencilGroup *group = &stencil_groups[JIT_INDEX(instruction1->opcode, instruction2->opcode)];
+            code_size += group->code.body_size;
+            data_size += group->data.body_size;
+            i++;
+            }
+            else {
+                maybe_double = 0;
+            }
+        }
+        if (!maybe_double){
+            DPRINTF("%d: uop %s, oparg %d, operand %" PRIu64 ", target %d\n",
+                    i,
+                    _PyUOpName(instruction1->opcode),
+                    instruction1->oparg,
+                    instruction1->operand,
+                    instruction1->target);
+            const StencilGroup *group = &stencil_groups[instruction1->opcode];
+            code_size += group->code.body_size;
+            data_size += group->data.body_size;
+        }
+        i++;
     }
     // Round up to the nearest page (code and data need separate pages):
     size_t page_size = get_page_size();
@@ -341,46 +382,52 @@ _PyJIT_Compile(_PyUOpExecutorObject *executor)
     // Loop again to emit the code:
     char *code = memory;
     char *data = memory + code_size;
-    for (Py_ssize_t i = 0; i < executor_size; i+= 2) {
+    StencilGroup *group;
+    for (Py_ssize_t i = 0; i < executor_size; ) {
         _PyUOpInstruction *instruction1 = &executor->trace[i];
         _PyUOpInstruction *instruction2 = &executor->trace[i+1];
         const StencilGroup *group = &stencil_groups[JIT_INDEX(instruction1->opcode, instruction2->opcode)];
         // Think of patches as a dictionary mapping HoleValue to uint64_t:
+        int maybe_double = 0;
         uint64_t patches[] = GET_PATCHES();
-        patches[HoleValue_CODE] = (uint64_t)code;
-        patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
-        patches[HoleValue_DATA] = (uint64_t)data;
-        patches[HoleValue_EXECUTOR] = (uint64_t)executor;
-        patches[HoleValue_OPARG] = instruction1->oparg;
-        patches[HoleValue_OPERAND] = instruction1->operand;
-        patches[HoleValue_TARGET] = instruction1->target;
-        patches[HoleValue_OPARG2] = instruction2->oparg;
-        patches[HoleValue_OPERAND2] = instruction2->operand;
-        patches[HoleValue_TARGET2] = instruction2->target;
-        patches[HoleValue_TOP] = (uint64_t)memory;
-        patches[HoleValue_ZERO] = 0;
-        emit(group, patches);
-        code += group->code.body_size;
-        data += group->data.body_size;
-    }
-    if (executor_size % 2){
-        _PyUOpInstruction *instruction = &executor->trace[executor_size - 1];
-        const StencilGroup *group = &stencil_groups[instruction->opcode];
+
+        if (i < executor_size - 1){
+            maybe_double = 1;
+            _PyUOpInstruction *instruction2 = &executor->trace[i+1];
+            if (instruction1->opcode == _GUARD_BOTH_INT && instruction2->opcode == _BINARY_OP_ADD_INT){
+                group = &stencil_groups[JIT_INDEX(instruction1->opcode, instruction2->opcode)];
+                patches[HoleValue_OPARG] = instruction1->oparg;
+                patches[HoleValue_OPERAND] = instruction1->operand;
+                patches[HoleValue_TARGET] = instruction1->target;
+                patches[HoleValue_OPARG2] = instruction2->oparg;
+                patches[HoleValue_OPERAND2] = instruction2->operand;
+                patches[HoleValue_TARGET2] = instruction2->target;
+                i++;
+            }
+            else {
+                maybe_double = 0;
+            }
+        }
+        if (!maybe_double){
+            group = &stencil_groups[instruction1->opcode];
+                patches[HoleValue_OPARG] = instruction1->oparg;
+                patches[HoleValue_OPERAND] = instruction1->operand;
+                patches[HoleValue_TARGET] = instruction1->target;
+        }
+        DPRINTF("%")
         // Think of patches as a dictionary mapping HoleValue to uint64_t:
-        uint64_t patches[] = GET_PATCHES();
         patches[HoleValue_CODE] = (uint64_t)code;
         patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
         patches[HoleValue_DATA] = (uint64_t)data;
         patches[HoleValue_EXECUTOR] = (uint64_t)executor;
-        patches[HoleValue_OPARG] = instruction->oparg;
-        patches[HoleValue_OPERAND] = instruction->operand;
-        patches[HoleValue_TARGET] = instruction->target;
         patches[HoleValue_TOP] = (uint64_t)memory;
         patches[HoleValue_ZERO] = 0;
         emit(group, patches);
         code += group->code.body_size;
         data += group->data.body_size;
+        i++;
     }
+
     if (mark_executable(memory, code_size) ||
         mark_readable(memory + code_size, data_size))
     {
