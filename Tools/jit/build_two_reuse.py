@@ -49,8 +49,11 @@ async def main() -> None:
     if args.first_opcode:
         raise ValueError("No longer valid")
         await target.build(pathlib.Path.cwd(), args.first_opcode)
-    else: # --all      
-        await target.build(pathlib.Path.cwd(), )
+    else: # --all
+        opvals = get_op_values()
+        await target.build(pathlib.Path.cwd(), [
+            ('_GUARD_BOTH_INT', '_BINARY_OP_ADD_INT')
+            ,])
 
 async def build_2(self, out: pathlib.Path) -> None:
     jit_stencils = out / "jit_stencils.h"
@@ -158,7 +161,7 @@ async def build_single_dual_stencil(self, first_opcode, second_opcode) -> dict[s
         work = pathlib.Path(tempdir).resolve()
         result = await self._compile(first_opcode, second_opcode, TOOLS_JIT_TEMPLATE_C2, work)
         
-    return {f"{first_opcode}plus{second_opcode": result}
+    return {f"{first_opcode}plus{second_opcode}": result}
 
 def dump_header() -> typing.Iterator[str]:
     yield f"// $ {shlex.join([sys.executable, *sys.argv])}"
@@ -332,7 +335,6 @@ def get_op_values() -> dict[str, int]:
             if m:= re.match(r"#define (?P<opname>[A-Z0-9_]+)\s+(?P<index>\d+)", line):
                 values[m.group('opname')] = int(m.group('index'))
 
-    print(values)
     return values
 
 
