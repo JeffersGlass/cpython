@@ -105,7 +105,7 @@ class _Target(typing.Generic[_S, _R]):
         self, c: pathlib.Path, tempdir: pathlib.Path, opnames: typing.Iterable[str]
     ) -> _stencils.StencilGroup:
         print(f"Compiling for {opnames}")
-        o = tempdir / f"{'plus'.join(opnames)}.o"
+        o = tempdir / f"{_superop_name(opnames)}.o"
         args = [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE",
@@ -179,20 +179,31 @@ class _Target(typing.Generic[_S, _R]):
                     if not template_path.exists():
                         _template.create_template_file(len(opset), template_path)
                     coro = self._compile(template_path, work, opset)
-                    tasks.append(group.create_task(coro, name='plus'.join(op for op in opset)))
+                    tasks.append(group.create_task(coro, name=_superop_name(opset)))
         return {task.get_name(): task.result() for task in tasks}
 
     def build(self, out: pathlib.Path, supernode_ops: list[typing.Iterable[str]] | None) -> None:
         """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
+
+        # Define superopcodes for supernodes
+        if supernode_ops:
+            jit_defines = out / "jit_defines.h"
+            max_id = max_uop_id()
+            op_indices = {_superop_name(opset): i+max_id+1 for i, opset in enumerate(supernode_ops)}
+            with open(jit_defines, "w") as f:
+                f.write("\n// Supernode Indices\n")
+                for name, index in op_indices.items():
+                    f.write(f"#define {name} {index}\n")
+
         jit_stencils = out / "jit_stencils.h"
+        # TODO make this check all touched files - jit_stencils, jit_defines, in future jit.c
         if not jit_stencils.exists() or not jit_stencils.read_text().startswith(digest):
-            if not supernode_ops: supernode_ops = []
             stencil_groups = asyncio.run(self._build_stencils(supernode_ops))
             with jit_stencils.open("w") as file:
                 file.write(digest)
                 max_id = max_uop_id()
-                for line in _writer.dump(stencil_groups, defines={'plus'.join(op): i+max_id+1 for i, op in enumerate(supernode_ops)}):
+                for line in _writer.dump(stencil_groups, defines=op_indices if supernode_ops else {}):
                     file.write(f"{line}\n")
 
 
@@ -419,3 +430,6 @@ def max_uop_id():
         for line in file.readlines():
             if m:= re.match(r"#define MAX_UOP_ID (?P<id>\d+)", line):
                 return int(m.group("id"))
+
+def _superop_name(opset: list[str]):
+    return 'plus'.join(opset)
