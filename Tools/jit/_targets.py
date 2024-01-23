@@ -206,7 +206,7 @@ class _Target(typing.Generic[_S, _R]):
 
         jit_stencils = out / "jit_stencils.h"
         # TODO make this check all touched files - jit_stencils, jit_defines, in future jit.c
-        if not jit_stencils.exists() or not jit_stencils.read_text().startswith(digest):
+        if force or not jit_stencils.exists() or not jit_stencils.read_text().startswith(digest):
             stencil_groups = asyncio.run(self._build_stencils(supernodes))
             with jit_stencils.open("w") as file:
                 file.write(digest)

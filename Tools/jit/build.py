@@ -12,7 +12,10 @@ if __name__ == "__main__":
         "target", type=_targets.get_target, help="a PEP 11 target triple to compile for"
     )
     parser.add_argument(
-        "-f", "--opfile", default='', help="Filepath to a csv of opname combinations to build" 
+        "--file", default='', help="Filepath to a csv of opname combinations to build" 
+    )
+    parser.add_argument(
+        "-F", "--force", action="store_true", help="force a rebuild even if nothing's changed"
     )
     parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"
@@ -23,4 +26,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.target.debug = args.debug
     args.target.verbose = args.verbose
-    args.target.build(pathlib.Path.cwd(), _opfile._retrieve_ops_from_path(args.opfile) if args.opfile else None)
+    args.target.build(pathlib.Path.cwd(), _opfile._retrieve_ops_from_path(args.file) if args.file else None, force=args.force)
