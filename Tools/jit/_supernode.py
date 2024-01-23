@@ -14,5 +14,7 @@ class SuperNode:
     def length(self):
         return len(self.ops)
     
+    def pop_front(self):
+        return self.__class__(ops=self.ops[1:])
     
 
