@@ -335,7 +335,7 @@ _PyJIT_Compile(_PyUOpExecutorObject *executor)
             maybe_double = 1;
             _PyUOpInstruction *instruction2 = &executor->trace[i+1];
             if (instruction1->opcode == _GUARD_BOTH_INT && instruction2->opcode == _BINARY_OP_ADD_INT){
-                DPRINTF("%4d: uop %s, oparg %d, operand %" PRIu64 ", target %d\n   +\n%4d: uop %s, oparg %d, operand %" PRIu64 ", target %d\n",
+                DPRINTF("    \033[0;32mJitted |\033[0m %4d: uop %s, oparg %d, operand %" PRIu64 ", target %d\n  \033[0;32mTogether |\033[0m %4d: uop %s, oparg %d, operand %" PRIu64 ", target %d\n",
                     i,
                     _PyUOpName(instruction1->opcode),
                     instruction1->oparg,
