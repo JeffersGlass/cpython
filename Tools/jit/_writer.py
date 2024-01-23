@@ -5,6 +5,7 @@ import typing
 
 import _schema
 import _stencils
+import _supernode
 
 
 def _dump_header() -> typing.Iterator[str]:
@@ -94,12 +95,12 @@ def _dump_define(name: str, value: int):
     yield f"#define {name} {value}"
 
 
-def dump(groups: dict[str, _stencils.StencilGroup], defines: dict[str, int] = None) -> typing.Iterator[str]:
+def dump(groups: dict[str, _stencils.StencilGroup], supernodes: typing.Iterable[_supernode.SuperNode] = None) -> typing.Iterator[str]:
     """Yiild a JIT compiler line-by-line as a C header file."""
     yield from _dump_header()
     for opname, group in groups.items():
         yield from _dump_stencil(opname, group)
-    if defines:
-        for name, value in defines.items():
-            yield from _dump_define(name, value)
+    if supernodes:
+        for node in supernodes:
+            yield from _dump_define(node.name, node.index)
     yield from _dump_footer(groups)

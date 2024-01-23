@@ -14,6 +14,7 @@ import typing
 import _jit_c
 import _llvm
 import _schema
+import _supernode
 import _stencils
 import _template
 import _writer
@@ -169,43 +170,48 @@ class _Target(typing.Generic[_S, _R]):
         if supernodes_stencils: result.update(supernodes_stencils)
         return result
     
-    async def _build_multiple_ops(self, ops: typing.Iterable[typing.Iterable[str]]) -> dict[str, _stencils.StencilGroup]:
+    async def _build_multiple_ops(self, supernodes: typing.Iterable[_supernode.SuperNode]) -> dict[str, _stencils.StencilGroup]:
         tasks = []
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                for opset in ops:
-                    template_path = TOOLS_JIT / f"template_{len(opset)}.c"
+                for node in supernodes:
+                    template_path = TOOLS_JIT / f"template_{node.length}.c"
                     if not template_path.exists():
-                        _template.create_template_file(len(opset), template_path)
-                    coro = self._compile(template_path, work, opset)
-                    tasks.append(group.create_task(coro, name=_superop_name(opset)))
+                        _template.create_template_file(node.length, template_path)
+                    coro = self._compile(template_path, work, node.ops)
+                    tasks.append(group.create_task(coro, name=node.name))
         return {task.get_name(): task.result() for task in tasks}
 
-    def build(self, out: pathlib.Path, supernode_ops: list[typing.Iterable[str]] | None) -> None:
+    def build(self, out: pathlib.Path, supernodes: list[_supernode.SuperNode] | None) -> None:
         """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
 
+        # Assign indices to supernodes here
+        # Don't do it when they're loaded/created, to allow for more dynamic
+        # customization later
+        max_id = max_uop_id()
+        for i, s in enumerate(supernodes):
+            s.index = i + max_id + 1
+
         # Define superopcodes for supernodes
-        if supernode_ops:
+        if supernodes:
             jit_defines = out / "jit_defines.h"
-            max_id = max_uop_id()
-            op_indices = {_superop_name(opset): i+max_id+1 for i, opset in enumerate(supernode_ops)}
             with open(jit_defines, "w") as f:
                 f.write("\n// Supernode Indices\n")
-                for name, index in op_indices.items():
-                    f.write(f"#define {name} {index}\n")
+                for node in supernodes:
+                    f.write(f"#define {node.name} {node.index}\n")
 
-        _jit_c._patch_jit_c(supernode_ops, max_id)
+        _jit_c._patch_jit_c(supernodes, max_id)
 
         jit_stencils = out / "jit_stencils.h"
         # TODO make this check all touched files - jit_stencils, jit_defines, in future jit.c
         if not jit_stencils.exists() or not jit_stencils.read_text().startswith(digest):
-            stencil_groups = asyncio.run(self._build_stencils(supernode_ops))
+            stencil_groups = asyncio.run(self._build_stencils(supernodes))
             with jit_stencils.open("w") as file:
                 file.write(digest)
                 max_id = max_uop_id()
-                for line in _writer.dump(stencil_groups, defines=op_indices if supernode_ops else {}):
+                for line in _writer.dump(stencil_groups, supernodes=supernodes):
                     file.write(f"{line}\n")
 
 
