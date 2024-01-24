@@ -309,11 +309,11 @@ _PyJIT_Compile(_PyExecutorObject *executor)
 		_PyUOpInstruction *instruction0 = &executor->trace[i+0];
 		_PyUOpInstruction *instruction1 = &executor->trace[i+1];
 		_PyUOpInstruction *instruction2 = &executor->trace[i+2];
-		const SuperNode node = _JIT_INDEX(instruction0, instruction1, instruction2);
-			const StencilGroup *group = &stencil_groups[node->index];
+		const SuperNode node = _JIT_INDEX(instruction0->opcode, instruction1->opcode, instruction2->opcode);
+			const StencilGroup *group = &stencil_groups[node.index];
 			code_size += group->code.body_size;
 			data_size += group->data.body_size;
-			i += node->length
+			i += node.length;
 		}
     /*for (Py_ssize_t i = 0; i < Py_SIZE(executor); i++) {
         _PyUOpInstruction *instruction = &executor->trace[i];
@@ -339,8 +339,8 @@ _PyJIT_Compile(_PyExecutorObject *executor)
 		_PyUOpInstruction *instruction0 = &executor->trace[i+0];
 		_PyUOpInstruction *instruction1 = &executor->trace[i+1];
 		_PyUOpInstruction *instruction2 = &executor->trace[i+2];
-		const SuperNode node = _JIT_INDEX(instruction0, instruction1, instruction2)
-			const StencilGroup *group = &stencil_groups[node->index];
+		const SuperNode node = _JIT_INDEX(instruction0->opcode, instruction1->opcode, instruction2->opcode);
+			const StencilGroup *group = &stencil_groups[node.index];
 		// Think of patches as a dictionary mapping HoleValue to uint64_t:
 			uint64_t patches[] = GET_PATCHES();
 			patches[HoleValue_OPARG0] = instruction0->oparg;
@@ -388,21 +388,16 @@ _PyJIT_Free(_PyExecutorObject *executor)
     }
 }
 
-typedef struct {
-    const uint64_t index;
-    const uint16_t length;
-} SuperNode;
-
 // _JIT_INDEX HERE
 SuperNode
 _JIT_INDEX(uint16_t a, uint16_t b, uint16_t c) {
   switch (a) {
-    case _ITER_CHECK_LIST:
+    case _LOAD_ATTR_MODULE:
       switch (b) {
-            case _GUARD_NOT_EXHAUSTED_LIST:
+            case _CHECK_ATTR_WITH_HINT:
           switch (c) {
-                    case _ITER_NEXT_LIST:
-                              return (SuperNode) {.index = _ITER_CHECK_LISTplus_GUARD_NOT_EXHAUSTED_LISTplus_ITER_NEXT_LIST, .length = 3};
+                    case _LOAD_ATTR_WITH_HINT:
+                              return (SuperNode) {.index = _LOAD_ATTR_MODULEplus_CHECK_ATTR_WITH_HINTplus_LOAD_ATTR_WITH_HINT, .length = 3};
                               break;
                     default:
                               return (SuperNode) {.index = a, .length = 1};
@@ -412,12 +407,12 @@ _JIT_INDEX(uint16_t a, uint16_t b, uint16_t c) {
                   return (SuperNode) {.index = a, .length = 1};
       }
       break;
-    case _LOAD_ATTR_MODULE:
+    case _ITER_CHECK_LIST:
       switch (b) {
-            case _CHECK_ATTR_WITH_HINT:
+            case _GUARD_NOT_EXHAUSTED_LIST:
           switch (c) {
-                    case _LOAD_ATTR_WITH_HINT:
-                              return (SuperNode) {.index = _LOAD_ATTR_MODULEplus_CHECK_ATTR_WITH_HINTplus_LOAD_ATTR_WITH_HINT, .length = 3};
+                    case _ITER_NEXT_LIST:
+                              return (SuperNode) {.index = _ITER_CHECK_LISTplus_GUARD_NOT_EXHAUSTED_LISTplus_ITER_NEXT_LIST, .length = 3};
                               break;
                     default:
                               return (SuperNode) {.index = a, .length = 1};

@@ -145,7 +145,6 @@ class _Target(typing.Generic[_S, _R]):
             "-std=c11",
             f"{c}",
         ])
-        print(args)
         await _llvm.run("clang", args, echo=self.verbose)
         print(f"Done building for {opnames}")
         return await self._parse(o)
@@ -202,6 +201,14 @@ class _Target(typing.Generic[_S, _R]):
                 for node in supernodes:
                     f.write(f"#define {node.name} {node.index}\n")
                     f.write(f"#define {node.name}_length {node.length}\n")
+                
+                f.write("""
+typedef struct {
+    const uint64_t index;
+    const uint16_t length;
+} SuperNode;
+                        
+SuperNode _JIT_INDEX(uint16_t a, uint16_t b, uint16_t c) ;""")
 
         _jit_c._patch_jit_c(supernodes)
 

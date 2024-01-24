@@ -361,11 +361,6 @@ _PyJIT_Free(_PyExecutorObject *executor)
     }
 }
 
-typedef struct {
-    const uint64_t index;
-    const uint16_t length;
-} SuperNode;
-
 // _JIT_INDEX HERE
 
 // _JIT_INDEX END
