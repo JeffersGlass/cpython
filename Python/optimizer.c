@@ -237,7 +237,8 @@ uop_dealloc(_PyExecutorObject *self) {
 const char *
 _PyUOpName(int index)
 {
-    return _PyOpcode_uop_name[index];
+    if (index <= MAX_UOP_ID){ return _PyOpcode_uop_name[index];}
+    else {return "<<JITTED>>";}
 }
 
 static Py_ssize_t
