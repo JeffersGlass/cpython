@@ -126,6 +126,7 @@ Tools/unicode/data/
 # hendrikmuhs/ccache-action@v1
 /.ccache
 /cross-build/
+/Python/jit.c
 /jit_stencils.h
 /jit_defines.h
 /platform
