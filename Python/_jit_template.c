@@ -332,7 +332,7 @@ _PyJIT_Compile(_PyExecutorObject *executor)
         uint64_t patches[] = GET_PATCHES();
         patches[HoleValue_OPARG0] = instruction0->oparg;
         patches[HoleValue_OPERAND0] = instruction0->operand;
-        patches[HoleValue_TARGET0] = instruction0->target;
+        patches[HoleValue_TARGET0] = instruction0->target;*/
     // PATCH LOOP INIT HERE
     
         // END PATCH LOOP
