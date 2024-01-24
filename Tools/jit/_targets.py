@@ -114,7 +114,7 @@ class _Target(typing.Generic[_S, _R]):
             "-D_DEBUG" if self.debug else "-DNDEBUG"]
         
         for i, op in enumerate(opnames):
-            args.append(f"-D_JIT_OPCODE{i+1}={op}")
+            args.append(f"-D_JIT_OPCODE{i}={op}")
 
         args.extend([
             "-D_PyJIT_ACTIVE",
@@ -145,7 +145,7 @@ class _Target(typing.Generic[_S, _R]):
             "-std=c11",
             f"{c}",
         ])
-
+        print(args)
         await _llvm.run("clang", args, echo=self.verbose)
         print(f"Done building for {opnames}")
         return await self._parse(o)
@@ -183,7 +183,7 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name=node.name))
         return {task.get_name(): task.result() for task in tasks}
 
-    def build(self, out: pathlib.Path, supernodes: list[_supernode.SuperNode] | None) -> None:
+    def build(self, out: pathlib.Path, supernodes: list[_supernode.SuperNode] | None, force=False) -> None:
         """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
 
@@ -201,8 +201,9 @@ class _Target(typing.Generic[_S, _R]):
                 f.write("\n// Supernode Indices\n")
                 for node in supernodes:
                     f.write(f"#define {node.name} {node.index}\n")
+                    f.write(f"#define {node.name}_length {node.length}\n")
 
-        _jit_c._patch_jit_c(supernodes, max_id)
+        _jit_c._patch_jit_c(supernodes)
 
         jit_stencils = out / "jit_stencils.h"
         # TODO make this check all touched files - jit_stencils, jit_defines, in future jit.c

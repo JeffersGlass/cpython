@@ -58,18 +58,18 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     // Locals that the instruction implementations expect to exist:
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
-    int opcode1 = _JIT_OPCODE1;
+    int opcode0 = _JIT_OPCODE0;
     _PyUOpInstruction *next_uop;
     // Other stuff we need handy:
-    PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
-    PATCH_VALUE(uint64_t, _operand, _JIT_OPERAND)
-    PATCH_VALUE(uint32_t, _target, _JIT_TARGET)
+    PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG0)
+    PATCH_VALUE(uint64_t, _operand, _JIT_OPERAND0)
+    PATCH_VALUE(uint32_t, _target, _JIT_TARGET0)
     // The actual instruction definitions (only one will be used):
-    if (opcode1 == _JUMP_TO_TOP) {
+    if (opcode0 == _JUMP_TO_TOP) {
         CHECK_EVAL_BREAKER();
         PATCH_JUMP(_JIT_TOP);
     }
-    switch (opcode1) {
+    switch (opcode0) {
 #include "executor_cases.c.h"
         default:
             Py_UNREACHABLE();

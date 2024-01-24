@@ -305,6 +305,16 @@ _PyJIT_Compile(_PyExecutorObject *executor)
     size_t code_size = 0;
     size_t data_size = 0;
     // SIZE LOOP HERE
+	for (Py_ssize_t i = 0; i < Py_SIZE(executor);) {
+		_PyUOpInstruction *instruction0 = &executor->trace[i+0];
+		_PyUOpInstruction *instruction1 = &executor->trace[i+1];
+		_PyUOpInstruction *instruction2 = &executor->trace[i+2];
+		const SuperNode node = _JIT_INDEX(instruction0, instruction1, instruction2);
+			const StencilGroup *group = &stencil_groups[node->index];
+			code_size += group->code.body_size;
+			data_size += group->data.body_size;
+			i += node->length
+		}
     /*for (Py_ssize_t i = 0; i < Py_SIZE(executor); i++) {
         _PyUOpInstruction *instruction = &executor->trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
@@ -325,6 +335,23 @@ _PyJIT_Compile(_PyExecutorObject *executor)
     char *code = memory;
     char *data = memory + code_size;
     // PATCH LOOP INIT HERE
+	for (Py_ssize_t i = 0; i < Py_SIZE(executor); ) {
+		_PyUOpInstruction *instruction0 = &executor->trace[i+0];
+		_PyUOpInstruction *instruction1 = &executor->trace[i+1];
+		_PyUOpInstruction *instruction2 = &executor->trace[i+2];
+		const SuperNode node = _JIT_INDEX(instruction0, instruction1, instruction2)
+			const StencilGroup *group = &stencil_groups[node->index];
+		// Think of patches as a dictionary mapping HoleValue to uint64_t:
+			uint64_t patches[] = GET_PATCHES();
+			patches[HoleValue_OPARG0] = instruction0->oparg;
+			patches[HoleValue_OPERAND0] = instruction0->operand;
+			patches[HoleValue_TARGET0] = instruction0->target;
+			patches[HoleValue_OPARG1] = instruction1->oparg;
+			patches[HoleValue_OPERAND1] = instruction1->operand;
+			patches[HoleValue_TARGET1] = instruction1->target;
+			patches[HoleValue_OPARG2] = instruction2->oparg;
+			patches[HoleValue_OPERAND2] = instruction2->operand;
+			patches[HoleValue_TARGET2] = instruction2->target;
         // END PATCH LOOP
         patches[HoleValue_CODE] = (uint64_t)code;
         patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
@@ -367,6 +394,52 @@ typedef struct {
 } SuperNode;
 
 // _JIT_INDEX HERE
+SuperNode
+_JIT_INDEX(uint16_t a, uint16_t b, uint16_t c) {
+  switch (a) {
+    case _ITER_CHECK_LIST:
+      switch (b) {
+            case _GUARD_NOT_EXHAUSTED_LIST:
+          switch (c) {
+                    case _ITER_NEXT_LIST:
+                              return (SuperNode) {.index = _ITER_CHECK_LISTplus_GUARD_NOT_EXHAUSTED_LISTplus_ITER_NEXT_LIST, .length = 3};
+                              break;
+                    default:
+                              return (SuperNode) {.index = a, .length = 1};
+          }
+                  break;
+            default:
+                  return (SuperNode) {.index = a, .length = 1};
+      }
+      break;
+    case _LOAD_ATTR_MODULE:
+      switch (b) {
+            case _CHECK_ATTR_WITH_HINT:
+          switch (c) {
+                    case _LOAD_ATTR_WITH_HINT:
+                              return (SuperNode) {.index = _LOAD_ATTR_MODULEplus_CHECK_ATTR_WITH_HINTplus_LOAD_ATTR_WITH_HINT, .length = 3};
+                              break;
+                    default:
+                              return (SuperNode) {.index = a, .length = 1};
+          }
+                  break;
+            default:
+                  return (SuperNode) {.index = a, .length = 1};
+      }
+      break;
+    case _GUARD_BOTH_INT:
+      switch (b) {
+            case _BINARY_OP_ADD_INT:
+                  return (SuperNode) {.index = _GUARD_BOTH_INTplus_BINARY_OP_ADD_INT, .length = 2};
+                  break;
+            default:
+                  return (SuperNode) {.index = a, .length = 1};
+      }
+      break;
+    default:
+      return (SuperNode) {.index = a, .length = 1};
+  }
+}
 
 // _JIT_INDEX END
 

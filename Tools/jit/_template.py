@@ -82,9 +82,9 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
     _PyUOpInstruction *next_uop;
-    PATCH_VALUE(uint32_t, _target, _JIT_TARGET)
+    PATCH_VALUE(uint32_t, _target, _JIT_TARGET0)
 """
-    for index in range(1, num_opcodes+1):
+    for index in range(num_opcodes):
         yield f"""
     #undef CURRENT_OPARG
     #define CURRENT_OPARG() (_oparg{index})
@@ -94,6 +94,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     int opcode{index} = _JIT_OPCODE{index};
     PATCH_VALUE(uint16_t, _oparg{index}, _JIT_OPARG{index})
     PATCH_VALUE(uint64_t, _operand{index}, _JIT_OPERAND{index})
+    {f'_target = _JIT_TARGET{index}' if index > 0 else ''}
     switch (opcode{index}) {{
 #include "executor_cases.c.h"
         default:

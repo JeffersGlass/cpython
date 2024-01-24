@@ -26,17 +26,20 @@ class HoleValue(enum.Enum):
     # equivalent DATA values:
     GOT = enum.auto()
     # The current uop's oparg (exposed as _JIT_OPARG):
-    OPARG = enum.auto()
+    OPARG0 = enum.auto()
     # The current uop's operand (exposed as _JIT_OPERAND):
-    OPERAND = enum.auto()
+    OPERAND0 = enum.auto()
     # The current uop's target (exposed as _JIT_TARGET):
-    TARGET = enum.auto()
+    TARGET0 = enum.auto()
     # The base address of the machine code for the first uop (exposed as _JIT_TOP):
     TOP = enum.auto()
     # A hardcoded value of zero (used for symbol lookups):
     ZERO = enum.auto()
     # Additional hole types for supernodes
     # TODO: Make this auto-generate instead of a hack
+    OPARG1 = enum.auto()
+    OPERAND1 = enum.auto()
+    TARGET1 = enum.auto()
     OPARG2 = enum.auto()
     OPERAND2 = enum.auto()
     TARGET2 = enum.auto()
@@ -46,9 +49,6 @@ class HoleValue(enum.Enum):
     OPARG4 = enum.auto()
     OPERAND4 = enum.auto()
     TARGET4 = enum.auto()
-    OPARG5 = enum.auto()
-    OPERAND5 = enum.auto()
-    TARGET5 = enum.auto()
 
 @dataclasses.dataclass
 class Hole:

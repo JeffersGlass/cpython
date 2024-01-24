@@ -97,7 +97,7 @@ def _dump_define(name: str, value: int):
 
 def dump(groups: dict[str, _stencils.StencilGroup], supernodes: typing.Iterable[_supernode.SuperNode] = None) -> typing.Iterator[str]:
     """Yiild a JIT compiler line-by-line as a C header file."""
-    yield from _dump_header()
+    yield from _dump_header()   
     for opname, group in groups.items():
         yield from _dump_stencil(opname, group)
     if supernodes:
