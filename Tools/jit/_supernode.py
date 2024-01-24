@@ -7,6 +7,7 @@ class SuperNode:
     ops: list[str]
     index: int = -1
     parent: typing.Self = None
+    replace = dataclasses.replace
 
     def __repr__(self):
         kws = [f"{key}={value!r}" for key, value in self.__dict__.items()] + [f"name={self.name}", f"length={self.length}"]
@@ -21,7 +22,7 @@ class SuperNode:
         return len(self.ops)
     
     def pop_front(self):
-        return self.__class__(ops=self.ops[1:], parent=self)
+        return self.replace(ops=self.ops[1:], parent=self)
     
     def top_parent(self):
         node = self
