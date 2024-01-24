@@ -19,7 +19,7 @@ def _patch_jit_c(supernodes: list[_supernode.SuperNode]):
                 for func_line in _create_size_loop(supernodes):
                     outfile.write(f"\t{func_line}\n")
             if line.strip() == "// PATCH LOOP INIT HERE":
-                 for func_line in _create_patch_loop_init(supernodes):
+                 for func_line in _create_patch_loop(supernodes):
                     outfile.write(f"\t{func_line}\n")
             if line.strip() == "// _JIT_INDEX HERE":
                 for func_line in _create_jit_index(supernodes):
@@ -37,23 +37,50 @@ def _create_size_loop(supernodes: list[_supernode.SuperNode]) -> typing.Generato
 
     depth = max(len(node.ops) for node in supernodes)
 
-    yield "for (Py_ssize_t i = 0; i < Py_SIZE(executor);) {"
-    for i in range(depth):
-        yield f"\t_PyUOpInstruction *instruction{i} = &executor->trace[i+{i}];"
+    yield f"for (Py_ssize_t i = 0; i <= Py_SIZE(executor)-{depth};) {{"
+    for d in range(depth):
+        yield f"\t_PyUOpInstruction *instruction{d} = &executor->trace[i+{d}];"
     yield f"\tconst SuperNode node = _JIT_INDEX({', '.join(f'instruction{i}->opcode' for i in range(depth))});"
+    yield f'DPRINTF("\\nLooking at {depth} opcodes starting at index %ld:", i )'
+    for d in range(depth):
+        yield f"""DPRINTF("\\n\t%ld: uop %s, oparg %d, operand %" PRIu64 ", target %d", i + {d} , _PyUOpName(instruction{d}->opcode), instruction{d}->oparg, instruction{d}->operand, instruction{d}->target);"""
+    yield f"""DPRINTF("\\n\tChosen Node index: %ld (PyUOpName: %s)", node.index, _PyUOpName(node.index));"""
     yield f"\t\tconst StencilGroup *group = &stencil_groups[node.index];"
     yield "\t\tcode_size += group->code.body_size;"
     yield "\t\tdata_size += group->data.body_size;"
     yield "\t\ti += node.length;"
+    yield "\t\tfinal_index = i;"
+    yield '''DPRINTF("\\n\tAfter loop, i = %ld (Py_SIZE(executor) is %ld)", i, Py_SIZE(executor));'''
     yield "\t}"
+    yield "\t// Once we're closer to the end of the stencil than the depth of our"
+    yield "\t// longest stencil, just single-jit the remaining opcodes. This can be"
+    yield "\t// improved to look only at short-enough patterns by passing, say, -1"
+    yield "\t// to any instructions past the end of the trace; since the longest"
+    yield "\t// superinstruction is likely to still be short, the current approach sholdn't"
+    yield "\t// be too awful."
+    yield ""
+    yield f""" for (Py_ssize_t i = final_index; i < Py_SIZE(executor); i++) {{
+        _PyUOpInstruction *instruction = &executor->trace[i];
+        const SuperNode node = _JIT_INDEX({', '.join(['instruction->opcode', *["-1" for _ in range(depth-1)]])});
+        DPRINTF("\\n(Single Node @ index %ld ) chosen UOp index: %ld (PyUOpName: %s)", i, node.index, _PyUOpName(node.index));
+        const StencilGroup *group = &stencil_groups[node.index];
+        code_size += group->code.body_size;
+        data_size += group->data.body_size;
+        DPRINTF(" - OP COMPLETE");
+    }} """
 
-def _create_patch_loop_init(supernodes):
-        depth = max(len(node.ops) for node in supernodes)
-        yield "for (Py_ssize_t i = 0; i < Py_SIZE(executor); ) {"
+
+def _create_patch_loop(supernodes):
+        depth = max(len(node.ops) for node in supernodes) 
+        yield f"for (Py_ssize_t i = 0; i <= Py_SIZE(executor) - {depth}; ) {{"
         for i in range(depth):
             yield f"\t_PyUOpInstruction *instruction{i} = &executor->trace[i+{i}];"
 
         yield f"\tconst SuperNode node = _JIT_INDEX({', '.join(f'instruction{i}->opcode' for i in range(depth))});"
+        yield f'DPRINTF("\\nLooking at {depth} opcodes starting at index %ld:", i )'
+        for d in range(depth):
+            yield f"""DPRINTF("\\n\t%ld: uop %s, oparg %d, operand %" PRIu64 ", target %d", i + {d} , _PyUOpName(instruction{d}->opcode), instruction{d}->oparg, instruction{d}->operand, instruction{d}->target);"""
+        yield f"""DPRINTF("\\n\tChosen Node index: %ld (PyUOpName: %s)", node.index, _PyUOpName(node.index));"""
         yield f"\t\tconst StencilGroup *group = &stencil_groups[node.index];"
         yield "\t// Think of patches as a dictionary mapping HoleValue to uint64_t:"
         yield "\t\tuint64_t patches[] = GET_PATCHES();"
@@ -61,8 +88,51 @@ def _create_patch_loop_init(supernodes):
             yield f"\t\tpatches[HoleValue_OPARG{i}] = instruction{i}->oparg;"
             yield f"\t\tpatches[HoleValue_OPERAND{i}] = instruction{i}->operand;"
             yield f"\t\tpatches[HoleValue_TARGET{i}] = instruction{i}->target;"
+        yield """\t\tpatches[HoleValue_CODE] = (uint64_t)code;
+        patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
+        patches[HoleValue_DATA] = (uint64_t)data;
+        patches[HoleValue_EXECUTOR] = (uint64_t)executor;
+        patches[HoleValue_TOP] = (uint64_t)memory;
+        patches[HoleValue_ZERO] = 0;
+        emit(group, patches);
+        code += group->code.body_size;
+        data += group->data.body_size;
+        i += node.length;
+        final_index = i;
+        
+}"""
+        yield "\t// Once we're closer to the end of the stencil than the depth of our"
+        yield "\t// longest stencil, just single-jit the remaining opcodes. This can be"
+        yield "\t// improved to look only at short-enough patterns by passing, say, -1"
+        yield "\t// to any instructions past the end of the trace; since the longest"
+        yield "\t// superinstruction is likely to still be short, the current approach sholdn't"
+        yield "\t// be too awful."
+        yield ""
+        yield f"""for (Py_ssize_t i = final_index; i < Py_SIZE(executor); i++) {{
+		_PyUOpInstruction *instruction = &executor->trace[i];
+		const SuperNode node = _JIT_INDEX({', '.join(['instruction->opcode', *["-1" for _ in range(depth-1)]])});
+        DPRINTF("\\n(Single Node @ index %ld ) chosen UOp index: %ld (PyUOpName: %s)", i, node.index, _PyUOpName(node.index));
+        DPRINTF("\\n\t%ld: uop %s, oparg %d, operand %" PRIu64 ", target %d", i, _PyUOpName(instruction->opcode), instruction->oparg, instruction->operand, instruction->target);
+        const StencilGroup *group = &stencil_groups[node.index];
+		// Think of patches as a dictionary mapping HoleValue to uint64_t:
+			uint64_t patches[] = GET_PATCHES();
+			patches[HoleValue_OPARG0] = instruction->oparg;
+			patches[HoleValue_OPERAND0] = instruction->operand;
+			patches[HoleValue_TARGET0] = instruction->target;
+        // END PATCH LOOP
+        patches[HoleValue_CODE] = (uint64_t)code;
+        patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
+        patches[HoleValue_DATA] = (uint64_t)data;
+        patches[HoleValue_EXECUTOR] = (uint64_t)executor;
+        patches[HoleValue_TOP] = (uint64_t)memory;
+        patches[HoleValue_ZERO] = 0;
+        emit(group, patches);
+        code += group->code.body_size;
+        data += group->data.body_size;
+        DPRINTF(" - OP COMPLETE")
+    }}"""
 
-
+ 
 
 def _create_jit_index(supernodes: list[_supernode.SuperNode]) -> typing.Generator[str, None, None]:
     depth = max(len(node.ops) for node in supernodes)

@@ -25,6 +25,15 @@
     #include <sys/mman.h>
 #endif
 
+#ifdef Py_DEBUG
+#define DPRINTF(...) \
+    { printf(__VA_ARGS__); }
+#else
+#define DPRINTF(...)
+#endif
+
+extern const char *_PyUOpName(int index);
+
 static size_t
 get_page_size(void)
 {
@@ -304,14 +313,21 @@ _PyJIT_Compile(_PyExecutorObject *executor)
     // Loop once to find the total compiled size:
     size_t code_size = 0;
     size_t data_size = 0;
+    
+    // Stores the final value of loop variables, so we can clean
+    // up remaining opcodes at the end
+    size_t final_index;
+
     /*for (Py_ssize_t i = 0; i < Py_SIZE(executor); i++) {
         _PyUOpInstruction *instruction = &executor->trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         code_size += group->code.body_size;
         data_size += group->data.body_size;
     }*/
+    DPRINTF("\n---Start Size Loop---");
     // SIZE LOOP HERE
     // END SIZE LOOP
+    DPRINTF("\n---Size loop done---");
     // Round up to the nearest page (code and data need separate pages):
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
@@ -328,24 +344,17 @@ _PyJIT_Compile(_PyExecutorObject *executor)
 		_PyUOpInstruction *instruction0 = &executor->trace[i+0];
 		const SuperNode node = _JIT_INDEX(instruction0->opcode, instruction1->opcode, instruction2->opcode);
         const StencilGroup *group = &stencil_groups[node.index];
-    // Think of patches as a dictionary mapping HoleValue to uint64_t:
+    // Think of patches 1as a dictionary mapping HoleValue to uint64_t:
         uint64_t patches[] = GET_PATCHES();
         patches[HoleValue_OPARG0] = instruction0->oparg;
         patches[HoleValue_OPERAND0] = instruction0->operand;
         patches[HoleValue_TARGET0] = instruction0->target;*/
+    DPRINTF("\n---Start Patch Loop--- ");
     // PATCH LOOP INIT HERE
     
         // END PATCH LOOP
-        patches[HoleValue_CODE] = (uint64_t)code;
-        patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
-        patches[HoleValue_DATA] = (uint64_t)data;
-        patches[HoleValue_EXECUTOR] = (uint64_t)executor;
-        patches[HoleValue_TOP] = (uint64_t)memory;
-        patches[HoleValue_ZERO] = 0;
-        emit(group, patches);
-        code += group->code.body_size;
-        data += group->data.body_size;
-    }
+    DPRINTF("\n---Patch loop loop done---");
+
     if (mark_executable(memory, code_size) ||
         mark_readable(memory + code_size, data_size))
     {
