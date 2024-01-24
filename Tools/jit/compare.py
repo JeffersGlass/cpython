@@ -60,8 +60,8 @@ def generate():
         
         TABLE = "{kind: <17}{first: >30}:{first_val:<3}  {second: >30}:{second_val:<3}  {combined: >69}:{combined_val:<3}  {math}"
         for second_opcode in second_opcode_data:
-            c = format_comparison(first_opcode, second_opcode, single_ops, second_opcode_data, "code_body_length", TABLE)
-            print(c)
+            #c = format_comparison(first_opcode, second_opcode, single_ops, second_opcode_data, "code_body_length", TABLE)
+            #print(c)
             with open(run_data_file, "a+", newline='') as f:
                 writer = csv.writer(f)
                 first_length = single_ops[first_opcode].code_body_length

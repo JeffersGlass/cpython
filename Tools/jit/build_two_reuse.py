@@ -44,16 +44,20 @@ async def main() -> None:
     #    raise ValueError("Must specify one of target (by position) or --all_targets")
 
     target = get_target(args.target, debug=args.debug, verbose=args.verbose)
-    target.build = build_singles_plus_selected.__get__(target, target.__class__)
+    
 
-    if args.first_opcode:
-        raise ValueError("No longer valid")
-        await target.build(pathlib.Path.cwd(), args.first_opcode)
-    else: # --all
-        opvals = get_op_values()
+    if not args.all_ops:
+        target.build = build_singles_plus_selected.__get__(target, target.__class__)
         await target.build(pathlib.Path.cwd(), [
             ('_GUARD_BOTH_INT', '_BINARY_OP_ADD_INT')
             ,])
+    else: # --all
+        generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
+        opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
+        for first in opnames:
+            target.build = build_2.__get__(target, target.__class__)
+            await target.build(pathlib.Path.cwd())
+       
 
 async def build_2(self, out: pathlib.Path) -> None:
     jit_stencils = out / "jit_stencils.h"
@@ -61,7 +65,7 @@ async def build_2(self, out: pathlib.Path) -> None:
     opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
     num_ops = len(opnames)
 
-    #header
+    """ #header
     with open(jit_stencils, "w") as file:
         for line in dump_header():
             file.write(f"{line}\n")
@@ -70,7 +74,7 @@ async def build_2(self, out: pathlib.Path) -> None:
 
     with open(jit_stencils, "a") as file:
         for line in dump(single_stencil_groups):
-            file.write(f"{line}\n")
+            file.write(f"{line}\n") """
 
     # Patch build(), build_stencils(), and _compile() to take an initial opcode argument
     self.build_stencils_2 = build_dual_stencils.__get__(self, self.__class__)
@@ -78,10 +82,10 @@ async def build_2(self, out: pathlib.Path) -> None:
 
     compiliation_start = time.time()
 
-    for index, first_opcode in enumerate(opnames):
+    for index, first_opcode in enumerate(opnames[opnames.index("_BUILD_MAP")+1:]):
         print(f"Building  ({first_opcode}, *) pairs...", end = " ", flush=True)
         start = time.time()
-        stencil_groups = await self.build_stencils_2(first_opcode, opnames)
+        stencil_groups = await self.build_stencils_2(first_opcode, opnames[opnames.index("_WITH_EXCEPT_START")+1:])
         with open(jit_stencils, "a") as file:    
             for line in dump(stencil_groups):
                 file.write(f"{line}\n")
@@ -96,7 +100,7 @@ async def build_2(self, out: pathlib.Path) -> None:
         op_values = get_op_values()
         for first in opnames:
             for second in opnames:
-                file.write(f"# define {first}plus{second} {max_id * op_values[first] + op_values[second] + max_id + 1 + 1}\n")
+                file.write(f"#define {first}plus{second} {max_id * op_values[first] + op_values[second] + max_id + 1 + 1}\n")
             print(f"Wrote all constants for ({first}, ) pairs")
 
     #footer
