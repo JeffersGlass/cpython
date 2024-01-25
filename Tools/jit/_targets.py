@@ -146,7 +146,6 @@ class _Target(typing.Generic[_S, _R]):
             f"{c}",
         ])
         await _llvm.run("clang", args, echo=self.verbose)
-        print(f"Done building for {opnames}")
         return await self._parse(o)
 
     async def _build_stencils(self,  ops: typing.Iterable[typing.Iterable[str]] | None = None) -> dict[str, _stencils.StencilGroup]:
