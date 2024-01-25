@@ -1,3 +1,8 @@
+""" Functions for turning _jit_template.c into a fully realized jit.c.
+    This is done at build time, to allow jit.c to be customized to accomodate 
+    the longest superinstructions.
+"""
+
 import itertools
 import string
 import typing
@@ -143,15 +148,15 @@ def _generate_jit_switch_or_compare(supernodes: list[_supernode.SuperNode], var_
     yield f"{INDENT_UNIT * indent_level}switch ({var_names[level]}) {{"
 
     for initial_op in initial_opcodes:
-        yield f"{INDENT_UNIT * 2 * indent_level}case {initial_op}:"
+        yield f"{INDENT_UNIT * (indent_level + 1)}case {initial_op}:"
         next_nodes = [node.pop_front() for node in supernodes if node.length > 1 and node.ops[0] == initial_op]
-        if next_nodes: yield from _generate_jit_switch_or_compare(next_nodes, var_names, level+1, indent_level + 4)
+        if next_nodes: yield from _generate_jit_switch_or_compare(next_nodes, var_names, level+1, indent_level + 2)
         else: 
-            yield f"{INDENT_UNIT * 3 * indent_level}return (SuperNode) {{.index = {supernodes[0].top_parent().name}, .length = {supernodes[0].top_parent().length}}};"
-        yield f"{INDENT_UNIT * 3 * indent_level}break;"
+            yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = {supernodes[0].top_parent().name}, .length = {supernodes[0].top_parent().length}}};"
+        yield f"{INDENT_UNIT * (indent_level + 2)}break;"
 
-    yield f"{INDENT_UNIT * 2   * indent_level}default:"
-    yield f"{INDENT_UNIT * 3 * indent_level}return (SuperNode) {{.index = {var_names[0]}, .length = 1}};"
+    yield f"{INDENT_UNIT * (indent_level + 1)}default:"
+    yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = {var_names[0]}, .length = 1}};"
     yield f"{INDENT_UNIT * indent_level}}}" # switch
 
 
