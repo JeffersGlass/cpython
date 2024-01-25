@@ -8,7 +8,6 @@ from typing import Generator
 
 
 def create_template_file(num_opcodes, path: Path | str):
-    print(f"Creating template file at {path}")
     with open(path, "w") as f:
         for val in gen_template_text(num_opcodes):
             f.write(val)
