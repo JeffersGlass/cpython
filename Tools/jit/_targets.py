@@ -148,7 +148,7 @@ class _Target(typing.Generic[_S, _R]):
         await _llvm.run("clang", args, echo=self.verbose)
         return await self._parse(o)
 
-    async def _build_stencils(self,  ops: typing.Iterable[typing.Iterable[str]] | None = None) -> dict[str, _stencils.StencilGroup]:
+    async def _build_stencils(self,  supernodes: typing.Iterable[typing.Iterable[str]] | None = None) -> dict[str, _stencils.StencilGroup]:        
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
         tasks = []
@@ -159,13 +159,13 @@ class _Target(typing.Generic[_S, _R]):
                     coro = self._compile(TOOLS_JIT_TEMPLATE_C, work, [opname,])
                     tasks.append(group.create_task(coro, name=opname))
 
-            if ops:
-                supernodes_stencils = await self._build_multiple_ops(ops)
+            if supernodes:
+                supernode_stencils = await self._build_multiple_ops(supernodes)
             else:
-                supernodes_stencils = []
+                supernode_stencils = []
 
         result = {task.get_name(): task.result() for task in tasks}
-        if supernodes_stencils: result.update(supernodes_stencils)
+        if supernode_stencils: result.update(supernode_stencils)
         return result
     
     async def _build_multiple_ops(self, supernodes: typing.Iterable[_supernode.SuperNode]) -> dict[str, _stencils.StencilGroup]:
