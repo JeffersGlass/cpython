@@ -158,67 +158,10 @@ def _generate_jit_switch_or_compare(supernodes: list[_supernode.SuperNode], var_
     yield f"{INDENT_UNIT * (indent_level + 1)}default:"
     yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = {var_names[0]}, .length = 1}};"
     yield f"{INDENT_UNIT * indent_level}}}" # switch
-
-
-"""
-With the following oplist:
-
-_GUARD_BOTH_INT,_BINARY_OP_ADD_INT
-_ITER_CHECK_LIST,_GUARD_NOT_EXHAUSTED_LIST,_ITER_NEXT_LIST
-_ITER_CHECK_LIST, _CHECK_ATTR_WITH_HINT, _BINARY_OP_ADD_INT, 
-
-_JIT_INDEX should look like:
-
-// Two levels of switch
-int
-_JIT_INDEX(uint16 a, uint16 b, uint16 c){
-    switch (a){
-        case _GUARD_BOTH_INT:
-            switch (b){
-                case _BINARY_OP_ADD_INT:
-                    return _GUARD_BOTH_INTplus_BINARY_OP_ADD_INT;
-                default:
-                    return a;
-            }
-            break;
-        case _ITER_CHECK_LIST:
-            switch (b){
-                case _GUARD_NOT_EXHAUSTED_LIST:
-                    break;
-                case _CHECK_ATTR_WITH_HINT:
-                    ...
-                    break;
-                default:
-                    return a;
-            }
-            break;
-        default:
-            return a;
-    }
-}
-
-
-//// One level of switch
-int
-_JIT_INDEX(uint16 a, uint16 b, uint16 c){
-    switch (a){
-        case _GUARD_BOTH_INT:
-            ...
-            break;
-        case _ITER_CHECK_LIST:
-            ...
-            break;
-        default:
-            return a;
-    }
-}
-
-
-"""
             
 def _parameter_names(num):
     """Generate single-letter arg names, following by two-letter arg names if
-    necessary
+    necessary. (a, b, c, ..., z, aa, ab, ...)
 
     Args:
         num (_type_): How many argument names to create
@@ -234,10 +177,9 @@ def _parameter_names(num):
         yield from itertools.combinations_with_replacement(string.ascii_lowercase)
 
 if __name__== "__main__":
+    # Run this file as a module to output `jit.c` for the current set of opcodes
     import _opfile
-    supernodes = _opfile._retrieve_ops_from_path("/home/jglass/Documents/cpython/Tools/jit/ops.csv")
-    depth = max(node.length for node in supernodes)
-    varnames = list(_parameter_names(depth))
-    print("-----")
+    from _targets import TOOLS_JIT
+    supernodes = _opfile._retrieve_ops_from_path(f"{TOOLS_JIT}/superinstructions.csv")
     for line in _create_jit_index(supernodes):
         print(line)
