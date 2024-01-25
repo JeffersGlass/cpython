@@ -324,10 +324,10 @@ _PyJIT_Compile(_PyExecutorObject *executor)
         code_size += group->code.body_size;
         data_size += group->data.body_size;
     }*/
-    DPRINTF("\n---Start Size Loop---");
+    // DPRINTF("\n---Start Size Loop---");
     // SIZE LOOP HERE
     // END SIZE LOOP
-    DPRINTF("\n---Size loop done---");
+    // DPRINTF("\n---Size loop done---");
     // Round up to the nearest page (code and data need separate pages):
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
@@ -349,11 +349,11 @@ _PyJIT_Compile(_PyExecutorObject *executor)
         patches[HoleValue_OPARG0] = instruction0->oparg;
         patches[HoleValue_OPERAND0] = instruction0->operand;
         patches[HoleValue_TARGET0] = instruction0->target;*/
-    DPRINTF("\n---Start Patch Loop--- ");
+    // DPRINTF("\n---Start Patch Loop--- ");
     // PATCH LOOP INIT HERE
     
         // END PATCH LOOP
-    DPRINTF("\n---Patch loop loop done---");
+    //DPRINTF("\n---Patch loop loop done---");
 
     if (mark_executable(memory, code_size) ||
         mark_readable(memory + code_size, data_size))
