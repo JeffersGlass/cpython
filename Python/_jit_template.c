@@ -25,15 +25,6 @@
     #include <sys/mman.h>
 #endif
 
-#ifdef Py_DEBUG
-#define DPRINTF(...) \
-    { printf(__VA_ARGS__); }
-#else
-#define DPRINTF(...)
-#endif
-
-extern const char *_PyUOpName(int index);
-
 static size_t
 get_page_size(void)
 {
