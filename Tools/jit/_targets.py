@@ -1,6 +1,5 @@
 """Target-specific code generation, parsing, and processing."""
 import asyncio
-import csv
 import dataclasses
 import hashlib
 import json
@@ -9,9 +8,11 @@ import pathlib
 import re
 import sys
 import tempfile
+import textwrap
 import typing
 
 import _jit_c
+import _jit_defines_h
 import _llvm
 import _schema
 import _supernode
@@ -106,7 +107,6 @@ class _Target(typing.Generic[_S, _R]):
     async def _compile(
         self, c: pathlib.Path, tempdir: pathlib.Path, opnames: typing.Iterable[str]
     ) -> _stencils.StencilGroup:
-        print(f"Compiling for {opnames}")
         o = tempdir / f"{_superop_name(opnames)}.o"
         args = [
             f"--target={self.triple}",
@@ -190,30 +190,10 @@ class _Target(typing.Generic[_S, _R]):
         # customization later
         max_id = max_uop_id()
         for i, s in enumerate(supernodes):
-            s.index = i + max_id + 1
-
-        # Define superopcodes for supernodes
-        if supernodes:
-            jit_defines = out / "jit_defines.h"
-            with open(jit_defines, "w") as f:
-                f.write("\n// Supernode Indices\n")
-                for node in supernodes:
-                    f.write(f"#define {node.name} {node.index}\n")
-                    f.write(f"#define {node.name}_length {node.length}\n")
-                
-                f.write("""
-typedef struct {
-    const uint64_t index;
-    const uint16_t length;
-} SuperNode;
-                        
-SuperNode _JIT_INDEX(""")
-                
-                depth = max(len(node.ops) for node in supernodes)
-                f.write(", ".join(f"uint16_t {param}" for param in _jit_c._parameter_names(depth)))
-                f.write(");\n")
+            s.index = i + max_id + 1 
 
         _jit_c._patch_jit_c(supernodes)
+        _jit_defines_h._patch_jit_defines(supernodes)
 
         jit_stencils = out / "jit_stencils.h"
         # TODO make this check all touched files - jit_stencils, jit_defines, in future jit.c
