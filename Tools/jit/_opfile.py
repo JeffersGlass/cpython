@@ -1,3 +1,7 @@
+""" Utilities for loading a list of UOp sequences from file that
+    should be turned into superinstructions
+"""
+
 import csv
 import pathlib
 import typing

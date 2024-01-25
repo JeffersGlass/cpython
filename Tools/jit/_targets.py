@@ -196,7 +196,7 @@ class _Target(typing.Generic[_S, _R]):
             s.index = i + max_id + 1 
 
         _jit_c._patch_jit_c(supernodes)
-        _jit_defines_h._patch_jit_defines(supernodes)
+        _jit_defines_h.create_jit_defines_h(supernodes)
 
         jit_stencils = out / "jit_stencils.h"
         # TODO make this check all touched files - jit_stencils, jit_defines, in future jit.c

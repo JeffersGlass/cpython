@@ -4,6 +4,7 @@ import typing
 
 @dataclasses.dataclass
 class SuperNode:
+    """Represents a sequence of UOps to be jitted together"""
     ops: list[str]
     index: int = -1
     parent: typing.Self = None

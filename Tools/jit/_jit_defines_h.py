@@ -1,3 +1,7 @@
+""" Utilities to create '/jit_defines.h', which contains constants and
+    other static information for jit.c's use.
+"""
+
 import textwrap
 import typing
 
@@ -6,7 +10,7 @@ import _supernode
 import _targets
 
 
-def _patch_jit_defines(supernodes: typing.Iterable[_supernode.SuperNode]):    
+def create_jit_defines_h(supernodes: typing.Iterable[_supernode.SuperNode]):    
     # Define superopcodes for supernodes
     jit_defines = _targets.CPYTHON / "jit_defines.h"
     with open(jit_defines, "w") as f:
