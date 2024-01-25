@@ -27,7 +27,7 @@ def create_jit_defines_h(supernodes: typing.Iterable[_supernode.SuperNode]):
                                         
                 SuperNode _JIT_INDEX("""))
         
-        depth = max(len(node.ops) for node in supernodes)
+        depth = _supernode.SuperNode.max_depth(supernodes)
         f.write(", ".join(f"uint16_t {param}" for param in _jit_c._parameter_names(depth)))
         f.write(");\n")
 

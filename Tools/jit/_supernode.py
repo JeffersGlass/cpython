@@ -30,6 +30,8 @@ class SuperNode:
         while node.parent:
             node = node.parent
         return node
-
     
+    @classmethod
+    def max_depth(cls, supernodes: typing.Iterable[typing.Self]):
+        return max(len(node.ops) for node in supernodes)
 

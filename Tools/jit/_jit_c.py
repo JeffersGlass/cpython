@@ -40,7 +40,7 @@ def _create_size_loop(supernodes: list[_supernode.SuperNode]) -> typing.Generato
         data_size += group->data.body_size;
     } """
 
-    depth = max(len(node.ops) for node in supernodes)
+    depth = _supernode.SuperNode.max_depth(supernodes)
 
     yield f"for (Py_ssize_t i = 0; i <= Py_SIZE(executor)-{depth};) {{"
     for d in range(depth):
@@ -69,7 +69,7 @@ def _create_size_loop(supernodes: list[_supernode.SuperNode]) -> typing.Generato
 
 
 def _create_patch_loop(supernodes):
-        depth = max(len(node.ops) for node in supernodes) 
+        depth = _supernode.SuperNode.max_depth(supernodes)
         yield f"for (Py_ssize_t i = 0; i <= Py_SIZE(executor) - {depth}; ) {{"
         for i in range(depth):
             yield f"\t_PyUOpInstruction *instruction{i} = &executor->trace[i+{i}];"
@@ -125,7 +125,7 @@ def _create_patch_loop(supernodes):
  
 
 def _create_jit_index(supernodes: list[_supernode.SuperNode]) -> typing.Generator[str, None, None]:
-    depth = max(len(node.ops) for node in supernodes)
+    depth = _supernode.SuperNode.max_depth(supernodes)
     yield "SuperNode"
     param_names = list(_parameter_names(depth))
 
