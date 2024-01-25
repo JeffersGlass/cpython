@@ -208,7 +208,11 @@ typedef struct {
     const uint16_t length;
 } SuperNode;
                         
-SuperNode _JIT_INDEX(uint16_t a, uint16_t b, uint16_t c) ;""")
+SuperNode _JIT_INDEX(""")
+                
+                depth = max(len(node.ops) for node in supernodes)
+                f.write(", ".join(f"uint16_t {param}" for param in _jit_c._parameter_names(depth)))
+                f.write(");\n")
 
         _jit_c._patch_jit_c(supernodes)
 
