@@ -12,7 +12,7 @@ if __name__ == "__main__":
         "target", type=_targets.get_target, help="a PEP 11 target triple to compile for"
     )
     parser.add_argument(
-        "--file", default='', help="Filepath to a csv of opname combinations to build" 
+        "--file", default='', help="Filepath to a csv of superinstructions to build" 
     )
     parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"
