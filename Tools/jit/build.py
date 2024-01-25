@@ -15,9 +15,6 @@ if __name__ == "__main__":
         "--file", default='', help="Filepath to a csv of opname combinations to build" 
     )
     parser.add_argument(
-        "-F", "--force", action="store_true", help="force a rebuild even if nothing's changed"
-    )
-    parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"
     )
     parser.add_argument(
@@ -26,4 +23,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.target.debug = args.debug
     args.target.verbose = args.verbose
-    args.target.build(pathlib.Path.cwd(), _opfile._retrieve_ops_from_path(args.file) if args.file else None, force=args.force)
+    args.target.build(pathlib.Path.cwd(), _opfile._retrieve_ops_from_path(args.file) if args.file else None)

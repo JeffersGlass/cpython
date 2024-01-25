@@ -181,7 +181,7 @@ class _Target(typing.Generic[_S, _R]):
                     tasks.append(group.create_task(coro, name=node.name))
         return {task.get_name(): task.result() for task in tasks}
 
-    def build(self, out: pathlib.Path, supernodes: list[_supernode.SuperNode] | None, force=False) -> None:
+    def build(self, out: pathlib.Path, supernodes: list[_supernode.SuperNode] | None) -> None:
         """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
 
@@ -197,7 +197,7 @@ class _Target(typing.Generic[_S, _R]):
 
         jit_stencils = out / "jit_stencils.h"
         # TODO make this check all touched files - jit_stencils, jit_defines, in future jit.c
-        if force or not jit_stencils.exists() or not jit_stencils.read_text().startswith(digest):
+        if not jit_stencils.exists() or not jit_stencils.read_text().startswith(digest):
             stencil_groups = asyncio.run(self._build_stencils(supernodes))
             with jit_stencils.open("w") as file:
                 file.write(digest)
