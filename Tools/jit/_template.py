@@ -66,7 +66,7 @@ def gen_template_text(num_opcodes: int) -> Generator[str, None, None]:
     extern void ALIAS;                  \\
     TYPE NAME = (TYPE)(uint64_t)&ALIAS;
 
-#define REPATCH_VALUE(TYPE, NAME, ALIAS)  \\
+#define REASSIGN_VALUE(TYPE, NAME, ALIAS)  \\
     extern void ALIAS;                    \\
     NAME = (TYPE)(uint64_t)&ALIAS;
 
@@ -94,7 +94,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     int opcode{index} = _JIT_OPCODE{index};
     PATCH_VALUE(uint16_t, _oparg{index}, _JIT_OPARG{index})
     PATCH_VALUE(uint64_t, _operand{index}, _JIT_OPERAND{index})
-    {f'REPATCH_VALUE(uint32_t, _target, _JIT_TARGET{index});' if index > 0 else ''}
+    {f'REASSIGN_VALUE(uint32_t, _target, _JIT_TARGET{index});' if index > 0 else ''}
     switch (opcode{index}) {{
 #include "executor_cases.c.h"
         default:
