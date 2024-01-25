@@ -94,6 +94,10 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     PATCH_VALUE(uint16_t, _oparg{index}, _JIT_OPARG{index})
     PATCH_VALUE(uint64_t, _operand{index}, _JIT_OPERAND{index})
     {f'REASSIGN_VALUE(uint32_t, _target, _JIT_TARGET{index});' if index > 0 else ''}
+    {"""if (opcode0 == _JUMP_TO_TOP) {
+        CHECK_EVAL_BREAKER();
+        PATCH_JUMP(_JIT_TOP);
+    }""" if index == 0 else ''}
     switch (opcode{index}) {{
 #include "executor_cases.c.h"
         default:
