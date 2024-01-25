@@ -152,6 +152,7 @@ class _Target(typing.Generic[_S, _R]):
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
         tasks = []
+        _stencils.HoleValue = _stencils.create_hole_values(_supernode.SuperNode.max_depth(supernodes))
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
@@ -196,7 +197,6 @@ class _Target(typing.Generic[_S, _R]):
         _jit_defines_h.create_jit_defines_h(supernodes)
 
         jit_stencils = out / "jit_stencils.h"
-        # TODO make this check all touched files - jit_stencils, jit_defines, in future jit.c
         if not jit_stencils.exists() or not jit_stencils.read_text().startswith(digest):
             stencil_groups = asyncio.run(self._build_stencils(supernodes))
             with jit_stencils.open("w") as file:
