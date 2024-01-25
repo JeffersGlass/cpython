@@ -154,9 +154,12 @@ class _Target(typing.Generic[_S, _R]):
         tasks = []
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
+            template_path = work / f"template_1.c"
+            if not template_path.exists():
+                _template.create_template_file(1, template_path)
             async with asyncio.TaskGroup() as group:
                 for opname in opnames:
-                    coro = self._compile(TOOLS_JIT_TEMPLATE_C, work, [opname,])
+                    coro = self._compile(template_path, work, [opname,])
                     tasks.append(group.create_task(coro, name=opname))
 
         if ops:
@@ -174,7 +177,7 @@ class _Target(typing.Generic[_S, _R]):
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
                 for node in supernodes:
-                    template_path = TOOLS_JIT / f"template_{node.length}.c"
+                    template_path = work / f"template_{node.length}.c"
                     if not template_path.exists():
                         _template.create_template_file(node.length, template_path)
                     coro = self._compile(template_path, work, node.ops)
