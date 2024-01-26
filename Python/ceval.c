@@ -1027,7 +1027,7 @@ enter_tier_two:
         next_uop++;
         OPT_STAT_INC(uops_executed);
         UOP_STAT_INC(uopcode, execution_count);
-        UOP_PAIR_STATS(uopcode);
+        //UOP_PAIR_STATS(uopcode);
 #ifdef Py_STATS
         trace_uop_execution_counter++;
 #endif

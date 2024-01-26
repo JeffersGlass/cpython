@@ -156,6 +156,7 @@ def generate_tier2(
             continue
         out.emit(f"case {uop.name}: {{\n")
         declare_variables(uop, out)
+        out.emit(f"UOP_PAIR_STATS({name});\n")
         stack = Stack()
         write_uop(uop, out, stack)
         out.start_line()
