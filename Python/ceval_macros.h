@@ -66,6 +66,12 @@
         if (_Py_stats) _Py_stats->opcode_stats[lastopcode].pair_count[op]++; \
         lastopcode = op; \
     } while (0)
+#define UOP_PAIR_STATS(uop) \
+    do { \
+    if (_Py_stats) _Py_stats->uop_stats[lastuop].pair_count[uop]++; \
+        lastuop = uop; \
+        printf("H"); \
+    } while (0)
 #else
 #define INSTRUCTION_STATS(op) ((void)0)
 #endif

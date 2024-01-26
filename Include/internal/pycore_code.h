@@ -276,6 +276,7 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
 #define STAT_INC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name++; } while (0)
 #define STAT_DEC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name--; } while (0)
 #define OPCODE_EXE_INC(opname) do { if (_Py_stats) _Py_stats->opcode_stats[opname].execution_count++; } while (0)
+#define UOP_EXEC_INC(opname) do { if (_Py_stats) _Py_stats->opcode_stats[opname].execution_count++;} while (0)
 #define CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.name++; } while (0)
 #define OBJECT_STAT_INC(name) do { if (_Py_stats) _Py_stats->object_stats.name++; } while (0)
 #define OBJECT_STAT_INC_COND(name, cond) \
