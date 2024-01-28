@@ -1,1503 +1,1363 @@
-opcode[BINARY_SLICE].specializable : 1
-opcode[STORE_SLICE].specializable : 1
-opcode[CACHE].pair_count[POP_TOP] : 47
-opcode[CACHE].pair_count[COPY_FREE_VARS] : 124
-opcode[CACHE].pair_count[MAKE_CELL] : 13
-opcode[CACHE].pair_count[RESUME] : 137
-opcode[CACHE].pair_count[RESUME_CHECK] : 449
-    opcode[BEFORE_WITH].execution_count : 190
-opcode[BEFORE_WITH].pair_count[POP_TOP] : 176
-opcode[BEFORE_WITH].pair_count[STORE_FAST] : 14
-    opcode[BINARY_OP_INPLACE_ADD_UNICODE].execution_count : 12
-opcode[BINARY_OP_INPLACE_ADD_UNICODE].pair_count[JUMP_BACKWARD] : 12
-    opcode[BINARY_SLICE].execution_count : 137
-opcode[BINARY_SLICE].pair_count[BINARY_OP] : 1
-opcode[BINARY_SLICE].pair_count[BUILD_TUPLE] : 29
-opcode[BINARY_SLICE].pair_count[CALL] : 6
-opcode[BINARY_SLICE].pair_count[LOAD_DEREF] : 29
-opcode[BINARY_SLICE].pair_count[LOAD_FAST] : 4
-opcode[BINARY_SLICE].pair_count[STORE_FAST] : 31
-opcode[BINARY_SLICE].pair_count[STORE_NAME] : 1
-opcode[BINARY_SLICE].pair_count[CALL_PY_EXACT_ARGS] : 36
-opcode[BINARY_SUBSCR].specializable : 1
-    opcode[BINARY_SUBSCR].specialization.success : 15
-    opcode[BINARY_SUBSCR].specialization.failure : 4
-    opcode[BINARY_SUBSCR].specialization.hit : 604
-    opcode[BINARY_SUBSCR].specialization.deferred : 70
-    opcode[BINARY_SUBSCR].execution_count : 89
-    opcode[BINARY_SUBSCR].specialization.failure_kinds[0] : 4
-opcode[BINARY_SUBSCR].pair_count[BINARY_SUBSCR] : 4
-opcode[BINARY_SUBSCR].pair_count[FORMAT_SIMPLE] : 4
-opcode[BINARY_SUBSCR].pair_count[POP_TOP] : 1
-opcode[BINARY_SUBSCR].pair_count[PUSH_EXC_INFO] : 5
-opcode[BINARY_SUBSCR].pair_count[RETURN_VALUE] : 1
-opcode[BINARY_SUBSCR].pair_count[BINARY_OP] : 1
-opcode[BINARY_SUBSCR].pair_count[CALL] : 6
-opcode[BINARY_SUBSCR].pair_count[LOAD_CONST] : 1
-opcode[BINARY_SUBSCR].pair_count[LOAD_FAST] : 1
-opcode[BINARY_SUBSCR].pair_count[POP_JUMP_IF_NOT_NONE] : 40
-opcode[BINARY_SUBSCR].pair_count[STORE_FAST] : 7
-opcode[BINARY_SUBSCR].pair_count[STORE_NAME] : 3
-opcode[BINARY_SUBSCR].pair_count[BINARY_SUBSCR_DICT] : 9
-opcode[BINARY_SUBSCR].pair_count[BINARY_SUBSCR_LIST_INT] : 1
-opcode[BINARY_SUBSCR].pair_count[BINARY_SUBSCR_STR_INT] : 1
-opcode[BINARY_SUBSCR].pair_count[BINARY_SUBSCR_TUPLE_INT] : 4
-    opcode[CHECK_EXC_MATCH].execution_count : 102
-opcode[CHECK_EXC_MATCH].pair_count[POP_JUMP_IF_FALSE] : 102
-    opcode[DELETE_SUBSCR].execution_count : 26
-opcode[DELETE_SUBSCR].pair_count[LOAD_GLOBAL] : 2
-opcode[DELETE_SUBSCR].pair_count[LOAD_GLOBAL_MODULE] : 24
-    opcode[EXIT_INIT_CHECK].execution_count : 92
-opcode[EXIT_INIT_CHECK].pair_count[RETURN_VALUE] : 92
-    opcode[FORMAT_SIMPLE].execution_count : 32
-opcode[FORMAT_SIMPLE].pair_count[BUILD_STRING] : 8
-opcode[FORMAT_SIMPLE].pair_count[LOAD_CONST] : 16
-opcode[FORMAT_SIMPLE].pair_count[LOAD_FAST] : 7
-opcode[FORMAT_SIMPLE].pair_count[LOAD_NAME] : 1
-    opcode[GET_ITER].execution_count : 368
-opcode[GET_ITER].pair_count[CALL] : 7
-opcode[GET_ITER].pair_count[EXTENDED_ARG] : 1
-opcode[GET_ITER].pair_count[FOR_ITER] : 41
-opcode[GET_ITER].pair_count[LOAD_FAST_AND_CLEAR] : 148
-opcode[GET_ITER].pair_count[CALL_PY_EXACT_ARGS] : 40
-opcode[GET_ITER].pair_count[FOR_ITER_LIST] : 66
-opcode[GET_ITER].pair_count[FOR_ITER_TUPLE] : 65
-    opcode[INTERPRETER_EXIT].execution_count : 761
-    opcode[LOAD_BUILD_CLASS].execution_count : 83
-opcode[LOAD_BUILD_CLASS].pair_count[PUSH_NULL] : 83
-    opcode[MAKE_FUNCTION].execution_count : 751
-opcode[MAKE_FUNCTION].pair_count[PUSH_NULL] : 1
-opcode[MAKE_FUNCTION].pair_count[CALL] : 69
-opcode[MAKE_FUNCTION].pair_count[LOAD_CONST] : 82
-opcode[MAKE_FUNCTION].pair_count[LOAD_GLOBAL] : 1
-opcode[MAKE_FUNCTION].pair_count[LOAD_NAME] : 1
-opcode[MAKE_FUNCTION].pair_count[SET_FUNCTION_ATTRIBUTE] : 198
-opcode[MAKE_FUNCTION].pair_count[STORE_FAST] : 7
-opcode[MAKE_FUNCTION].pair_count[STORE_NAME] : 392
-    opcode[NOP].execution_count : 903
-opcode[NOP].pair_count[NOP] : 39
-opcode[NOP].pair_count[LOAD_CONST] : 101
-opcode[NOP].pair_count[LOAD_FAST] : 346
-opcode[NOP].pair_count[LOAD_FAST_LOAD_FAST] : 64
-opcode[NOP].pair_count[LOAD_GLOBAL] : 41
-opcode[NOP].pair_count[LOAD_NAME] : 8
-opcode[NOP].pair_count[LOAD_GLOBAL_BUILTIN] : 2
-opcode[NOP].pair_count[LOAD_GLOBAL_MODULE] : 302
-    opcode[POP_EXCEPT].execution_count : 104
-opcode[POP_EXCEPT].pair_count[RETURN_VALUE] : 2
-opcode[POP_EXCEPT].pair_count[EXTENDED_ARG] : 3
-opcode[POP_EXCEPT].pair_count[JUMP_BACKWARD] : 7
-opcode[POP_EXCEPT].pair_count[JUMP_BACKWARD_NO_INTERRUPT] : 69
-opcode[POP_EXCEPT].pair_count[JUMP_FORWARD] : 1
-opcode[POP_EXCEPT].pair_count[LOAD_CONST] : 2
-opcode[POP_EXCEPT].pair_count[LOAD_FAST] : 7
-opcode[POP_EXCEPT].pair_count[RERAISE] : 4
-opcode[POP_EXCEPT].pair_count[RETURN_CONST] : 9
-    opcode[POP_TOP].execution_count : 1695
-opcode[POP_TOP].pair_count[LOAD_BUILD_CLASS] : 15
-opcode[POP_TOP].pair_count[NOP] : 150
-opcode[POP_TOP].pair_count[POP_EXCEPT] : 20
-opcode[POP_TOP].pair_count[RETURN_VALUE] : 95
-opcode[POP_TOP].pair_count[BUILD_LIST] : 2
-opcode[POP_TOP].pair_count[BUILD_MAP] : 1
-opcode[POP_TOP].pair_count[DELETE_NAME] : 3
-opcode[POP_TOP].pair_count[ENTER_EXECUTOR] : 6
-opcode[POP_TOP].pair_count[JUMP_BACKWARD] : 183
-opcode[POP_TOP].pair_count[JUMP_FORWARD] : 2
-opcode[POP_TOP].pair_count[LOAD_CONST] : 141
-opcode[POP_TOP].pair_count[LOAD_FAST] : 212
-opcode[POP_TOP].pair_count[LOAD_FAST_CHECK] : 60
-opcode[POP_TOP].pair_count[LOAD_FAST_LOAD_FAST] : 112
-opcode[POP_TOP].pair_count[LOAD_GLOBAL] : 30
-opcode[POP_TOP].pair_count[LOAD_NAME] : 78
-opcode[POP_TOP].pair_count[RETURN_CONST] : 435
-opcode[POP_TOP].pair_count[RESUME] : 5
-opcode[POP_TOP].pair_count[LOAD_GLOBAL_BUILTIN] : 30
-opcode[POP_TOP].pair_count[LOAD_GLOBAL_MODULE] : 73
-opcode[POP_TOP].pair_count[RESUME_CHECK] : 42
-    opcode[PUSH_EXC_INFO].execution_count : 104
-opcode[PUSH_EXC_INFO].pair_count[WITH_EXCEPT_START] : 2
-opcode[PUSH_EXC_INFO].pair_count[LOAD_GLOBAL] : 27
-opcode[PUSH_EXC_INFO].pair_count[LOAD_NAME] : 5
-opcode[PUSH_EXC_INFO].pair_count[LOAD_GLOBAL_BUILTIN] : 70
-    opcode[PUSH_NULL].execution_count : 750
-opcode[PUSH_NULL].pair_count[BUILD_LIST] : 2
-opcode[PUSH_NULL].pair_count[BUILD_MAP] : 6
-opcode[PUSH_NULL].pair_count[CALL] : 65
-opcode[PUSH_NULL].pair_count[LOAD_CONST] : 157
-opcode[PUSH_NULL].pair_count[LOAD_FAST] : 282
-opcode[PUSH_NULL].pair_count[LOAD_FAST_LOAD_FAST] : 147
-opcode[PUSH_NULL].pair_count[LOAD_GLOBAL] : 3
-opcode[PUSH_NULL].pair_count[LOAD_NAME] : 76
-opcode[PUSH_NULL].pair_count[LOAD_GLOBAL_BUILTIN] : 12
-    opcode[RETURN_GENERATOR].execution_count : 50
-opcode[RETURN_GENERATOR].pair_count[CALL] : 7
-opcode[RETURN_GENERATOR].pair_count[LOAD_CONST] : 1
-opcode[RETURN_GENERATOR].pair_count[STORE_NAME] : 2
-opcode[RETURN_GENERATOR].pair_count[CALL_BUILTIN_FAST_WITH_KEYWORDS] : 27
-opcode[RETURN_GENERATOR].pair_count[CALL_METHOD_DESCRIPTOR_O] : 13
-    opcode[RETURN_VALUE].execution_count : 1444
-opcode[RETURN_VALUE].pair_count[BEFORE_WITH] : 54
-opcode[RETURN_VALUE].pair_count[BINARY_SUBSCR] : 2
-opcode[RETURN_VALUE].pair_count[GET_ITER] : 1
-opcode[RETURN_VALUE].pair_count[INTERPRETER_EXIT] : 176
-opcode[RETURN_VALUE].pair_count[POP_TOP] : 97
-opcode[RETURN_VALUE].pair_count[RETURN_VALUE] : 138
-opcode[RETURN_VALUE].pair_count[TO_BOOL] : 23
-opcode[RETURN_VALUE].pair_count[BUILD_TUPLE] : 5
-opcode[RETURN_VALUE].pair_count[CALL] : 9
-opcode[RETURN_VALUE].pair_count[LIST_APPEND] : 6
-opcode[RETURN_VALUE].pair_count[LOAD_ATTR] : 2
-opcode[RETURN_VALUE].pair_count[LOAD_FAST] : 147
-opcode[RETURN_VALUE].pair_count[LOAD_GLOBAL] : 1
-opcode[RETURN_VALUE].pair_count[POP_JUMP_IF_NONE] : 13
-opcode[RETURN_VALUE].pair_count[STORE_FAST] : 568
-opcode[RETURN_VALUE].pair_count[STORE_GLOBAL] : 2
-opcode[RETURN_VALUE].pair_count[STORE_NAME] : 34
-opcode[RETURN_VALUE].pair_count[SWAP] : 43
-opcode[RETURN_VALUE].pair_count[UNPACK_SEQUENCE] : 9
-opcode[RETURN_VALUE].pair_count[BINARY_SUBSCR_DICT] : 1
-opcode[RETURN_VALUE].pair_count[LOAD_ATTR_SLOT] : 19
-opcode[RETURN_VALUE].pair_count[TO_BOOL_BOOL] : 67
-opcode[RETURN_VALUE].pair_count[UNPACK_SEQUENCE_TWO_TUPLE] : 27
-    opcode[STORE_SLICE].execution_count : 1
-opcode[STORE_SLICE].pair_count[LOAD_FAST] : 1
-opcode[STORE_SUBSCR].specializable : 1
-    opcode[STORE_SUBSCR].specialization.success : 5
-    opcode[STORE_SUBSCR].specialization.hit : 111
-    opcode[STORE_SUBSCR].specialization.deferred : 22
-    opcode[STORE_SUBSCR].execution_count : 27
-opcode[STORE_SUBSCR].pair_count[NOP] : 2
-opcode[STORE_SUBSCR].pair_count[POP_EXCEPT] : 1
-opcode[STORE_SUBSCR].pair_count[LOAD_CONST] : 2
-opcode[STORE_SUBSCR].pair_count[LOAD_FAST] : 1
-opcode[STORE_SUBSCR].pair_count[LOAD_GLOBAL] : 2
-opcode[STORE_SUBSCR].pair_count[LOAD_NAME] : 12
-opcode[STORE_SUBSCR].pair_count[RETURN_CONST] : 2
-opcode[STORE_SUBSCR].pair_count[STORE_SUBSCR_DICT] : 5
-opcode[TO_BOOL].specializable : 1
-    opcode[TO_BOOL].specialization.success : 73
-    opcode[TO_BOOL].specialization.failure : 7
-    opcode[TO_BOOL].specialization.hit : 1209
-    opcode[TO_BOOL].specialization.deferred : 265
-    opcode[TO_BOOL].specialization.miss : 17
-    opcode[TO_BOOL].execution_count : 328
-    opcode[TO_BOOL].specialization.failure_kinds[17] : 4
-    opcode[TO_BOOL].specialization.failure_kinds[18] : 3
-opcode[TO_BOOL].pair_count[TO_BOOL] : 7
-opcode[TO_BOOL].pair_count[EXTENDED_ARG] : 6
-opcode[TO_BOOL].pair_count[POP_JUMP_IF_FALSE] : 141
-opcode[TO_BOOL].pair_count[POP_JUMP_IF_TRUE] : 101
-opcode[TO_BOOL].pair_count[TO_BOOL_BOOL] : 40
-opcode[TO_BOOL].pair_count[TO_BOOL_INT] : 4
-opcode[TO_BOOL].pair_count[TO_BOOL_LIST] : 4
-opcode[TO_BOOL].pair_count[TO_BOOL_NONE] : 5
-opcode[TO_BOOL].pair_count[TO_BOOL_STR] : 20
-    opcode[WITH_EXCEPT_START].execution_count : 2
-opcode[WITH_EXCEPT_START].pair_count[TO_BOOL] : 2
-opcode[BINARY_OP].specializable : 1
-    opcode[BINARY_OP].specialization.success : 12
-    opcode[BINARY_OP].specialization.failure : 18
-    opcode[BINARY_OP].specialization.hit : 2298
-    opcode[BINARY_OP].specialization.deferred : 107
-    opcode[BINARY_OP].execution_count : 137
-    opcode[BINARY_OP].specialization.failure_kinds[12] : 17
-    opcode[BINARY_OP].specialization.failure_kinds[17] : 1
-opcode[BINARY_OP].pair_count[BINARY_OP_INPLACE_ADD_UNICODE] : 1
-opcode[BINARY_OP].pair_count[POP_TOP] : 1
-opcode[BINARY_OP].pair_count[TO_BOOL] : 2
-opcode[BINARY_OP].pair_count[BINARY_OP] : 19
-opcode[BINARY_OP].pair_count[CALL] : 3
-opcode[BINARY_OP].pair_count[COMPARE_OP] : 18
-opcode[BINARY_OP].pair_count[COPY] : 1
-opcode[BINARY_OP].pair_count[LIST_APPEND] : 1
-opcode[BINARY_OP].pair_count[LOAD_CONST] : 27
-opcode[BINARY_OP].pair_count[LOAD_FAST] : 20
-opcode[BINARY_OP].pair_count[LOAD_GLOBAL] : 1
-opcode[BINARY_OP].pair_count[STORE_FAST] : 4
-opcode[BINARY_OP].pair_count[STORE_NAME] : 4
-opcode[BINARY_OP].pair_count[BINARY_OP_ADD_INT] : 3
-opcode[BINARY_OP].pair_count[BINARY_OP_ADD_UNICODE] : 7
-opcode[BINARY_OP].pair_count[BINARY_OP_MULTIPLY_INT] : 1
-opcode[BINARY_OP].pair_count[COMPARE_OP_INT] : 12
-opcode[BINARY_OP].pair_count[TO_BOOL_INT] : 12
-    opcode[BUILD_CONST_KEY_MAP].execution_count : 42
-opcode[BUILD_CONST_KEY_MAP].pair_count[RETURN_VALUE] : 14
-opcode[BUILD_CONST_KEY_MAP].pair_count[DICT_UPDATE] : 1
-opcode[BUILD_CONST_KEY_MAP].pair_count[LOAD_CONST] : 13
-opcode[BUILD_CONST_KEY_MAP].pair_count[STORE_FAST] : 14
-    opcode[BUILD_LIST].execution_count : 390
-opcode[BUILD_LIST].pair_count[RETURN_VALUE] : 1
-opcode[BUILD_LIST].pair_count[BUILD_LIST] : 1
-opcode[BUILD_LIST].pair_count[CALL] : 10
-opcode[BUILD_LIST].pair_count[COMPARE_OP] : 44
-opcode[BUILD_LIST].pair_count[LOAD_CONST] : 11
-opcode[BUILD_LIST].pair_count[LOAD_DEREF] : 5
-opcode[BUILD_LIST].pair_count[LOAD_FAST] : 101
-opcode[BUILD_LIST].pair_count[LOAD_NAME] : 1
-opcode[BUILD_LIST].pair_count[STORE_FAST] : 32
-opcode[BUILD_LIST].pair_count[STORE_FAST_STORE_FAST] : 1
-opcode[BUILD_LIST].pair_count[STORE_GLOBAL] : 1
-opcode[BUILD_LIST].pair_count[STORE_NAME] : 9
-opcode[BUILD_LIST].pair_count[SWAP] : 147
-opcode[BUILD_LIST].pair_count[CALL_METHOD_DESCRIPTOR_O] : 26
-    opcode[BUILD_MAP].execution_count : 135
-opcode[BUILD_MAP].pair_count[EXTENDED_ARG] : 7
-opcode[BUILD_MAP].pair_count[LOAD_ATTR] : 6
-opcode[BUILD_MAP].pair_count[LOAD_CONST] : 12
-opcode[BUILD_MAP].pair_count[LOAD_FAST] : 106
-opcode[BUILD_MAP].pair_count[STORE_NAME] : 4
-    opcode[BUILD_SET].execution_count : 3
-opcode[BUILD_SET].pair_count[LOAD_NAME] : 2
-opcode[BUILD_SET].pair_count[SWAP] : 1
-    opcode[BUILD_STRING].execution_count : 15
-opcode[BUILD_STRING].pair_count[RETURN_VALUE] : 1
-opcode[BUILD_STRING].pair_count[BUILD_LIST] : 1
-opcode[BUILD_STRING].pair_count[CALL] : 1
-opcode[BUILD_STRING].pair_count[LOAD_CONST] : 1
-opcode[BUILD_STRING].pair_count[LOAD_FAST] : 2
-opcode[BUILD_STRING].pair_count[LOAD_NAME] : 1
-opcode[BUILD_STRING].pair_count[SET_ADD] : 1
-opcode[BUILD_STRING].pair_count[STORE_FAST] : 3
-opcode[BUILD_STRING].pair_count[STORE_NAME] : 4
-    opcode[BUILD_TUPLE].execution_count : 267
-opcode[BUILD_TUPLE].pair_count[CHECK_EXC_MATCH] : 6
-opcode[BUILD_TUPLE].pair_count[GET_ITER] : 4
-opcode[BUILD_TUPLE].pair_count[RETURN_VALUE] : 36
-opcode[BUILD_TUPLE].pair_count[BUILD_MAP] : 34
-opcode[BUILD_TUPLE].pair_count[BUILD_TUPLE] : 11
-opcode[BUILD_TUPLE].pair_count[CALL] : 3
-opcode[BUILD_TUPLE].pair_count[LOAD_CONST] : 106
-opcode[BUILD_TUPLE].pair_count[LOAD_GLOBAL] : 1
-opcode[BUILD_TUPLE].pair_count[LOAD_NAME] : 22
-opcode[BUILD_TUPLE].pair_count[STORE_FAST] : 3
-opcode[BUILD_TUPLE].pair_count[STORE_NAME] : 2
-opcode[BUILD_TUPLE].pair_count[YIELD_VALUE] : 27
-opcode[BUILD_TUPLE].pair_count[CALL_ISINSTANCE] : 12
-opcode[CALL].specializable : 1
-    opcode[CALL].specialization.success : 173
-    opcode[CALL].specialization.failure : 174
-    opcode[CALL].specialization.hit : 3898
-    opcode[CALL].specialization.deferred : 2122
-    opcode[CALL].specialization.miss : 208
-    opcode[CALL].execution_count : 2261
-    opcode[CALL].specialization.failure_kinds[0] : 5
-    opcode[CALL].specialization.failure_kinds[7] : 59
-    opcode[CALL].specialization.failure_kinds[13] : 12
-    opcode[CALL].specialization.failure_kinds[14] : 4
-    opcode[CALL].specialization.failure_kinds[15] : 37
-    opcode[CALL].specialization.failure_kinds[17] : 23
-    opcode[CALL].specialization.failure_kinds[18] : 3
-    opcode[CALL].specialization.failure_kinds[21] : 5
-    opcode[CALL].specialization.failure_kinds[23] : 1
-    opcode[CALL].specialization.failure_kinds[25] : 12
-    opcode[CALL].specialization.failure_kinds[26] : 8
-    opcode[CALL].specialization.failure_kinds[29] : 4
-    opcode[CALL].specialization.failure_kinds[30] : 1
-opcode[CALL].pair_count[BEFORE_WITH] : 63
-opcode[CALL].pair_count[GET_ITER] : 6
-opcode[CALL].pair_count[POP_TOP] : 452
-opcode[CALL].pair_count[PUSH_EXC_INFO] : 7
-opcode[CALL].pair_count[PUSH_NULL] : 3
-opcode[CALL].pair_count[RETURN_GENERATOR] : 5
-opcode[CALL].pair_count[RETURN_VALUE] : 50
-opcode[CALL].pair_count[TO_BOOL] : 46
-opcode[CALL].pair_count[BINARY_OP] : 1
-opcode[CALL].pair_count[BUILD_TUPLE] : 1
-opcode[CALL].pair_count[CALL] : 211
-opcode[CALL].pair_count[COMPARE_OP] : 2
-opcode[CALL].pair_count[CONTAINS_OP] : 11
-opcode[CALL].pair_count[COPY] : 7
-opcode[CALL].pair_count[COPY_FREE_VARS] : 20
-opcode[CALL].pair_count[LIST_APPEND] : 1
-opcode[CALL].pair_count[LOAD_ATTR] : 1
-opcode[CALL].pair_count[LOAD_CONST] : 31
-opcode[CALL].pair_count[LOAD_FAST] : 88
-opcode[CALL].pair_count[LOAD_GLOBAL] : 10
-opcode[CALL].pair_count[MAKE_CELL] : 15
-opcode[CALL].pair_count[POP_JUMP_IF_NOT_NONE] : 6
-opcode[CALL].pair_count[STORE_DEREF] : 4
-opcode[CALL].pair_count[STORE_FAST] : 165
-opcode[CALL].pair_count[STORE_GLOBAL] : 1
-opcode[CALL].pair_count[STORE_NAME] : 195
-opcode[CALL].pair_count[SWAP] : 1
-opcode[CALL].pair_count[UNPACK_SEQUENCE] : 1
-opcode[CALL].pair_count[YIELD_VALUE] : 30
-opcode[CALL].pair_count[RESUME] : 90
-opcode[CALL].pair_count[CALL_ALLOC_AND_ENTER_INIT] : 4
-opcode[CALL].pair_count[CALL_BOUND_METHOD_EXACT_ARGS] : 8
-opcode[CALL].pair_count[CALL_BUILTIN_CLASS] : 5
-opcode[CALL].pair_count[CALL_BUILTIN_FAST] : 23
-opcode[CALL].pair_count[CALL_BUILTIN_FAST_WITH_KEYWORDS] : 19
-opcode[CALL].pair_count[CALL_BUILTIN_O] : 2
-opcode[CALL].pair_count[CALL_ISINSTANCE] : 8
-opcode[CALL].pair_count[CALL_LEN] : 6
-opcode[CALL].pair_count[CALL_LIST_APPEND] : 5
-opcode[CALL].pair_count[CALL_METHOD_DESCRIPTOR_FAST] : 9
-opcode[CALL].pair_count[CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] : 3
-opcode[CALL].pair_count[CALL_METHOD_DESCRIPTOR_NOARGS] : 2
-opcode[CALL].pair_count[CALL_METHOD_DESCRIPTOR_O] : 11
-opcode[CALL].pair_count[CALL_PY_EXACT_ARGS] : 88
-opcode[CALL].pair_count[CALL_PY_WITH_DEFAULTS] : 2
-opcode[CALL].pair_count[CALL_STR_1] : 2
-opcode[CALL].pair_count[CALL_TUPLE_1] : 1
-opcode[CALL].pair_count[CALL_TYPE_1] : 2
-opcode[CALL].pair_count[LOAD_GLOBAL_MODULE] : 24
-opcode[CALL].pair_count[RESUME_CHECK] : 473
-opcode[CALL].pair_count[TO_BOOL_BOOL] : 40
-    opcode[CALL_FUNCTION_EX].execution_count : 117
-opcode[CALL_FUNCTION_EX].pair_count[RETURN_VALUE] : 62
-opcode[CALL_FUNCTION_EX].pair_count[BUILD_LIST] : 1
-opcode[CALL_FUNCTION_EX].pair_count[COPY_FREE_VARS] : 1
-opcode[CALL_FUNCTION_EX].pair_count[MAKE_CELL] : 1
-opcode[CALL_FUNCTION_EX].pair_count[STORE_FAST] : 33
-opcode[CALL_FUNCTION_EX].pair_count[RESUME] : 2
-opcode[CALL_FUNCTION_EX].pair_count[RESUME_CHECK] : 17
-    opcode[CALL_INTRINSIC_1].execution_count : 24
-opcode[CALL_INTRINSIC_1].pair_count[POP_TOP] : 4
-opcode[CALL_INTRINSIC_1].pair_count[BUILD_MAP] : 14
-opcode[CALL_INTRINSIC_1].pair_count[CALL_FUNCTION_EX] : 6
-    opcode[CALL_KW].execution_count : 204
-opcode[CALL_KW].pair_count[RETURN_VALUE] : 14
-opcode[CALL_KW].pair_count[LOAD_FAST] : 3
-opcode[CALL_KW].pair_count[RAISE_VARARGS] : 9
-opcode[CALL_KW].pair_count[STORE_FAST] : 19
-opcode[CALL_KW].pair_count[STORE_NAME] : 11
-opcode[CALL_KW].pair_count[RESUME] : 3
-opcode[CALL_KW].pair_count[RESUME_CHECK] : 145
-opcode[COMPARE_OP].specializable : 1
-    opcode[COMPARE_OP].specialization.success : 20
-    opcode[COMPARE_OP].specialization.failure : 18
-    opcode[COMPARE_OP].specialization.hit : 814
-    opcode[COMPARE_OP].specialization.deferred : 172
-    opcode[COMPARE_OP].specialization.miss : 4
-    opcode[COMPARE_OP].execution_count : 206
-    opcode[COMPARE_OP].specialization.failure_kinds[12] : 3
-    opcode[COMPARE_OP].specialization.failure_kinds[14] : 8
-    opcode[COMPARE_OP].specialization.failure_kinds[15] : 3
-    opcode[COMPARE_OP].specialization.failure_kinds[17] : 4
-opcode[COMPARE_OP].pair_count[RETURN_VALUE] : 1
-opcode[COMPARE_OP].pair_count[COMPARE_OP] : 18
-opcode[COMPARE_OP].pair_count[POP_JUMP_IF_FALSE] : 127
-opcode[COMPARE_OP].pair_count[POP_JUMP_IF_TRUE] : 35
-opcode[COMPARE_OP].pair_count[STORE_FAST] : 1
-opcode[COMPARE_OP].pair_count[STORE_NAME] : 3
-opcode[COMPARE_OP].pair_count[YIELD_VALUE] : 1
-opcode[COMPARE_OP].pair_count[COMPARE_OP_FLOAT] : 1
-opcode[COMPARE_OP].pair_count[COMPARE_OP_INT] : 11
-opcode[COMPARE_OP].pair_count[COMPARE_OP_STR] : 8
-    opcode[CONTAINS_OP].execution_count : 356
-opcode[CONTAINS_OP].pair_count[RETURN_VALUE] : 11
-opcode[CONTAINS_OP].pair_count[POP_JUMP_IF_FALSE] : 169
-opcode[CONTAINS_OP].pair_count[POP_JUMP_IF_TRUE] : 150
-opcode[CONTAINS_OP].pair_count[STORE_FAST] : 26
-    opcode[CONVERT_VALUE].execution_count : 3
-opcode[CONVERT_VALUE].pair_count[FORMAT_SIMPLE] : 3
-    opcode[COPY].execution_count : 62
-opcode[COPY].pair_count[POP_EXCEPT] : 4
-opcode[COPY].pair_count[TO_BOOL] : 19
-opcode[COPY].pair_count[STORE_FAST_LOAD_FAST] : 1
-opcode[COPY].pair_count[STORE_NAME] : 13
-opcode[COPY].pair_count[TO_BOOL_STR] : 25
-    opcode[COPY_FREE_VARS].execution_count : 206
-opcode[COPY_FREE_VARS].pair_count[RETURN_GENERATOR] : 45
-opcode[COPY_FREE_VARS].pair_count[MAKE_CELL] : 1
-opcode[COPY_FREE_VARS].pair_count[RESUME] : 10
-opcode[COPY_FREE_VARS].pair_count[RESUME_CHECK] : 150
-    opcode[DELETE_FAST].execution_count : 2
-opcode[DELETE_FAST].pair_count[RETURN_CONST] : 2
-    opcode[DELETE_NAME].execution_count : 13
-opcode[DELETE_NAME].pair_count[NOP] : 1
-opcode[DELETE_NAME].pair_count[BUILD_LIST] : 1
-opcode[DELETE_NAME].pair_count[DELETE_NAME] : 3
-opcode[DELETE_NAME].pair_count[JUMP_FORWARD] : 1
-opcode[DELETE_NAME].pair_count[LOAD_CONST] : 5
-opcode[DELETE_NAME].pair_count[LOAD_NAME] : 2
-    opcode[DICT_MERGE].execution_count : 105
-opcode[DICT_MERGE].pair_count[CALL_FUNCTION_EX] : 105
-    opcode[DICT_UPDATE].execution_count : 19
-opcode[DICT_UPDATE].pair_count[BUILD_MAP] : 17
-opcode[DICT_UPDATE].pair_count[LOAD_CONST] : 1
-opcode[DICT_UPDATE].pair_count[STORE_NAME] : 1
-    opcode[ENTER_EXECUTOR].execution_count : 34
-opcode[ENTER_EXECUTOR].pair_count[CALL] : 11
-opcode[ENTER_EXECUTOR].pair_count[RETURN_CONST] : 2
-opcode[ENTER_EXECUTOR].pair_count[YIELD_VALUE] : 3
-opcode[ENTER_EXECUTOR].pair_count[FOR_ITER_LIST] : 4
-opcode[ENTER_EXECUTOR].pair_count[FOR_ITER_RANGE] : 1
-opcode[ENTER_EXECUTOR].pair_count[FOR_ITER_TUPLE] : 13
-    opcode[EXTENDED_ARG].execution_count : 274
-opcode[EXTENDED_ARG].pair_count[FOR_ITER] : 2
-opcode[EXTENDED_ARG].pair_count[JUMP_BACKWARD] : 2
-opcode[EXTENDED_ARG].pair_count[JUMP_BACKWARD_NO_INTERRUPT] : 1
-opcode[EXTENDED_ARG].pair_count[JUMP_FORWARD] : 1
-opcode[EXTENDED_ARG].pair_count[LOAD_CONST] : 259
-opcode[EXTENDED_ARG].pair_count[POP_JUMP_IF_FALSE] : 2
-opcode[EXTENDED_ARG].pair_count[POP_JUMP_IF_NOT_NONE] : 1
-opcode[EXTENDED_ARG].pair_count[POP_JUMP_IF_TRUE] : 4
-opcode[EXTENDED_ARG].pair_count[RETURN_CONST] : 1
-opcode[EXTENDED_ARG].pair_count[FOR_ITER_LIST] : 1
-opcode[FOR_ITER].specializable : 1
-    opcode[FOR_ITER].specialization.success : 29
-    opcode[FOR_ITER].specialization.failure : 13
-    opcode[FOR_ITER].specialization.hit : 1249
-    opcode[FOR_ITER].specialization.deferred : 134
-    opcode[FOR_ITER].specialization.miss : 4
-    opcode[FOR_ITER].execution_count : 172
-    opcode[FOR_ITER].specialization.failure_kinds[21] : 2
-    opcode[FOR_ITER].specialization.failure_kinds[24] : 4
-    opcode[FOR_ITER].specialization.failure_kinds[29] : 7
-opcode[FOR_ITER].pair_count[NOP] : 15
-opcode[FOR_ITER].pair_count[FOR_ITER] : 13
-opcode[FOR_ITER].pair_count[LOAD_CONST] : 2
-opcode[FOR_ITER].pair_count[LOAD_FAST] : 1
-opcode[FOR_ITER].pair_count[LOAD_GLOBAL] : 1
-opcode[FOR_ITER].pair_count[RETURN_CONST] : 27
-opcode[FOR_ITER].pair_count[STORE_FAST] : 67
-opcode[FOR_ITER].pair_count[STORE_FAST_LOAD_FAST] : 4
-opcode[FOR_ITER].pair_count[STORE_NAME] : 4
-opcode[FOR_ITER].pair_count[SWAP] : 2
-opcode[FOR_ITER].pair_count[UNPACK_SEQUENCE] : 5
-opcode[FOR_ITER].pair_count[FOR_ITER_LIST] : 15
-opcode[FOR_ITER].pair_count[FOR_ITER_RANGE] : 1
-opcode[FOR_ITER].pair_count[FOR_ITER_TUPLE] : 13
-opcode[FOR_ITER].pair_count[UNPACK_SEQUENCE_TWO_TUPLE] : 2
-    opcode[IMPORT_FROM].execution_count : 43
-opcode[IMPORT_FROM].pair_count[PUSH_EXC_INFO] : 1
-opcode[IMPORT_FROM].pair_count[STORE_NAME] : 42
-    opcode[IMPORT_NAME].execution_count : 65
-opcode[IMPORT_NAME].pair_count[PUSH_EXC_INFO] : 2
-opcode[IMPORT_NAME].pair_count[CALL_INTRINSIC_1] : 4
-opcode[IMPORT_NAME].pair_count[IMPORT_FROM] : 12
-opcode[IMPORT_NAME].pair_count[STORE_FAST] : 4
-opcode[IMPORT_NAME].pair_count[STORE_NAME] : 43
-    opcode[IS_OP].execution_count : 128
-opcode[IS_OP].pair_count[POP_JUMP_IF_FALSE] : 98
-opcode[IS_OP].pair_count[POP_JUMP_IF_TRUE] : 30
-    opcode[JUMP_BACKWARD].execution_count : 1004
-opcode[JUMP_BACKWARD].pair_count[NOP] : 1
-opcode[JUMP_BACKWARD].pair_count[ENTER_EXECUTOR] : 6
-opcode[JUMP_BACKWARD].pair_count[EXTENDED_ARG] : 2
-opcode[JUMP_BACKWARD].pair_count[FOR_ITER] : 76
-opcode[JUMP_BACKWARD].pair_count[FOR_ITER_LIST] : 519
-opcode[JUMP_BACKWARD].pair_count[FOR_ITER_RANGE] : 15
-opcode[JUMP_BACKWARD].pair_count[FOR_ITER_TUPLE] : 385
-    opcode[JUMP_BACKWARD_NO_INTERRUPT].execution_count : 70
-opcode[JUMP_BACKWARD_NO_INTERRUPT].pair_count[NOP] : 4
-opcode[JUMP_BACKWARD_NO_INTERRUPT].pair_count[LOAD_FAST] : 60
-opcode[JUMP_BACKWARD_NO_INTERRUPT].pair_count[LOAD_FAST_LOAD_FAST] : 1
-opcode[JUMP_BACKWARD_NO_INTERRUPT].pair_count[LOAD_GLOBAL] : 2
-opcode[JUMP_BACKWARD_NO_INTERRUPT].pair_count[LOAD_NAME] : 1
-opcode[JUMP_BACKWARD_NO_INTERRUPT].pair_count[LOAD_GLOBAL_MODULE] : 2
-    opcode[JUMP_FORWARD].execution_count : 122
-opcode[JUMP_FORWARD].pair_count[NOP] : 1
-opcode[JUMP_FORWARD].pair_count[POP_EXCEPT] : 2
-opcode[JUMP_FORWARD].pair_count[JUMP_BACKWARD] : 1
-opcode[JUMP_FORWARD].pair_count[LOAD_FAST] : 33
-opcode[JUMP_FORWARD].pair_count[LOAD_FAST_LOAD_FAST] : 28
-opcode[JUMP_FORWARD].pair_count[LOAD_GLOBAL] : 10
-opcode[JUMP_FORWARD].pair_count[LOAD_NAME] : 5
-opcode[JUMP_FORWARD].pair_count[SWAP] : 1
-opcode[JUMP_FORWARD].pair_count[LOAD_GLOBAL_BUILTIN] : 27
-opcode[JUMP_FORWARD].pair_count[LOAD_GLOBAL_MODULE] : 14
-    opcode[LIST_APPEND].execution_count : 639
-opcode[LIST_APPEND].pair_count[ENTER_EXECUTOR] : 12
-opcode[LIST_APPEND].pair_count[JUMP_BACKWARD] : 627
-    opcode[LIST_EXTEND].execution_count : 31
-opcode[LIST_EXTEND].pair_count[CALL] : 4
-opcode[LIST_EXTEND].pair_count[CALL_INTRINSIC_1] : 20
-opcode[LIST_EXTEND].pair_count[STORE_NAME] : 7
-opcode[LOAD_ATTR].specializable : 1
-    opcode[LOAD_ATTR].specialization.success : 226
-    opcode[LOAD_ATTR].specialization.failure : 79
-    opcode[LOAD_ATTR].specialization.hit : 4029
-    opcode[LOAD_ATTR].specialization.deferred : 1389
-    opcode[LOAD_ATTR].specialization.miss : 362
-    opcode[LOAD_ATTR].execution_count : 1332
-    opcode[LOAD_ATTR].specialization.failure_kinds[10] : 12
-    opcode[LOAD_ATTR].specialization.failure_kinds[18] : 18
-    opcode[LOAD_ATTR].specialization.failure_kinds[20] : 7
-    opcode[LOAD_ATTR].specialization.failure_kinds[22] : 4
-    opcode[LOAD_ATTR].specialization.failure_kinds[23] : 16
-    opcode[LOAD_ATTR].specialization.failure_kinds[25] : 8
-    opcode[LOAD_ATTR].specialization.failure_kinds[27] : 14
-opcode[LOAD_ATTR].pair_count[BEFORE_WITH] : 2
-opcode[LOAD_ATTR].pair_count[FORMAT_SIMPLE] : 2
-opcode[LOAD_ATTR].pair_count[GET_ITER] : 4
-opcode[LOAD_ATTR].pair_count[PUSH_EXC_INFO] : 15
-opcode[LOAD_ATTR].pair_count[PUSH_NULL] : 42
-opcode[LOAD_ATTR].pair_count[RETURN_VALUE] : 4
-opcode[LOAD_ATTR].pair_count[STORE_SUBSCR] : 2
-opcode[LOAD_ATTR].pair_count[TO_BOOL] : 10
-opcode[LOAD_ATTR].pair_count[BUILD_LIST] : 9
-opcode[LOAD_ATTR].pair_count[CALL] : 149
-opcode[LOAD_ATTR].pair_count[COMPARE_OP] : 2
-opcode[LOAD_ATTR].pair_count[CONTAINS_OP] : 49
-opcode[LOAD_ATTR].pair_count[COPY] : 1
-opcode[LOAD_ATTR].pair_count[LOAD_ATTR] : 136
-opcode[LOAD_ATTR].pair_count[LOAD_CONST] : 76
-opcode[LOAD_ATTR].pair_count[LOAD_DEREF] : 2
-opcode[LOAD_ATTR].pair_count[LOAD_FAST] : 330
-opcode[LOAD_ATTR].pair_count[LOAD_FAST_CHECK] : 1
-opcode[LOAD_ATTR].pair_count[LOAD_FAST_LOAD_FAST] : 32
-opcode[LOAD_ATTR].pair_count[LOAD_GLOBAL] : 19
-opcode[LOAD_ATTR].pair_count[LOAD_NAME] : 53
-opcode[LOAD_ATTR].pair_count[POP_JUMP_IF_NONE] : 7
-opcode[LOAD_ATTR].pair_count[POP_JUMP_IF_NOT_NONE] : 4
-opcode[LOAD_ATTR].pair_count[STORE_FAST] : 127
-opcode[LOAD_ATTR].pair_count[STORE_NAME] : 11
-opcode[LOAD_ATTR].pair_count[CALL_METHOD_DESCRIPTOR_FAST] : 12
-opcode[LOAD_ATTR].pair_count[LOAD_ATTR_CLASS] : 3
-opcode[LOAD_ATTR].pair_count[LOAD_ATTR_INSTANCE_VALUE] : 69
-opcode[LOAD_ATTR].pair_count[LOAD_ATTR_METHOD_NO_DICT] : 44
-opcode[LOAD_ATTR].pair_count[LOAD_ATTR_METHOD_WITH_VALUES] : 14
-opcode[LOAD_ATTR].pair_count[LOAD_ATTR_MODULE] : 88
-opcode[LOAD_ATTR].pair_count[LOAD_ATTR_PROPERTY] : 4
-opcode[LOAD_ATTR].pair_count[LOAD_ATTR_SLOT] : 9
-    opcode[LOAD_CONST].execution_count : 6160
-opcode[LOAD_CONST].pair_count[BINARY_SLICE] : 106
-opcode[LOAD_CONST].pair_count[BINARY_SUBSCR] : 25
-opcode[LOAD_CONST].pair_count[GET_ITER] : 11
-opcode[LOAD_CONST].pair_count[MAKE_FUNCTION] : 751
-opcode[LOAD_CONST].pair_count[STORE_SLICE] : 1
-opcode[LOAD_CONST].pair_count[STORE_SUBSCR] : 15
-opcode[LOAD_CONST].pair_count[BINARY_OP] : 97
-opcode[LOAD_CONST].pair_count[BUILD_CONST_KEY_MAP] : 42
-opcode[LOAD_CONST].pair_count[BUILD_LIST] : 10
-opcode[LOAD_CONST].pair_count[BUILD_STRING] : 7
-opcode[LOAD_CONST].pair_count[BUILD_TUPLE] : 25
-opcode[LOAD_CONST].pair_count[CALL] : 326
-opcode[LOAD_CONST].pair_count[CALL_KW] : 204
-opcode[LOAD_CONST].pair_count[COMPARE_OP] : 61
-opcode[LOAD_CONST].pair_count[CONTAINS_OP] : 1
-opcode[LOAD_CONST].pair_count[COPY] : 4
-opcode[LOAD_CONST].pair_count[EXTENDED_ARG] : 130
-opcode[LOAD_CONST].pair_count[IMPORT_NAME] : 65
-opcode[LOAD_CONST].pair_count[JUMP_FORWARD] : 4
-opcode[LOAD_CONST].pair_count[LIST_EXTEND] : 11
-opcode[LOAD_CONST].pair_count[LOAD_ATTR] : 5
-opcode[LOAD_CONST].pair_count[LOAD_CONST] : 1163
-opcode[LOAD_CONST].pair_count[LOAD_FAST] : 518
-opcode[LOAD_CONST].pair_count[LOAD_FAST_LOAD_FAST] : 1
-opcode[LOAD_CONST].pair_count[LOAD_GLOBAL] : 5
-opcode[LOAD_CONST].pair_count[LOAD_NAME] : 75
-opcode[LOAD_CONST].pair_count[MAP_ADD] : 323
-opcode[LOAD_CONST].pair_count[RAISE_VARARGS] : 1
-opcode[LOAD_CONST].pair_count[STORE_FAST] : 282
-opcode[LOAD_CONST].pair_count[STORE_GLOBAL] : 9
-opcode[LOAD_CONST].pair_count[STORE_NAME] : 311
-opcode[LOAD_CONST].pair_count[BINARY_OP_ADD_INT] : 42
-opcode[LOAD_CONST].pair_count[BINARY_OP_MULTIPLY_INT] : 15
-opcode[LOAD_CONST].pair_count[BINARY_SUBSCR_DICT] : 24
-opcode[LOAD_CONST].pair_count[BINARY_SUBSCR_LIST_INT] : 26
-opcode[LOAD_CONST].pair_count[BINARY_SUBSCR_STR_INT] : 343
-opcode[LOAD_CONST].pair_count[BINARY_SUBSCR_TUPLE_INT] : 71
-opcode[LOAD_CONST].pair_count[CALL_BOUND_METHOD_EXACT_ARGS] : 58
-opcode[LOAD_CONST].pair_count[CALL_BUILTIN_FAST] : 202
-opcode[LOAD_CONST].pair_count[CALL_BUILTIN_FAST_WITH_KEYWORDS] : 40
-opcode[LOAD_CONST].pair_count[CALL_LIST_APPEND] : 28
-opcode[LOAD_CONST].pair_count[CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] : 1
-opcode[LOAD_CONST].pair_count[CALL_METHOD_DESCRIPTOR_O] : 97
-opcode[LOAD_CONST].pair_count[CALL_PY_EXACT_ARGS] : 20
-opcode[LOAD_CONST].pair_count[COMPARE_OP_INT] : 173
-opcode[LOAD_CONST].pair_count[COMPARE_OP_STR] : 405
-opcode[LOAD_CONST].pair_count[LOAD_ATTR_METHOD_NO_DICT] : 26
-    opcode[LOAD_DEREF].execution_count : 294
-opcode[LOAD_DEREF].pair_count[PUSH_NULL] : 61
-opcode[LOAD_DEREF].pair_count[RETURN_VALUE] : 1
-opcode[LOAD_DEREF].pair_count[TO_BOOL] : 1
-opcode[LOAD_DEREF].pair_count[BUILD_TUPLE] : 27
-opcode[LOAD_DEREF].pair_count[CALL] : 6
-opcode[LOAD_DEREF].pair_count[LIST_EXTEND] : 5
-opcode[LOAD_DEREF].pair_count[LOAD_ATTR] : 2
-opcode[LOAD_DEREF].pair_count[LOAD_CONST] : 34
-opcode[LOAD_DEREF].pair_count[LOAD_FAST] : 125
-opcode[LOAD_DEREF].pair_count[STORE_FAST] : 1
-opcode[LOAD_DEREF].pair_count[CALL_PY_EXACT_ARGS] : 4
-opcode[LOAD_DEREF].pair_count[LOAD_ATTR_METHOD_NO_DICT] : 27
-    opcode[LOAD_FAST].execution_count : 9288
-opcode[LOAD_FAST].pair_count[BINARY_SLICE] : 31
-opcode[LOAD_FAST].pair_count[BINARY_SUBSCR] : 52
-opcode[LOAD_FAST].pair_count[DELETE_SUBSCR] : 26
-opcode[LOAD_FAST].pair_count[FORMAT_SIMPLE] : 8
-opcode[LOAD_FAST].pair_count[GET_ITER] : 272
-opcode[LOAD_FAST].pair_count[PUSH_NULL] : 148
-opcode[LOAD_FAST].pair_count[RETURN_VALUE] : 417
-opcode[LOAD_FAST].pair_count[STORE_SUBSCR] : 8
-opcode[LOAD_FAST].pair_count[TO_BOOL] : 86
-opcode[LOAD_FAST].pair_count[BINARY_OP] : 7
-opcode[LOAD_FAST].pair_count[BUILD_LIST] : 7
-opcode[LOAD_FAST].pair_count[BUILD_MAP] : 57
-opcode[LOAD_FAST].pair_count[BUILD_TUPLE] : 101
-opcode[LOAD_FAST].pair_count[CALL] : 421
-opcode[LOAD_FAST].pair_count[CALL_FUNCTION_EX] : 6
-opcode[LOAD_FAST].pair_count[COMPARE_OP] : 41
-opcode[LOAD_FAST].pair_count[CONTAINS_OP] : 108
-opcode[LOAD_FAST].pair_count[CONVERT_VALUE] : 3
-opcode[LOAD_FAST].pair_count[COPY] : 12
-opcode[LOAD_FAST].pair_count[DICT_MERGE] : 105
-opcode[LOAD_FAST].pair_count[EXTENDED_ARG] : 1
-opcode[LOAD_FAST].pair_count[FOR_ITER] : 33
-opcode[LOAD_FAST].pair_count[IS_OP] : 26
-opcode[LOAD_FAST].pair_count[JUMP_FORWARD] : 28
-opcode[LOAD_FAST].pair_count[LIST_APPEND] : 337
-opcode[LOAD_FAST].pair_count[LIST_EXTEND] : 14
-opcode[LOAD_FAST].pair_count[LOAD_ATTR] : 531
-opcode[LOAD_FAST].pair_count[LOAD_CONST] : 730
-opcode[LOAD_FAST].pair_count[LOAD_DEREF] : 10
-opcode[LOAD_FAST].pair_count[LOAD_FAST] : 105
-opcode[LOAD_FAST].pair_count[LOAD_FAST_CHECK] : 2
-opcode[LOAD_FAST].pair_count[LOAD_FAST_LOAD_FAST] : 1
-opcode[LOAD_FAST].pair_count[LOAD_GLOBAL] : 82
-opcode[LOAD_FAST].pair_count[LOAD_SUPER_ATTR] : 7
-opcode[LOAD_FAST].pair_count[POP_JUMP_IF_NONE] : 97
-opcode[LOAD_FAST].pair_count[POP_JUMP_IF_NOT_NONE] : 434
-opcode[LOAD_FAST].pair_count[STORE_ATTR] : 146
-opcode[LOAD_FAST].pair_count[STORE_FAST] : 37
-opcode[LOAD_FAST].pair_count[STORE_GLOBAL] : 4
-opcode[LOAD_FAST].pair_count[SWAP] : 39
-opcode[LOAD_FAST].pair_count[UNPACK_SEQUENCE] : 2
-opcode[LOAD_FAST].pair_count[BINARY_OP_ADD_UNICODE] : 16
-opcode[LOAD_FAST].pair_count[BINARY_SUBSCR_DICT] : 124
-opcode[LOAD_FAST].pair_count[CALL_ALLOC_AND_ENTER_INIT] : 48
-opcode[LOAD_FAST].pair_count[CALL_BOUND_METHOD_EXACT_ARGS] : 114
-opcode[LOAD_FAST].pair_count[CALL_BUILTIN_CLASS] : 16
-opcode[LOAD_FAST].pair_count[CALL_BUILTIN_FAST] : 1
-opcode[LOAD_FAST].pair_count[CALL_BUILTIN_FAST_WITH_KEYWORDS] : 141
-opcode[LOAD_FAST].pair_count[CALL_BUILTIN_O] : 58
-opcode[LOAD_FAST].pair_count[CALL_LEN] : 52
-opcode[LOAD_FAST].pair_count[CALL_LIST_APPEND] : 3
-opcode[LOAD_FAST].pair_count[CALL_METHOD_DESCRIPTOR_FAST] : 24
-opcode[LOAD_FAST].pair_count[CALL_METHOD_DESCRIPTOR_O] : 1
-opcode[LOAD_FAST].pair_count[CALL_PY_EXACT_ARGS] : 316
-opcode[LOAD_FAST].pair_count[CALL_STR_1] : 38
-opcode[LOAD_FAST].pair_count[COMPARE_OP_INT] : 177
-opcode[LOAD_FAST].pair_count[COMPARE_OP_STR] : 12
-opcode[LOAD_FAST].pair_count[FOR_ITER_LIST] : 14
-opcode[LOAD_FAST].pair_count[LOAD_ATTR_CLASS] : 9
-opcode[LOAD_FAST].pair_count[LOAD_ATTR_INSTANCE_VALUE] : 1391
-opcode[LOAD_FAST].pair_count[LOAD_ATTR_METHOD_NO_DICT] : 439
-opcode[LOAD_FAST].pair_count[LOAD_ATTR_METHOD_WITH_VALUES] : 85
-opcode[LOAD_FAST].pair_count[LOAD_ATTR_MODULE] : 20
-opcode[LOAD_FAST].pair_count[LOAD_ATTR_PROPERTY] : 82
-opcode[LOAD_FAST].pair_count[LOAD_ATTR_SLOT] : 73
-opcode[LOAD_FAST].pair_count[LOAD_GLOBAL_BUILTIN] : 71
-opcode[LOAD_FAST].pair_count[LOAD_GLOBAL_MODULE] : 413
-opcode[LOAD_FAST].pair_count[LOAD_SUPER_ATTR_ATTR] : 31
-opcode[LOAD_FAST].pair_count[LOAD_SUPER_ATTR_METHOD] : 56
-opcode[LOAD_FAST].pair_count[STORE_ATTR_INSTANCE_VALUE] : 437
-opcode[LOAD_FAST].pair_count[STORE_SUBSCR_DICT] : 56
-opcode[LOAD_FAST].pair_count[TO_BOOL_BOOL] : 181
-opcode[LOAD_FAST].pair_count[TO_BOOL_LIST] : 24
-opcode[LOAD_FAST].pair_count[TO_BOOL_NONE] : 75
-opcode[LOAD_FAST].pair_count[TO_BOOL_STR] : 108
-    opcode[LOAD_FAST_AND_CLEAR].execution_count : 151
-opcode[LOAD_FAST_AND_CLEAR].pair_count[LOAD_FAST_AND_CLEAR] : 3
-opcode[LOAD_FAST_AND_CLEAR].pair_count[SWAP] : 148
-    opcode[LOAD_FAST_CHECK].execution_count : 65
-opcode[LOAD_FAST_CHECK].pair_count[PUSH_NULL] : 1
-opcode[LOAD_FAST_CHECK].pair_count[CALL] : 2
-opcode[LOAD_FAST_CHECK].pair_count[LOAD_FAST] : 2
-opcode[LOAD_FAST_CHECK].pair_count[POP_JUMP_IF_NOT_NONE] : 60
-    opcode[LOAD_FAST_LOAD_FAST].execution_count : 1623
-opcode[LOAD_FAST_LOAD_FAST].pair_count[BINARY_SUBSCR] : 2
-opcode[LOAD_FAST_LOAD_FAST].pair_count[BINARY_OP] : 4
-opcode[LOAD_FAST_LOAD_FAST].pair_count[BUILD_LIST] : 43
-opcode[LOAD_FAST_LOAD_FAST].pair_count[BUILD_TUPLE] : 37
-opcode[LOAD_FAST_LOAD_FAST].pair_count[CALL] : 136
-opcode[LOAD_FAST_LOAD_FAST].pair_count[COMPARE_OP] : 3
-opcode[LOAD_FAST_LOAD_FAST].pair_count[CONTAINS_OP] : 27
-opcode[LOAD_FAST_LOAD_FAST].pair_count[LOAD_ATTR] : 89
-opcode[LOAD_FAST_LOAD_FAST].pair_count[LOAD_CONST] : 13
-opcode[LOAD_FAST_LOAD_FAST].pair_count[LOAD_DEREF] : 1
-opcode[LOAD_FAST_LOAD_FAST].pair_count[LOAD_FAST] : 214
-opcode[LOAD_FAST_LOAD_FAST].pair_count[LOAD_FAST_LOAD_FAST] : 49
-opcode[LOAD_FAST_LOAD_FAST].pair_count[LOAD_GLOBAL] : 6
-opcode[LOAD_FAST_LOAD_FAST].pair_count[STORE_ATTR] : 133
-opcode[LOAD_FAST_LOAD_FAST].pair_count[BINARY_OP_ADD_UNICODE] : 201
-opcode[LOAD_FAST_LOAD_FAST].pair_count[CALL_ALLOC_AND_ENTER_INIT] : 40
-opcode[LOAD_FAST_LOAD_FAST].pair_count[CALL_BUILTIN_FAST] : 158
-opcode[LOAD_FAST_LOAD_FAST].pair_count[CALL_ISINSTANCE] : 2
-opcode[LOAD_FAST_LOAD_FAST].pair_count[CALL_PY_EXACT_ARGS] : 52
-opcode[LOAD_FAST_LOAD_FAST].pair_count[CALL_PY_WITH_DEFAULTS] : 26
-opcode[LOAD_FAST_LOAD_FAST].pair_count[LOAD_ATTR_INSTANCE_VALUE] : 19
-opcode[LOAD_FAST_LOAD_FAST].pair_count[LOAD_GLOBAL_BUILTIN] : 36
-opcode[LOAD_FAST_LOAD_FAST].pair_count[STORE_ATTR_INSTANCE_VALUE] : 304
-opcode[LOAD_FAST_LOAD_FAST].pair_count[STORE_ATTR_SLOT] : 28
-opcode[LOAD_GLOBAL].specializable : 1
-    opcode[LOAD_GLOBAL].specialization.success : 252
-    opcode[LOAD_GLOBAL].specialization.hit : 3877
-    opcode[LOAD_GLOBAL].specialization.deferred : 1148
-    opcode[LOAD_GLOBAL].specialization.miss : 686
-    opcode[LOAD_GLOBAL].specialization.deopt : 33
-    opcode[LOAD_GLOBAL].execution_count : 714
-opcode[LOAD_GLOBAL].pair_count[BINARY_SUBSCR] : 2
-opcode[LOAD_GLOBAL].pair_count[CHECK_EXC_MATCH] : 15
-opcode[LOAD_GLOBAL].pair_count[FORMAT_SIMPLE] : 1
-opcode[LOAD_GLOBAL].pair_count[GET_ITER] : 1
-opcode[LOAD_GLOBAL].pair_count[RETURN_VALUE] : 4
-opcode[LOAD_GLOBAL].pair_count[TO_BOOL] : 3
-opcode[LOAD_GLOBAL].pair_count[BUILD_TUPLE] : 6
-opcode[LOAD_GLOBAL].pair_count[CALL] : 47
-opcode[LOAD_GLOBAL].pair_count[COMPARE_OP] : 1
-opcode[LOAD_GLOBAL].pair_count[CONTAINS_OP] : 2
-opcode[LOAD_GLOBAL].pair_count[IS_OP] : 11
-opcode[LOAD_GLOBAL].pair_count[LOAD_ATTR] : 161
-opcode[LOAD_GLOBAL].pair_count[LOAD_CONST] : 18
-opcode[LOAD_GLOBAL].pair_count[LOAD_DEREF] : 5
-opcode[LOAD_GLOBAL].pair_count[LOAD_FAST] : 108
-opcode[LOAD_GLOBAL].pair_count[LOAD_FAST_LOAD_FAST] : 30
-opcode[LOAD_GLOBAL].pair_count[LOAD_GLOBAL] : 29
-opcode[LOAD_GLOBAL].pair_count[POP_JUMP_IF_NONE] : 1
-opcode[LOAD_GLOBAL].pair_count[POP_JUMP_IF_NOT_NONE] : 5
-opcode[LOAD_GLOBAL].pair_count[STORE_ATTR] : 8
-opcode[LOAD_GLOBAL].pair_count[STORE_FAST] : 4
-opcode[LOAD_GLOBAL].pair_count[LOAD_GLOBAL_BUILTIN] : 71
-opcode[LOAD_GLOBAL].pair_count[LOAD_GLOBAL_MODULE] : 181
-    opcode[LOAD_NAME].execution_count : 849
-opcode[LOAD_NAME].pair_count[BINARY_SUBSCR] : 2
-opcode[LOAD_NAME].pair_count[CHECK_EXC_MATCH] : 3
-opcode[LOAD_NAME].pair_count[FORMAT_SIMPLE] : 12
-opcode[LOAD_NAME].pair_count[GET_ITER] : 3
-opcode[LOAD_NAME].pair_count[PUSH_NULL] : 168
-opcode[LOAD_NAME].pair_count[TO_BOOL] : 70
-opcode[LOAD_NAME].pair_count[BINARY_OP] : 4
-opcode[LOAD_NAME].pair_count[BUILD_LIST] : 1
-opcode[LOAD_NAME].pair_count[BUILD_SET] : 2
-opcode[LOAD_NAME].pair_count[BUILD_TUPLE] : 11
-opcode[LOAD_NAME].pair_count[CALL] : 114
-opcode[LOAD_NAME].pair_count[COMPARE_OP] : 2
-opcode[LOAD_NAME].pair_count[CONTAINS_OP] : 2
-opcode[LOAD_NAME].pair_count[COPY] : 10
-opcode[LOAD_NAME].pair_count[LIST_EXTEND] : 1
-opcode[LOAD_NAME].pair_count[LOAD_ATTR] : 117
-opcode[LOAD_NAME].pair_count[LOAD_CONST] : 161
-opcode[LOAD_NAME].pair_count[LOAD_FAST] : 2
-opcode[LOAD_NAME].pair_count[LOAD_NAME] : 55
-opcode[LOAD_NAME].pair_count[STORE_ATTR] : 2
-opcode[LOAD_NAME].pair_count[STORE_NAME] : 103
-opcode[LOAD_NAME].pair_count[CALL_BOUND_METHOD_EXACT_ARGS] : 3
-opcode[LOAD_NAME].pair_count[TO_BOOL_STR] : 1
-opcode[LOAD_SUPER_ATTR].specializable : 1
-    opcode[LOAD_SUPER_ATTR].specialization.success : 3
-    opcode[LOAD_SUPER_ATTR].specialization.hit : 90
-    opcode[LOAD_SUPER_ATTR].specialization.deferred : 4
-    opcode[LOAD_SUPER_ATTR].execution_count : 7
-opcode[LOAD_SUPER_ATTR].pair_count[PUSH_NULL] : 2
-opcode[LOAD_SUPER_ATTR].pair_count[LOAD_FAST_LOAD_FAST] : 2
-opcode[LOAD_SUPER_ATTR].pair_count[LOAD_SUPER_ATTR_ATTR] : 1
-opcode[LOAD_SUPER_ATTR].pair_count[LOAD_SUPER_ATTR_METHOD] : 2
-    opcode[MAKE_CELL].execution_count : 61
-opcode[MAKE_CELL].pair_count[MAKE_CELL] : 4
-opcode[MAKE_CELL].pair_count[RESUME] : 18
-opcode[MAKE_CELL].pair_count[RESUME_CHECK] : 39
-    opcode[MAP_ADD].execution_count : 323
-opcode[MAP_ADD].pair_count[BUILD_MAP] : 1
-opcode[MAP_ADD].pair_count[DICT_UPDATE] : 18
-opcode[MAP_ADD].pair_count[EXTENDED_ARG] : 122
-opcode[MAP_ADD].pair_count[LOAD_CONST] : 182
-opcode[POP_JUMP_IF_FALSE].specializable : 1
-    opcode[POP_JUMP_IF_FALSE].execution_count : 1483
-opcode[POP_JUMP_IF_FALSE].pair_count[NOP] : 84
-opcode[POP_JUMP_IF_FALSE].pair_count[POP_TOP] : 100
-opcode[POP_JUMP_IF_FALSE].pair_count[BUILD_LIST] : 7
-opcode[POP_JUMP_IF_FALSE].pair_count[EXTENDED_ARG] : 1
-opcode[POP_JUMP_IF_FALSE].pair_count[JUMP_BACKWARD] : 1
-opcode[POP_JUMP_IF_FALSE].pair_count[JUMP_FORWARD] : 2
-opcode[POP_JUMP_IF_FALSE].pair_count[LOAD_CONST] : 114
-opcode[POP_JUMP_IF_FALSE].pair_count[LOAD_DEREF] : 55
-opcode[POP_JUMP_IF_FALSE].pair_count[LOAD_FAST] : 409
-opcode[POP_JUMP_IF_FALSE].pair_count[LOAD_FAST_LOAD_FAST] : 37
-opcode[POP_JUMP_IF_FALSE].pair_count[LOAD_GLOBAL] : 78
-opcode[POP_JUMP_IF_FALSE].pair_count[LOAD_NAME] : 47
-opcode[POP_JUMP_IF_FALSE].pair_count[RETURN_CONST] : 244
-opcode[POP_JUMP_IF_FALSE].pair_count[STORE_FAST] : 2
-opcode[POP_JUMP_IF_FALSE].pair_count[STORE_NAME] : 1
-opcode[POP_JUMP_IF_FALSE].pair_count[LOAD_GLOBAL_BUILTIN] : 52
-opcode[POP_JUMP_IF_FALSE].pair_count[LOAD_GLOBAL_MODULE] : 249
-opcode[POP_JUMP_IF_NONE].specializable : 1
-    opcode[POP_JUMP_IF_NONE].execution_count : 235
-opcode[POP_JUMP_IF_NONE].pair_count[NOP] : 19
-opcode[POP_JUMP_IF_NONE].pair_count[LOAD_CONST] : 4
-opcode[POP_JUMP_IF_NONE].pair_count[LOAD_FAST] : 90
-opcode[POP_JUMP_IF_NONE].pair_count[LOAD_GLOBAL] : 15
-opcode[POP_JUMP_IF_NONE].pair_count[LOAD_GLOBAL_BUILTIN] : 27
-opcode[POP_JUMP_IF_NONE].pair_count[LOAD_GLOBAL_MODULE] : 80
-opcode[POP_JUMP_IF_NOT_NONE].specializable : 1
-    opcode[POP_JUMP_IF_NOT_NONE].execution_count : 833
-opcode[POP_JUMP_IF_NOT_NONE].pair_count[NOP] : 80
-opcode[POP_JUMP_IF_NOT_NONE].pair_count[POP_TOP] : 40
-opcode[POP_JUMP_IF_NOT_NONE].pair_count[ENTER_EXECUTOR] : 1
-opcode[POP_JUMP_IF_NOT_NONE].pair_count[JUMP_BACKWARD] : 56
-opcode[POP_JUMP_IF_NOT_NONE].pair_count[LOAD_CONST] : 33
-opcode[POP_JUMP_IF_NOT_NONE].pair_count[LOAD_FAST] : 415
-opcode[POP_JUMP_IF_NOT_NONE].pair_count[LOAD_FAST_CHECK] : 1
-opcode[POP_JUMP_IF_NOT_NONE].pair_count[LOAD_GLOBAL] : 30
-opcode[POP_JUMP_IF_NOT_NONE].pair_count[RETURN_CONST] : 16
-opcode[POP_JUMP_IF_NOT_NONE].pair_count[LOAD_GLOBAL_BUILTIN] : 9
-opcode[POP_JUMP_IF_NOT_NONE].pair_count[LOAD_GLOBAL_MODULE] : 152
-opcode[POP_JUMP_IF_TRUE].specializable : 1
-    opcode[POP_JUMP_IF_TRUE].execution_count : 1474
-opcode[POP_JUMP_IF_TRUE].pair_count[LOAD_BUILD_CLASS] : 1
-opcode[POP_JUMP_IF_TRUE].pair_count[NOP] : 8
-opcode[POP_JUMP_IF_TRUE].pair_count[POP_TOP] : 7
-opcode[POP_JUMP_IF_TRUE].pair_count[RETURN_VALUE] : 6
-opcode[POP_JUMP_IF_TRUE].pair_count[BUILD_LIST] : 1
-opcode[POP_JUMP_IF_TRUE].pair_count[CALL] : 4
-opcode[POP_JUMP_IF_TRUE].pair_count[ENTER_EXECUTOR] : 9
-opcode[POP_JUMP_IF_TRUE].pair_count[JUMP_BACKWARD] : 104
-opcode[POP_JUMP_IF_TRUE].pair_count[LOAD_CONST] : 32
-opcode[POP_JUMP_IF_TRUE].pair_count[LOAD_DEREF] : 5
-opcode[POP_JUMP_IF_TRUE].pair_count[LOAD_FAST] : 867
-opcode[POP_JUMP_IF_TRUE].pair_count[LOAD_FAST_LOAD_FAST] : 26
-opcode[POP_JUMP_IF_TRUE].pair_count[LOAD_GLOBAL] : 39
-opcode[POP_JUMP_IF_TRUE].pair_count[LOAD_NAME] : 33
-opcode[POP_JUMP_IF_TRUE].pair_count[RERAISE] : 2
-opcode[POP_JUMP_IF_TRUE].pair_count[RETURN_CONST] : 1
-opcode[POP_JUMP_IF_TRUE].pair_count[STORE_NAME] : 2
-opcode[POP_JUMP_IF_TRUE].pair_count[CALL_BUILTIN_FAST_WITH_KEYWORDS] : 3
-opcode[POP_JUMP_IF_TRUE].pair_count[CALL_PY_EXACT_ARGS] : 19
-opcode[POP_JUMP_IF_TRUE].pair_count[LOAD_GLOBAL_BUILTIN] : 230
-opcode[POP_JUMP_IF_TRUE].pair_count[LOAD_GLOBAL_MODULE] : 75
-    opcode[RAISE_VARARGS].execution_count : 10
-opcode[RAISE_VARARGS].pair_count[PUSH_EXC_INFO] : 3
-opcode[RAISE_VARARGS].pair_count[COPY] : 1
-    opcode[RERAISE].execution_count : 6
-opcode[RERAISE].pair_count[PUSH_EXC_INFO] : 1
-opcode[RERAISE].pair_count[COPY] : 2
-    opcode[RETURN_CONST].execution_count : 1095
-opcode[RETURN_CONST].pair_count[EXIT_INIT_CHECK] : 92
-opcode[RETURN_CONST].pair_count[INTERPRETER_EXIT] : 524
-opcode[RETURN_CONST].pair_count[POP_TOP] : 336
-opcode[RETURN_CONST].pair_count[RETURN_VALUE] : 32
-opcode[RETURN_CONST].pair_count[TO_BOOL] : 5
-opcode[RETURN_CONST].pair_count[LOAD_ATTR] : 1
-opcode[RETURN_CONST].pair_count[STORE_FAST] : 84
-opcode[RETURN_CONST].pair_count[STORE_GLOBAL] : 1
-opcode[RETURN_CONST].pair_count[UNPACK_SEQUENCE] : 1
-opcode[RETURN_CONST].pair_count[TO_BOOL_BOOL] : 19
-opcode[SEND].specializable : 1
-    opcode[SET_ADD].execution_count : 1
-opcode[SET_ADD].pair_count[JUMP_BACKWARD] : 1
-    opcode[SET_FUNCTION_ATTRIBUTE].execution_count : 206
-opcode[SET_FUNCTION_ATTRIBUTE].pair_count[CALL] : 12
-opcode[SET_FUNCTION_ATTRIBUTE].pair_count[LOAD_CONST] : 1
-opcode[SET_FUNCTION_ATTRIBUTE].pair_count[LOAD_FAST] : 16
-opcode[SET_FUNCTION_ATTRIBUTE].pair_count[LOAD_GLOBAL] : 2
-opcode[SET_FUNCTION_ATTRIBUTE].pair_count[SET_FUNCTION_ATTRIBUTE] : 8
-opcode[SET_FUNCTION_ATTRIBUTE].pair_count[STORE_DEREF] : 1
-opcode[SET_FUNCTION_ATTRIBUTE].pair_count[STORE_FAST] : 40
-opcode[SET_FUNCTION_ATTRIBUTE].pair_count[STORE_NAME] : 99
-opcode[SET_FUNCTION_ATTRIBUTE].pair_count[LOAD_GLOBAL_MODULE] : 27
-opcode[STORE_ATTR].specializable : 1
-    opcode[STORE_ATTR].specialization.success : 55
-    opcode[STORE_ATTR].specialization.failure : 24
-    opcode[STORE_ATTR].specialization.hit : 824
-    opcode[STORE_ATTR].specialization.deferred : 235
-    opcode[STORE_ATTR].execution_count : 314
-    opcode[STORE_ATTR].specialization.failure_kinds[2] : 19
-    opcode[STORE_ATTR].specialization.failure_kinds[14] : 1
-    opcode[STORE_ATTR].specialization.failure_kinds[18] : 4
-opcode[STORE_ATTR].pair_count[NOP] : 32
-opcode[STORE_ATTR].pair_count[POP_EXCEPT] : 1
-opcode[STORE_ATTR].pair_count[BUILD_LIST] : 4
-opcode[STORE_ATTR].pair_count[BUILD_MAP] : 1
-opcode[STORE_ATTR].pair_count[JUMP_FORWARD] : 1
-opcode[STORE_ATTR].pair_count[LOAD_CONST] : 10
-opcode[STORE_ATTR].pair_count[LOAD_FAST] : 137
-opcode[STORE_ATTR].pair_count[LOAD_FAST_LOAD_FAST] : 23
-opcode[STORE_ATTR].pair_count[LOAD_GLOBAL] : 8
-opcode[STORE_ATTR].pair_count[RETURN_CONST] : 18
-opcode[STORE_ATTR].pair_count[STORE_ATTR] : 24
-opcode[STORE_ATTR].pair_count[STORE_ATTR_INSTANCE_VALUE] : 54
-opcode[STORE_ATTR].pair_count[STORE_ATTR_SLOT] : 1
-    opcode[STORE_DEREF].execution_count : 20
-opcode[STORE_DEREF].pair_count[LOAD_BUILD_CLASS] : 1
-opcode[STORE_DEREF].pair_count[LOAD_FAST] : 3
-opcode[STORE_DEREF].pair_count[LOAD_GLOBAL] : 1
-opcode[STORE_DEREF].pair_count[STORE_FAST] : 15
-    opcode[STORE_FAST].execution_count : 2515
-opcode[STORE_FAST].pair_count[NOP] : 205
-opcode[STORE_FAST].pair_count[POP_EXCEPT] : 68
-opcode[STORE_FAST].pair_count[POP_TOP] : 1
-opcode[STORE_FAST].pair_count[CALL] : 2
-opcode[STORE_FAST].pair_count[DELETE_FAST] : 2
-opcode[STORE_FAST].pair_count[JUMP_BACKWARD] : 6
-opcode[STORE_FAST].pair_count[JUMP_FORWARD] : 74
-opcode[STORE_FAST].pair_count[LOAD_CONST] : 141
-opcode[STORE_FAST].pair_count[LOAD_DEREF] : 31
-opcode[STORE_FAST].pair_count[LOAD_FAST] : 1078
-opcode[STORE_FAST].pair_count[LOAD_FAST_LOAD_FAST] : 125
-opcode[STORE_FAST].pair_count[LOAD_GLOBAL] : 107
-opcode[STORE_FAST].pair_count[STORE_FAST] : 4
-opcode[STORE_FAST].pair_count[STORE_NAME] : 1
-opcode[STORE_FAST].pair_count[SWAP] : 1
-opcode[STORE_FAST].pair_count[CALL_METHOD_DESCRIPTOR_O] : 139
-opcode[STORE_FAST].pair_count[LOAD_GLOBAL_BUILTIN] : 133
-opcode[STORE_FAST].pair_count[LOAD_GLOBAL_MODULE] : 397
-    opcode[STORE_FAST_LOAD_FAST].execution_count : 669
-opcode[STORE_FAST_LOAD_FAST].pair_count[TO_BOOL] : 2
-opcode[STORE_FAST_LOAD_FAST].pair_count[LOAD_CONST] : 346
-opcode[STORE_FAST_LOAD_FAST].pair_count[LOAD_DEREF] : 27
-opcode[STORE_FAST_LOAD_FAST].pair_count[STORE_ATTR] : 1
-opcode[STORE_FAST_LOAD_FAST].pair_count[TO_BOOL_STR] : 293
-    opcode[STORE_FAST_STORE_FAST].execution_count : 174
-opcode[STORE_FAST_STORE_FAST].pair_count[NOP] : 98
-opcode[STORE_FAST_STORE_FAST].pair_count[LOAD_CONST] : 5
-opcode[STORE_FAST_STORE_FAST].pair_count[LOAD_FAST] : 28
-opcode[STORE_FAST_STORE_FAST].pair_count[LOAD_FAST_LOAD_FAST] : 5
-opcode[STORE_FAST_STORE_FAST].pair_count[LOAD_GLOBAL] : 6
-opcode[STORE_FAST_STORE_FAST].pair_count[STORE_FAST] : 30
-opcode[STORE_FAST_STORE_FAST].pair_count[LOAD_GLOBAL_BUILTIN] : 2
-    opcode[STORE_GLOBAL].execution_count : 18
-opcode[STORE_GLOBAL].pair_count[LOAD_BUILD_CLASS] : 1
-opcode[STORE_GLOBAL].pair_count[LOAD_CONST] : 9
-opcode[STORE_GLOBAL].pair_count[LOAD_FAST] : 2
-opcode[STORE_GLOBAL].pair_count[LOAD_GLOBAL] : 4
-opcode[STORE_GLOBAL].pair_count[RETURN_CONST] : 2
-    opcode[STORE_NAME].execution_count : 1334
-opcode[STORE_NAME].pair_count[LOAD_BUILD_CLASS] : 65
-opcode[STORE_NAME].pair_count[NOP] : 12
-opcode[STORE_NAME].pair_count[POP_EXCEPT] : 1
-opcode[STORE_NAME].pair_count[POP_TOP] : 11
-opcode[STORE_NAME].pair_count[RETURN_VALUE] : 7
-opcode[STORE_NAME].pair_count[BUILD_LIST] : 5
-opcode[STORE_NAME].pair_count[BUILD_MAP] : 4
-opcode[STORE_NAME].pair_count[DELETE_NAME] : 6
-opcode[STORE_NAME].pair_count[EXTENDED_ARG] : 1
-opcode[STORE_NAME].pair_count[IMPORT_FROM] : 31
-opcode[STORE_NAME].pair_count[JUMP_FORWARD] : 3
-opcode[STORE_NAME].pair_count[LOAD_CONST] : 794
-opcode[STORE_NAME].pair_count[LOAD_FAST] : 17
-opcode[STORE_NAME].pair_count[LOAD_NAME] : 284
-opcode[STORE_NAME].pair_count[RETURN_CONST] : 86
-opcode[STORE_NAME].pair_count[STORE_NAME] : 7
-    opcode[SWAP].execution_count : 540
-opcode[SWAP].pair_count[POP_EXCEPT] : 2
-opcode[SWAP].pair_count[POP_TOP] : 57
-opcode[SWAP].pair_count[BUILD_LIST] : 147
-opcode[SWAP].pair_count[BUILD_SET] : 1
-opcode[SWAP].pair_count[FOR_ITER] : 7
-opcode[SWAP].pair_count[LOAD_CONST] : 38
-opcode[SWAP].pair_count[STORE_FAST] : 147
-opcode[SWAP].pair_count[FOR_ITER_TUPLE] : 141
-opcode[UNPACK_SEQUENCE].specializable : 1
-    opcode[UNPACK_SEQUENCE].specialization.success : 9
-    opcode[UNPACK_SEQUENCE].specialization.hit : 185
-    opcode[UNPACK_SEQUENCE].specialization.deferred : 13
-    opcode[UNPACK_SEQUENCE].execution_count : 22
-opcode[UNPACK_SEQUENCE].pair_count[STORE_DEREF] : 1
-opcode[UNPACK_SEQUENCE].pair_count[STORE_FAST_STORE_FAST] : 11
-opcode[UNPACK_SEQUENCE].pair_count[STORE_NAME] : 1
-opcode[UNPACK_SEQUENCE].pair_count[UNPACK_SEQUENCE_TUPLE] : 2
-opcode[UNPACK_SEQUENCE].pair_count[UNPACK_SEQUENCE_TWO_TUPLE] : 7
-    opcode[YIELD_VALUE].execution_count : 61
-opcode[YIELD_VALUE].pair_count[INTERPRETER_EXIT] : 61
-    opcode[RESUME].specialization.miss : 1
-    opcode[RESUME].execution_count : 271
-opcode[RESUME].pair_count[NOP] : 11
-opcode[RESUME].pair_count[POP_TOP] : 3
-opcode[RESUME].pair_count[BUILD_LIST] : 5
-opcode[RESUME].pair_count[LOAD_CONST] : 27
-opcode[RESUME].pair_count[LOAD_DEREF] : 2
-opcode[RESUME].pair_count[LOAD_FAST] : 50
-opcode[RESUME].pair_count[LOAD_FAST_LOAD_FAST] : 9
-opcode[RESUME].pair_count[LOAD_GLOBAL] : 75
-opcode[RESUME].pair_count[LOAD_NAME] : 85
-opcode[RESUME].pair_count[RETURN_CONST] : 4
-    opcode[BINARY_OP_ADD_INT].execution_count : 45
-opcode[BINARY_OP_ADD_INT].pair_count[CALL] : 1
-opcode[BINARY_OP_ADD_INT].pair_count[LOAD_CONST] : 28
-opcode[BINARY_OP_ADD_INT].pair_count[STORE_FAST] : 1
-opcode[BINARY_OP_ADD_INT].pair_count[CALL_BUILTIN_FAST_WITH_KEYWORDS] : 15
-    opcode[BINARY_OP_ADD_UNICODE].execution_count : 250
-opcode[BINARY_OP_ADD_UNICODE].pair_count[BINARY_OP_INPLACE_ADD_UNICODE] : 11
-opcode[BINARY_OP_ADD_UNICODE].pair_count[POP_TOP] : 3
-opcode[BINARY_OP_ADD_UNICODE].pair_count[BINARY_OP] : 1
-opcode[BINARY_OP_ADD_UNICODE].pair_count[CALL] : 97
-opcode[BINARY_OP_ADD_UNICODE].pair_count[LOAD_FAST] : 106
-opcode[BINARY_OP_ADD_UNICODE].pair_count[STORE_FAST] : 31
-opcode[BINARY_OP_ADD_UNICODE].pair_count[STORE_NAME] : 1
-    opcode[BINARY_OP_MULTIPLY_INT].execution_count : 16
-opcode[BINARY_OP_MULTIPLY_INT].pair_count[LOAD_CONST] : 16
-    opcode[BINARY_SUBSCR_DICT].execution_count : 158
-opcode[BINARY_SUBSCR_DICT].pair_count[PUSH_EXC_INFO] : 59
-opcode[BINARY_SUBSCR_DICT].pair_count[PUSH_NULL] : 4
-opcode[BINARY_SUBSCR_DICT].pair_count[CALL] : 2
-opcode[BINARY_SUBSCR_DICT].pair_count[LOAD_FAST] : 13
-opcode[BINARY_SUBSCR_DICT].pair_count[STORE_FAST] : 33
-opcode[BINARY_SUBSCR_DICT].pair_count[CALL_BUILTIN_CLASS] : 12
-opcode[BINARY_SUBSCR_DICT].pair_count[CALL_METHOD_DESCRIPTOR_O] : 35
-    opcode[BINARY_SUBSCR_LIST_INT].execution_count : 27
-opcode[BINARY_SUBSCR_LIST_INT].pair_count[BINARY_OP] : 1
-opcode[BINARY_SUBSCR_LIST_INT].pair_count[BINARY_OP_ADD_UNICODE] : 26
-    opcode[BINARY_SUBSCR_STR_INT].execution_count : 344
-opcode[BINARY_SUBSCR_STR_INT].pair_count[LOAD_CONST] : 344
-    opcode[BINARY_SUBSCR_TUPLE_INT].execution_count : 75
-opcode[BINARY_SUBSCR_TUPLE_INT].pair_count[RETURN_VALUE] : 29
-opcode[BINARY_SUBSCR_TUPLE_INT].pair_count[STORE_FAST] : 46
-    opcode[CALL_ALLOC_AND_ENTER_INIT].execution_count : 92
-opcode[CALL_ALLOC_AND_ENTER_INIT].pair_count[RESUME_CHECK] : 92
-    opcode[CALL_BOUND_METHOD_EXACT_ARGS].specialization.miss : 101
-    opcode[CALL_BOUND_METHOD_EXACT_ARGS].execution_count : 184
-opcode[CALL_BOUND_METHOD_EXACT_ARGS].pair_count[POP_TOP] : 59
-opcode[CALL_BOUND_METHOD_EXACT_ARGS].pair_count[COPY_FREE_VARS] : 10
-opcode[CALL_BOUND_METHOD_EXACT_ARGS].pair_count[RESUME] : 2
-opcode[CALL_BOUND_METHOD_EXACT_ARGS].pair_count[CALL_BOUND_METHOD_EXACT_ARGS] : 1
-opcode[CALL_BOUND_METHOD_EXACT_ARGS].pair_count[RESUME_CHECK] : 112
-    opcode[CALL_BUILTIN_CLASS].execution_count : 39
-opcode[CALL_BUILTIN_CLASS].pair_count[GET_ITER] : 14
-opcode[CALL_BUILTIN_CLASS].pair_count[LOAD_FAST] : 12
-opcode[CALL_BUILTIN_CLASS].pair_count[STORE_FAST] : 13
-    opcode[CALL_BUILTIN_FAST].execution_count : 448
-opcode[CALL_BUILTIN_FAST].pair_count[POP_TOP] : 83
-opcode[CALL_BUILTIN_FAST].pair_count[RETURN_VALUE] : 76
-opcode[CALL_BUILTIN_FAST].pair_count[TO_BOOL] : 6
-opcode[CALL_BUILTIN_FAST].pair_count[CALL] : 2
-opcode[CALL_BUILTIN_FAST].pair_count[POP_JUMP_IF_NOT_NONE] : 146
-opcode[CALL_BUILTIN_FAST].pair_count[STORE_FAST] : 3
-opcode[CALL_BUILTIN_FAST].pair_count[CALL_BUILTIN_FAST] : 36
-opcode[CALL_BUILTIN_FAST].pair_count[TO_BOOL_BOOL] : 95
-opcode[CALL_BUILTIN_FAST].pair_count[TO_BOOL_STR] : 1
-    opcode[CALL_BUILTIN_FAST_WITH_KEYWORDS].specialization.miss : 41
-    opcode[CALL_BUILTIN_FAST_WITH_KEYWORDS].execution_count : 257
-opcode[CALL_BUILTIN_FAST_WITH_KEYWORDS].pair_count[BEFORE_WITH] : 13
-opcode[CALL_BUILTIN_FAST_WITH_KEYWORDS].pair_count[POP_TOP] : 17
-opcode[CALL_BUILTIN_FAST_WITH_KEYWORDS].pair_count[PUSH_EXC_INFO] : 6
-opcode[CALL_BUILTIN_FAST_WITH_KEYWORDS].pair_count[RETURN_VALUE] : 104
-opcode[CALL_BUILTIN_FAST_WITH_KEYWORDS].pair_count[COPY] : 4
-opcode[CALL_BUILTIN_FAST_WITH_KEYWORDS].pair_count[STORE_FAST] : 113
-    opcode[CALL_BUILTIN_O].execution_count : 60
-opcode[CALL_BUILTIN_O].pair_count[POP_TOP] : 32
-opcode[CALL_BUILTIN_O].pair_count[TO_BOOL] : 1
-opcode[CALL_BUILTIN_O].pair_count[TO_BOOL_INT] : 27
-    opcode[CALL_ISINSTANCE].execution_count : 96
-opcode[CALL_ISINSTANCE].pair_count[TO_BOOL] : 8
-opcode[CALL_ISINSTANCE].pair_count[TO_BOOL_BOOL] : 88
-    opcode[CALL_LEN].execution_count : 138
-opcode[CALL_LEN].pair_count[TO_BOOL] : 1
-opcode[CALL_LEN].pair_count[BINARY_OP] : 1
-opcode[CALL_LEN].pair_count[LOAD_CONST] : 108
-opcode[CALL_LEN].pair_count[TO_BOOL_INT] : 28
-    opcode[CALL_LIST_APPEND].execution_count : 64
-opcode[CALL_LIST_APPEND].pair_count[NOP] : 30
-opcode[CALL_LIST_APPEND].pair_count[LOAD_CONST] : 3
-opcode[CALL_LIST_APPEND].pair_count[LOAD_FAST] : 2
-opcode[CALL_LIST_APPEND].pair_count[RETURN_CONST] : 29
-    opcode[CALL_METHOD_DESCRIPTOR_FAST].execution_count : 439
-opcode[CALL_METHOD_DESCRIPTOR_FAST].pair_count[POP_TOP] : 30
-opcode[CALL_METHOD_DESCRIPTOR_FAST].pair_count[LIST_APPEND] : 294
-opcode[CALL_METHOD_DESCRIPTOR_FAST].pair_count[LOAD_FAST] : 25
-opcode[CALL_METHOD_DESCRIPTOR_FAST].pair_count[STORE_FAST] : 77
-opcode[CALL_METHOD_DESCRIPTOR_FAST].pair_count[SWAP] : 13
-    opcode[CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS].execution_count : 4
-opcode[CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS].pair_count[RETURN_VALUE] : 3
-opcode[CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS].pair_count[STORE_FAST] : 1
-    opcode[CALL_METHOD_DESCRIPTOR_NOARGS].execution_count : 7
-opcode[CALL_METHOD_DESCRIPTOR_NOARGS].pair_count[TO_BOOL] : 2
-opcode[CALL_METHOD_DESCRIPTOR_NOARGS].pair_count[TO_BOOL_BOOL] : 5
-    opcode[CALL_METHOD_DESCRIPTOR_O].specialization.miss : 29
-    opcode[CALL_METHOD_DESCRIPTOR_O].execution_count : 350
-opcode[CALL_METHOD_DESCRIPTOR_O].pair_count[POP_TOP] : 81
-opcode[CALL_METHOD_DESCRIPTOR_O].pair_count[RETURN_VALUE] : 140
-opcode[CALL_METHOD_DESCRIPTOR_O].pair_count[LOAD_CONST] : 75
-opcode[CALL_METHOD_DESCRIPTOR_O].pair_count[STORE_FAST] : 27
-opcode[CALL_METHOD_DESCRIPTOR_O].pair_count[UNPACK_SEQUENCE] : 1
-opcode[CALL_METHOD_DESCRIPTOR_O].pair_count[UNPACK_SEQUENCE_TUPLE] : 26
-    opcode[CALL_PY_EXACT_ARGS].specialization.miss : 37
-    opcode[CALL_PY_EXACT_ARGS].execution_count : 709
-opcode[CALL_PY_EXACT_ARGS].pair_count[PUSH_EXC_INFO] : 5
-opcode[CALL_PY_EXACT_ARGS].pair_count[COPY_FREE_VARS] : 51
-opcode[CALL_PY_EXACT_ARGS].pair_count[MAKE_CELL] : 27
-opcode[CALL_PY_EXACT_ARGS].pair_count[RESUME] : 4
-opcode[CALL_PY_EXACT_ARGS].pair_count[RESUME_CHECK] : 622
-    opcode[CALL_PY_WITH_DEFAULTS].execution_count : 28
-opcode[CALL_PY_WITH_DEFAULTS].pair_count[RESUME_CHECK] : 28
-    opcode[CALL_STR_1].execution_count : 40
-opcode[CALL_STR_1].pair_count[CALL] : 1
-opcode[CALL_STR_1].pair_count[STORE_FAST] : 27
-opcode[CALL_STR_1].pair_count[CALL_BUILTIN_FAST_WITH_KEYWORDS] : 12
-    opcode[CALL_TUPLE_1].execution_count : 13
-opcode[CALL_TUPLE_1].pair_count[CALL] : 13
-    opcode[CALL_TYPE_1].execution_count : 16
-opcode[CALL_TYPE_1].pair_count[PUSH_NULL] : 16
-    opcode[COMPARE_OP_FLOAT].specialization.miss : 4
-    opcode[COMPARE_OP_FLOAT].execution_count : 20
-opcode[COMPARE_OP_FLOAT].pair_count[POP_JUMP_IF_FALSE] : 20
-    opcode[COMPARE_OP_INT].execution_count : 373
-opcode[COMPARE_OP_INT].pair_count[RETURN_VALUE] : 18
-opcode[COMPARE_OP_INT].pair_count[POP_JUMP_IF_FALSE] : 272
-opcode[COMPARE_OP_INT].pair_count[POP_JUMP_IF_TRUE] : 70
-opcode[COMPARE_OP_INT].pair_count[STORE_FAST] : 13
-    opcode[COMPARE_OP_STR].execution_count : 425
-opcode[COMPARE_OP_STR].pair_count[POP_JUMP_IF_FALSE] : 81
-opcode[COMPARE_OP_STR].pair_count[POP_JUMP_IF_TRUE] : 344
-    opcode[FOR_ITER_LIST].execution_count : 619
-opcode[FOR_ITER_LIST].pair_count[JUMP_BACKWARD] : 4
-opcode[FOR_ITER_LIST].pair_count[JUMP_FORWARD] : 1
-opcode[FOR_ITER_LIST].pair_count[LOAD_FAST] : 10
-opcode[FOR_ITER_LIST].pair_count[LOAD_GLOBAL] : 2
-opcode[FOR_ITER_LIST].pair_count[RETURN_CONST] : 19
-opcode[FOR_ITER_LIST].pair_count[STORE_FAST] : 111
-opcode[FOR_ITER_LIST].pair_count[STORE_FAST_LOAD_FAST] : 370
-opcode[FOR_ITER_LIST].pair_count[SWAP] : 1
-opcode[FOR_ITER_LIST].pair_count[UNPACK_SEQUENCE] : 2
-opcode[FOR_ITER_LIST].pair_count[UNPACK_SEQUENCE_TWO_TUPLE] : 99
-    opcode[FOR_ITER_RANGE].execution_count : 17
-opcode[FOR_ITER_RANGE].pair_count[RETURN_CONST] : 1
-opcode[FOR_ITER_RANGE].pair_count[STORE_NAME] : 16
-    opcode[FOR_ITER_TUPLE].specialization.miss : 4
-    opcode[FOR_ITER_TUPLE].execution_count : 617
-opcode[FOR_ITER_TUPLE].pair_count[DELETE_NAME] : 1
-opcode[FOR_ITER_TUPLE].pair_count[LOAD_FAST] : 11
-opcode[FOR_ITER_TUPLE].pair_count[LOAD_FAST_LOAD_FAST] : 5
-opcode[FOR_ITER_TUPLE].pair_count[LOAD_GLOBAL] : 1
-opcode[FOR_ITER_TUPLE].pair_count[LOAD_NAME] : 2
-opcode[FOR_ITER_TUPLE].pair_count[RETURN_CONST] : 17
-opcode[FOR_ITER_TUPLE].pair_count[STORE_FAST] : 122
-opcode[FOR_ITER_TUPLE].pair_count[STORE_FAST_LOAD_FAST] : 294
-opcode[FOR_ITER_TUPLE].pair_count[STORE_NAME] : 7
-opcode[FOR_ITER_TUPLE].pair_count[SWAP] : 143
-opcode[FOR_ITER_TUPLE].pair_count[UNPACK_SEQUENCE] : 1
-opcode[FOR_ITER_TUPLE].pair_count[UNPACK_SEQUENCE_TWO_TUPLE] : 13
-    opcode[LOAD_ATTR_CLASS].execution_count : 12
-opcode[LOAD_ATTR_CLASS].pair_count[LOAD_CONST] : 10
-opcode[LOAD_ATTR_CLASS].pair_count[LOAD_FAST] : 1
-opcode[LOAD_ATTR_CLASS].pair_count[STORE_FAST] : 1
-    opcode[LOAD_ATTR_INSTANCE_VALUE].execution_count : 1479
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[BEFORE_WITH] : 58
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[GET_ITER] : 19
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[RETURN_VALUE] : 72
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[STORE_SUBSCR] : 2
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[TO_BOOL] : 31
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[BUILD_LIST] : 42
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[CALL] : 36
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[COMPARE_OP] : 1
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[COPY] : 20
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[LOAD_ATTR] : 118
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[LOAD_CONST] : 52
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[LOAD_FAST] : 176
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[LOAD_FAST_LOAD_FAST] : 126
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[LOAD_GLOBAL] : 2
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[POP_JUMP_IF_NONE] : 82
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[POP_JUMP_IF_NOT_NONE] : 99
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[STORE_FAST] : 56
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[CALL_LEN] : 80
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[CALL_LIST_APPEND] : 28
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[CALL_METHOD_DESCRIPTOR_FAST] : 25
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[CALL_METHOD_DESCRIPTOR_O] : 28
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[CALL_PY_EXACT_ARGS] : 48
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[COMPARE_OP_FLOAT] : 19
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[LOAD_ATTR_METHOD_NO_DICT] : 84
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[LOAD_ATTR_METHOD_WITH_VALUES] : 48
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[LOAD_GLOBAL_MODULE] : 37
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[STORE_SUBSCR_DICT] : 50
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[TO_BOOL_BOOL] : 12
-opcode[LOAD_ATTR_INSTANCE_VALUE].pair_count[TO_BOOL_LIST] : 28
-    opcode[LOAD_ATTR_METHOD_NO_DICT].execution_count : 897
-opcode[LOAD_ATTR_METHOD_NO_DICT].pair_count[CALL] : 4
-opcode[LOAD_ATTR_METHOD_NO_DICT].pair_count[LOAD_CONST] : 136
-opcode[LOAD_ATTR_METHOD_NO_DICT].pair_count[LOAD_DEREF] : 3
-opcode[LOAD_ATTR_METHOD_NO_DICT].pair_count[LOAD_FAST] : 355
-opcode[LOAD_ATTR_METHOD_NO_DICT].pair_count[LOAD_FAST_CHECK] : 1
-opcode[LOAD_ATTR_METHOD_NO_DICT].pair_count[LOAD_GLOBAL] : 5
-opcode[LOAD_ATTR_METHOD_NO_DICT].pair_count[CALL_METHOD_DESCRIPTOR_FAST] : 28
-opcode[LOAD_ATTR_METHOD_NO_DICT].pair_count[CALL_METHOD_DESCRIPTOR_NOARGS] : 5
-opcode[LOAD_ATTR_METHOD_NO_DICT].pair_count[LOAD_GLOBAL_BUILTIN] : 12
-opcode[LOAD_ATTR_METHOD_NO_DICT].pair_count[LOAD_GLOBAL_MODULE] : 348
-    opcode[LOAD_ATTR_METHOD_WITH_VALUES].execution_count : 175
-opcode[LOAD_ATTR_METHOD_WITH_VALUES].pair_count[CALL] : 5
-opcode[LOAD_ATTR_METHOD_WITH_VALUES].pair_count[LOAD_FAST] : 83
-opcode[LOAD_ATTR_METHOD_WITH_VALUES].pair_count[LOAD_FAST_LOAD_FAST] : 32
-opcode[LOAD_ATTR_METHOD_WITH_VALUES].pair_count[CALL_PY_EXACT_ARGS] : 55
-    opcode[LOAD_ATTR_MODULE].specialization.miss : 362
-    opcode[LOAD_ATTR_MODULE].execution_count : 1430
-opcode[LOAD_ATTR_MODULE].pair_count[FORMAT_SIMPLE] : 1
-opcode[LOAD_ATTR_MODULE].pair_count[GET_ITER] : 5
-opcode[LOAD_ATTR_MODULE].pair_count[PUSH_NULL] : 189
-opcode[LOAD_ATTR_MODULE].pair_count[TO_BOOL] : 1
-opcode[LOAD_ATTR_MODULE].pair_count[CALL] : 336
-opcode[LOAD_ATTR_MODULE].pair_count[CONTAINS_OP] : 75
-opcode[LOAD_ATTR_MODULE].pair_count[LOAD_ATTR] : 40
-opcode[LOAD_ATTR_MODULE].pair_count[LOAD_CONST] : 132
-opcode[LOAD_ATTR_MODULE].pair_count[LOAD_FAST] : 223
-opcode[LOAD_ATTR_MODULE].pair_count[LOAD_FAST_LOAD_FAST] : 43
-opcode[LOAD_ATTR_MODULE].pair_count[LOAD_GLOBAL] : 1
-opcode[LOAD_ATTR_MODULE].pair_count[POP_JUMP_IF_NONE] : 32
-opcode[LOAD_ATTR_MODULE].pair_count[STORE_FAST] : 47
-opcode[LOAD_ATTR_MODULE].pair_count[CALL_PY_EXACT_ARGS] : 12
-opcode[LOAD_ATTR_MODULE].pair_count[LOAD_ATTR_METHOD_NO_DICT] : 79
-opcode[LOAD_ATTR_MODULE].pair_count[LOAD_ATTR_MODULE] : 11
-opcode[LOAD_ATTR_MODULE].pair_count[LOAD_ATTR_SLOT] : 187
-opcode[LOAD_ATTR_MODULE].pair_count[LOAD_GLOBAL_BUILTIN] : 12
-opcode[LOAD_ATTR_MODULE].pair_count[TO_BOOL_LIST] : 4
-    opcode[LOAD_ATTR_PROPERTY].execution_count : 86
-opcode[LOAD_ATTR_PROPERTY].pair_count[RESUME_CHECK] : 86
-    opcode[LOAD_ATTR_SLOT].execution_count : 288
-opcode[LOAD_ATTR_SLOT].pair_count[TO_BOOL] : 1
-opcode[LOAD_ATTR_SLOT].pair_count[CALL] : 1
-opcode[LOAD_ATTR_SLOT].pair_count[LOAD_CONST] : 63
-opcode[LOAD_ATTR_SLOT].pair_count[LOAD_FAST] : 174
-opcode[LOAD_ATTR_SLOT].pair_count[STORE_FAST] : 20
-opcode[LOAD_ATTR_SLOT].pair_count[CALL_BUILTIN_FAST] : 28
-opcode[LOAD_ATTR_SLOT].pair_count[TO_BOOL_INT] : 1
-    opcode[LOAD_GLOBAL_BUILTIN].specialization.miss : 577
-    opcode[LOAD_GLOBAL_BUILTIN].execution_count : 1032
-opcode[LOAD_GLOBAL_BUILTIN].pair_count[CHECK_EXC_MATCH] : 78
-opcode[LOAD_GLOBAL_BUILTIN].pair_count[RETURN_VALUE] : 13
-opcode[LOAD_GLOBAL_BUILTIN].pair_count[BUILD_TUPLE] : 1
-opcode[LOAD_GLOBAL_BUILTIN].pair_count[CALL] : 17
-opcode[LOAD_GLOBAL_BUILTIN].pair_count[LOAD_ATTR] : 41
-opcode[LOAD_GLOBAL_BUILTIN].pair_count[LOAD_DEREF] : 90
-opcode[LOAD_GLOBAL_BUILTIN].pair_count[LOAD_FAST] : 544
-opcode[LOAD_GLOBAL_BUILTIN].pair_count[LOAD_FAST_LOAD_FAST] : 133
-opcode[LOAD_GLOBAL_BUILTIN].pair_count[LOAD_GLOBAL] : 7
-opcode[LOAD_GLOBAL_BUILTIN].pair_count[CALL_BUILTIN_CLASS] : 6
-opcode[LOAD_GLOBAL_BUILTIN].pair_count[CALL_ISINSTANCE] : 62
-opcode[LOAD_GLOBAL_BUILTIN].pair_count[LOAD_GLOBAL_MODULE] : 40
-    opcode[LOAD_GLOBAL_MODULE].specialization.miss : 109
-    opcode[LOAD_GLOBAL_MODULE].execution_count : 3505
-opcode[LOAD_GLOBAL_MODULE].pair_count[FORMAT_SIMPLE] : 1
-opcode[LOAD_GLOBAL_MODULE].pair_count[GET_ITER] : 28
-opcode[LOAD_GLOBAL_MODULE].pair_count[TO_BOOL] : 1
-opcode[LOAD_GLOBAL_MODULE].pair_count[BUILD_TUPLE] : 13
-opcode[LOAD_GLOBAL_MODULE].pair_count[CALL] : 115
-opcode[LOAD_GLOBAL_MODULE].pair_count[COMPARE_OP] : 13
-opcode[LOAD_GLOBAL_MODULE].pair_count[CONTAINS_OP] : 81
-opcode[LOAD_GLOBAL_MODULE].pair_count[IS_OP] : 91
-opcode[LOAD_GLOBAL_MODULE].pair_count[LOAD_ATTR] : 82
-opcode[LOAD_GLOBAL_MODULE].pair_count[LOAD_CONST] : 60
-opcode[LOAD_GLOBAL_MODULE].pair_count[LOAD_FAST] : 731
-opcode[LOAD_GLOBAL_MODULE].pair_count[LOAD_FAST_LOAD_FAST] : 256
-opcode[LOAD_GLOBAL_MODULE].pair_count[LOAD_GLOBAL] : 5
-opcode[LOAD_GLOBAL_MODULE].pair_count[POP_JUMP_IF_NONE] : 3
-opcode[LOAD_GLOBAL_MODULE].pair_count[POP_JUMP_IF_NOT_NONE] : 38
-opcode[LOAD_GLOBAL_MODULE].pair_count[STORE_FAST] : 2
-opcode[LOAD_GLOBAL_MODULE].pair_count[CALL_ISINSTANCE] : 12
-opcode[LOAD_GLOBAL_MODULE].pair_count[CALL_METHOD_DESCRIPTOR_FAST] : 341
-opcode[LOAD_GLOBAL_MODULE].pair_count[CALL_PY_EXACT_ARGS] : 19
-opcode[LOAD_GLOBAL_MODULE].pair_count[CALL_TUPLE_1] : 12
-opcode[LOAD_GLOBAL_MODULE].pair_count[CALL_TYPE_1] : 14
-opcode[LOAD_GLOBAL_MODULE].pair_count[LOAD_ATTR_METHOD_NO_DICT] : 198
-opcode[LOAD_GLOBAL_MODULE].pair_count[LOAD_ATTR_METHOD_WITH_VALUES] : 28
-opcode[LOAD_GLOBAL_MODULE].pair_count[LOAD_ATTR_MODULE] : 1311
-opcode[LOAD_GLOBAL_MODULE].pair_count[LOAD_GLOBAL_MODULE] : 46
-opcode[LOAD_GLOBAL_MODULE].pair_count[TO_BOOL_STR] : 4
-    opcode[LOAD_SUPER_ATTR_ATTR].execution_count : 32
-opcode[LOAD_SUPER_ATTR_ATTR].pair_count[PUSH_NULL] : 32
-    opcode[LOAD_SUPER_ATTR_METHOD].execution_count : 58
-opcode[LOAD_SUPER_ATTR_METHOD].pair_count[LOAD_FAST_LOAD_FAST] : 58
-    opcode[RESUME_CHECK].specialization.miss : 1
-    opcode[RESUME_CHECK].execution_count : 2255
-opcode[RESUME_CHECK].pair_count[NOP] : 59
-opcode[RESUME_CHECK].pair_count[POP_TOP] : 57
-opcode[RESUME_CHECK].pair_count[BUILD_LIST] : 19
-opcode[RESUME_CHECK].pair_count[LOAD_CONST] : 110
-opcode[RESUME_CHECK].pair_count[LOAD_DEREF] : 29
-opcode[RESUME_CHECK].pair_count[LOAD_FAST] : 635
-opcode[RESUME_CHECK].pair_count[LOAD_FAST_LOAD_FAST] : 105
-opcode[RESUME_CHECK].pair_count[LOAD_GLOBAL] : 47
-opcode[RESUME_CHECK].pair_count[RETURN_CONST] : 44
-opcode[RESUME_CHECK].pair_count[LOAD_GLOBAL_BUILTIN] : 206
-opcode[RESUME_CHECK].pair_count[LOAD_GLOBAL_MODULE] : 944
-    opcode[STORE_ATTR_INSTANCE_VALUE].execution_count : 795
-opcode[STORE_ATTR_INSTANCE_VALUE].pair_count[NOP] : 26
-opcode[STORE_ATTR_INSTANCE_VALUE].pair_count[BUILD_LIST] : 82
-opcode[STORE_ATTR_INSTANCE_VALUE].pair_count[JUMP_FORWARD] : 4
-opcode[STORE_ATTR_INSTANCE_VALUE].pair_count[LOAD_CONST] : 121
-opcode[STORE_ATTR_INSTANCE_VALUE].pair_count[LOAD_FAST] : 191
-opcode[STORE_ATTR_INSTANCE_VALUE].pair_count[LOAD_FAST_LOAD_FAST] : 173
-opcode[STORE_ATTR_INSTANCE_VALUE].pair_count[LOAD_GLOBAL] : 4
-opcode[STORE_ATTR_INSTANCE_VALUE].pair_count[RETURN_CONST] : 136
-opcode[STORE_ATTR_INSTANCE_VALUE].pair_count[LOAD_GLOBAL_BUILTIN] : 30
-opcode[STORE_ATTR_INSTANCE_VALUE].pair_count[LOAD_GLOBAL_MODULE] : 28
-    opcode[STORE_ATTR_SLOT].execution_count : 29
-opcode[STORE_ATTR_SLOT].pair_count[LOAD_FAST] : 29
-    opcode[STORE_SUBSCR_DICT].execution_count : 111
-opcode[STORE_SUBSCR_DICT].pair_count[NOP] : 26
-opcode[STORE_SUBSCR_DICT].pair_count[POP_EXCEPT] : 5
-opcode[STORE_SUBSCR_DICT].pair_count[LOAD_FAST] : 29
-opcode[STORE_SUBSCR_DICT].pair_count[LOAD_GLOBAL] : 2
-opcode[STORE_SUBSCR_DICT].pair_count[LOAD_GLOBAL_MODULE] : 49
-    opcode[TO_BOOL_BOOL].execution_count : 547
-opcode[TO_BOOL_BOOL].pair_count[POP_JUMP_IF_FALSE] : 218
-opcode[TO_BOOL_BOOL].pair_count[POP_JUMP_IF_TRUE] : 329
-    opcode[TO_BOOL_INT].execution_count : 72
-opcode[TO_BOOL_INT].pair_count[POP_JUMP_IF_FALSE] : 43
-opcode[TO_BOOL_INT].pair_count[POP_JUMP_IF_TRUE] : 29
-    opcode[TO_BOOL_LIST].execution_count : 60
-opcode[TO_BOOL_LIST].pair_count[POP_JUMP_IF_FALSE] : 30
-opcode[TO_BOOL_LIST].pair_count[POP_JUMP_IF_TRUE] : 30
-    opcode[TO_BOOL_NONE].specialization.miss : 17
-    opcode[TO_BOOL_NONE].execution_count : 80
-opcode[TO_BOOL_NONE].pair_count[POP_JUMP_IF_FALSE] : 79
-opcode[TO_BOOL_NONE].pair_count[POP_JUMP_IF_TRUE] : 1
-    opcode[TO_BOOL_STR].execution_count : 452
-opcode[TO_BOOL_STR].pair_count[POP_JUMP_IF_FALSE] : 101
-opcode[TO_BOOL_STR].pair_count[POP_JUMP_IF_TRUE] : 351
-    opcode[UNPACK_SEQUENCE_TUPLE].execution_count : 28
-opcode[UNPACK_SEQUENCE_TUPLE].pair_count[STORE_FAST_STORE_FAST] : 28
-    opcode[UNPACK_SEQUENCE_TWO_TUPLE].execution_count : 148
-opcode[UNPACK_SEQUENCE_TWO_TUPLE].pair_count[STORE_DEREF] : 14
-opcode[UNPACK_SEQUENCE_TWO_TUPLE].pair_count[STORE_FAST_STORE_FAST] : 134
-Calls to PyEval_EvalDefault: 770
-Calls to Python functions inlined: 1806
-Frames pushed: 2561
-Frame objects created: 106
-Calls via PyEval_EvalFrame[0] : 770
-Calls via PyEval_EvalFrame[1] : 663
-Calls via PyEval_EvalFrame[2] : 107
-Calls via PyEval_EvalFrame[3] : 19
-Calls via PyEval_EvalFrame[4] : 561
-Calls via PyEval_EvalFrame[5] : 83
-Calls via PyEval_EvalFrame[6] : 4
-Calls via PyEval_EvalFrame[7] : 21
-Calls via PyEval_EvalFrame[8] : 96
-Calls via PyEval_EvalFrame[9] : 4
-Object allocations from freelist: 5955
-Object frees to freelist: 7830
-Object allocations: 37851
-Object allocations to 512 bytes: 37237
-Object allocations to 4 kbytes: 565
-Object allocations over 4 kbytes: 49
-Object frees: 30951
-Object new values: 120
-Object interpreter increfs: 25114
-Object interpreter decrefs: 31426
-Object increfs: 74204
-Object decrefs: 94873
-Object materialize dict (on request): 0
-Object materialize dict (new key): 0
-Object materialize dict (too big): 0
-Object materialize dict (str subclass): 0
-Object dematerialize dict: 0
-Object method cache hits: 7774
-Object method cache misses: 1254
-Object method cache collisions: 604
-Object method cache dunder hits: 3239
-Object method cache dunder misses: 271
-GC[0] collections: 6
-GC[0] object visits: 45984
-GC[0] objects collected: 24
-GC[1] collections: 0
-GC[1] object visits: 0
-GC[1] objects collected: 0
-GC[2] collections: 3
-GC[2] object visits: 91040
-GC[2] objects collected: 1744
-Optimization attempts: 6
-Optimization traces created: 6
-Optimization traces executed: 0
-Optimization uops executed: 0
-Optimization trace stack overflow: 0
-Optimization trace stack underflow: 0
-Optimization trace too long: 0
-Optimization trace too short: 0
-Optimization inner loop: 0
-Optimization recursive call: 0
-Optimization low confidence: 0
-Trace length[1]: 0
-Trace length[2]: 0
-Trace length[4]: 0
-Trace length[8]: 0
-Trace length[16]: 0
-Trace length[32]: 3
-Trace length[64]: 3
-Trace length[128]: 0
-Trace length[256]: 0
-Trace length[512]: 0
-Trace length[1024]: 0
-Trace length[2048]: 0
-Trace length[4096]: 0
-Trace length[8192]: 0
-Trace length[16384]: 0
-Trace length[32768]: 0
-Trace length[65536]: 0
-Trace length[131072]: 0
-Trace length[262144]: 0
-Trace length[524288]: 0
-Trace length[1048576]: 0
-Trace length[2097152]: 0
-Trace length[4194304]: 0
-Trace length[8388608]: 0
-Trace length[16777216]: 0
-Trace length[33554432]: 0
-Trace length[67108864]: 0
-Trace length[134217728]: 0
-Trace length[268435456]: 0
-Trace length[536870912]: 0
-Trace length[1073741824]: 0
-Trace length[2147483648]: 0
-Trace run length[1]: 0
-Trace run length[2]: 0
-Trace run length[4]: 0
-Trace run length[8]: 0
-Trace run length[16]: 0
-Trace run length[32]: 0
-Trace run length[64]: 0
-Trace run length[128]: 0
-Trace run length[256]: 0
-Trace run length[512]: 0
-Trace run length[1024]: 0
-Trace run length[2048]: 0
-Trace run length[4096]: 0
-Trace run length[8192]: 0
-Trace run length[16384]: 0
-Trace run length[32768]: 0
-Trace run length[65536]: 0
-Trace run length[131072]: 0
-Trace run length[262144]: 0
-Trace run length[524288]: 0
-Trace run length[1048576]: 0
-Trace run length[2097152]: 0
-Trace run length[4194304]: 0
-Trace run length[8388608]: 0
-Trace run length[16777216]: 0
-Trace run length[33554432]: 0
-Trace run length[67108864]: 0
-Trace run length[134217728]: 0
-Trace run length[268435456]: 0
-Trace run length[536870912]: 0
-Trace run length[1073741824]: 0
-Trace run length[2147483648]: 0
-Optimized trace length[1]: 0
-Optimized trace length[2]: 0
-Optimized trace length[4]: 0
-Optimized trace length[8]: 1
-Optimized trace length[16]: 2
-Optimized trace length[32]: 3
-Optimized trace length[64]: 0
-Optimized trace length[128]: 0
-Optimized trace length[256]: 0
-Optimized trace length[512]: 0
-Optimized trace length[1024]: 0
-Optimized trace length[2048]: 0
-Optimized trace length[4096]: 0
-Optimized trace length[8192]: 0
-Optimized trace length[16384]: 0
-Optimized trace length[32768]: 0
-Optimized trace length[65536]: 0
-Optimized trace length[131072]: 0
-Optimized trace length[262144]: 0
-Optimized trace length[524288]: 0
-Optimized trace length[1048576]: 0
-Optimized trace length[2097152]: 0
-Optimized trace length[4194304]: 0
-Optimized trace length[8388608]: 0
-Optimized trace length[16777216]: 0
-Optimized trace length[33554432]: 0
-Optimized trace length[67108864]: 0
-Optimized trace length[134217728]: 0
-Optimized trace length[268435456]: 0
-Optimized trace length[536870912]: 0
-Optimized trace length[1073741824]: 0
-Optimized trace length[2147483648]: 0
-UOP Stats:
-UOP Stats DONE
-unsupported_opcode[CALL].count : 3
-unsupported_opcode[YIELD_VALUE].count : 1
-Rare event (set_class): 0
-Rare event (set_bases): 0
-Rare event (set_eval_frame_func): 0
-Rare event (builtin_dict): 0
-Rare event (func_modification): 0
+Jit Compile: Last:511    Op:344  patches[HoleValue_LASTUOP] = 511  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:344    Op:346  patches[HoleValue_LASTUOP] = 344  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:346    Op:347  patches[HoleValue_LASTUOP] = 346  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:347    Op:110  patches[HoleValue_LASTUOP] = 347  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:110    Op:320  patches[HoleValue_LASTUOP] = 110  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:320    Op:322  patches[HoleValue_LASTUOP] = 320  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:322    Op:300  patches[HoleValue_LASTUOP] = 322  patches[HoleValue_PYSTATS] = 563e21a28966
+Set  (511 344) to 1
+Set  (344 346) to 1
+Set  (346 347) to 1
+Set  (347 110) to 1
+Set  (110 320) to 1
+Set  (320 322) to 1
+Set  (322 300) to 1
+Set  (300 344) to 1
+Set  (344 346) to 2
+Set  (346 347) to 2
+Set  (347 110) to 2
+Set  (110 320) to 2
+Set  (320 322) to 2
+Set  (322 300) to 2
+Jit Compile: Last:511    Op:344  patches[HoleValue_LASTUOP] = 511  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:344    Op:346  patches[HoleValue_LASTUOP] = 344  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:346    Op:347  patches[HoleValue_LASTUOP] = 346  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:347    Op:110  patches[HoleValue_LASTUOP] = 347  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:110    Op:85  patches[HoleValue_LASTUOP] = 110  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:85    Op:301  patches[HoleValue_LASTUOP] = 85  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:84  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:84    Op:301  patches[HoleValue_LASTUOP] = 84  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:379  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:52  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:52    Op:379  patches[HoleValue_LASTUOP] = 52  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:300  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Set  (300 344) to 2
+Set  (344 346) to 3
+Set  (346 347) to 3
+Set  (347 110) to 3
+Set  (110 85) to 1
+Set  (85 301) to 1
+Set  (301 84) to 1
+Set  (84 301) to 1
+Set  (301 379) to 1
+Set  (379 52) to 1
+Set  (52 379) to 1
+Set  (379 300) to 1
+Set  (300 344) to 3
+Set  (344 346) to 4
+Set  (346 347) to 4
+Set  (347 110) to 4
+Set  (110 85) to 2
+Set  (85 301) to 2
+Set  (301 84) to 2
+Set  (84 301) to 2
+Set  (301 379) to 2
+Set  (379 52) to 2
+Set  (52 379) to 2
+Set  (379 300) to 2
+Set  (300 344) to 4
+Set  (344 346) to 5
+Set  (346 347) to 5
+Set  (347 110) to 5
+Set  (110 85) to 3
+Set  (85 301) to 3
+Set  (301 84) to 3
+Set  (84 301) to 3
+Set  (301 379) to 3
+Set  (379 52) to 3
+Set  (52 379) to 3
+Set  (379 300) to 3
+Set  (300 344) to 5
+Set  (344 346) to 6
+Set  (346 344) to 1
+Set  (344 346) to 7
+Set  (346 344) to 2
+Set  (344 346) to 8
+Jit Compile: Last:511    Op:348  patches[HoleValue_LASTUOP] = 511  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:348    Op:350  patches[HoleValue_LASTUOP] = 348  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:350    Op:351  patches[HoleValue_LASTUOP] = 350  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:351    Op:110  patches[HoleValue_LASTUOP] = 351  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:110    Op:85  patches[HoleValue_LASTUOP] = 110  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:85    Op:215  patches[HoleValue_LASTUOP] = 85  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:215    Op:373  patches[HoleValue_LASTUOP] = 215  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:373    Op:85  patches[HoleValue_LASTUOP] = 373  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:85    Op:301  patches[HoleValue_LASTUOP] = 85  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:325  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:325    Op:359  patches[HoleValue_LASTUOP] = 325  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:359    Op:379  patches[HoleValue_LASTUOP] = 359  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:320  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:320    Op:322  patches[HoleValue_LASTUOP] = 320  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:322    Op:301  patches[HoleValue_LASTUOP] = 322  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:171  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:171    Op:301  patches[HoleValue_LASTUOP] = 171  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:379  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:80  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:80    Op:377  patches[HoleValue_LASTUOP] = 80  patches[HoleValue_PYSTATS] = 563e21a28966
+Set  (346 348) to 1
+Set  (348 350) to 1
+Set  (350 351) to 1
+Set  (351 110) to 1
+Set  (110 85) to 4
+Set  (85 215) to 1
+Set  (215 373) to 1
+Set  (373 85) to 1
+Set  (85 301) to 4
+Set  (301 325) to 1
+Set  (325 359) to 1
+Set  (359 379) to 1
+Set  (379 320) to 1
+Set  (320 322) to 3
+Set  (322 301) to 1
+Set  (301 171) to 1
+Set  (171 301) to 1
+Set  (301 379) to 4
+Set  (379 80) to 1
+Set  (80 377) to 1
+Set  (377 348) to 1
+Set  (348 350) to 2
+Jit Compile: Last:511    Op:344  patches[HoleValue_LASTUOP] = 511  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:344    Op:346  patches[HoleValue_LASTUOP] = 344  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:346    Op:347  patches[HoleValue_LASTUOP] = 346  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:347    Op:218  patches[HoleValue_LASTUOP] = 347  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:218    Op:110  patches[HoleValue_LASTUOP] = 218  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:110    Op:110  patches[HoleValue_LASTUOP] = 110  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:110    Op:320  patches[HoleValue_LASTUOP] = 110  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:320    Op:322  patches[HoleValue_LASTUOP] = 320  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:322    Op:85  patches[HoleValue_LASTUOP] = 322  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:85    Op:325  patches[HoleValue_LASTUOP] = 85  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:325    Op:326  patches[HoleValue_LASTUOP] = 325  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:326    Op:327  patches[HoleValue_LASTUOP] = 326  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:327    Op:85  patches[HoleValue_LASTUOP] = 327  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:85    Op:85  patches[HoleValue_LASTUOP] = 85  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:85    Op:301  patches[HoleValue_LASTUOP] = 85  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:311  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:311    Op:312  patches[HoleValue_LASTUOP] = 311  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:312    Op:379  patches[HoleValue_LASTUOP] = 312  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:300  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Set  (350 344) to 1
+Set  (344 346) to 9
+Set  (346 347) to 6
+Set  (347 218) to 1
+Set  (218 110) to 1
+Set  (110 110) to 1
+Set  (110 320) to 3
+Set  (320 322) to 4
+Set  (322 85) to 1
+Set  (85 325) to 1
+Set  (325 326) to 1
+Set  (326 327) to 1
+Set  (327 85) to 1
+Set  (85 85) to 1
+Set  (85 301) to 5
+Set  (301 311) to 1
+Set  (311 312) to 1
+Set  (312 379) to 1
+Set  (379 300) to 4
+Set  (300 348) to 1
+Set  (348 350) to 3
+Set  (350 351) to 2
+Set  (351 110) to 2
+Set  (110 85) to 5
+Set  (85 215) to 2
+Set  (215 373) to 2
+Set  (373 85) to 2
+Set  (85 301) to 6
+Set  (301 325) to 2
+Set  (325 359) to 2
+Set  (359 379) to 2
+Set  (379 320) to 2
+Set  (320 322) to 5
+Set  (322 301) to 2
+Set  (301 171) to 2
+Set  (171 301) to 2
+Set  (301 379) to 5
+Set  (379 80) to 2
+Set  (80 377) to 2
+Set  (377 348) to 2
+Set  (348 350) to 4
+Set  (350 344) to 2
+Set  (344 346) to 10
+Set  (346 347) to 7
+Set  (347 218) to 2
+Set  (218 110) to 2
+Set  (110 110) to 2
+Set  (110 320) to 4
+Set  (320 322) to 6
+Set  (322 85) to 2
+Set  (85 325) to 2
+Set  (325 326) to 2
+Set  (326 327) to 2
+Set  (327 85) to 2
+Set  (85 85) to 2
+Set  (85 301) to 7
+Set  (301 311) to 2
+Set  (311 312) to 2
+Set  (312 379) to 2
+Set  (379 300) to 5
+Set  (300 348) to 2
+Set  (348 350) to 5
+Set  (350 351) to 3
+Set  (351 110) to 3
+Set  (110 85) to 6
+Set  (85 215) to 3
+Set  (215 373) to 3
+Set  (373 85) to 3
+Set  (85 301) to 8
+Set  (301 325) to 3
+Set  (325 359) to 3
+Set  (359 379) to 3
+Set  (379 320) to 3
+Set  (320 322) to 7
+Set  (322 301) to 3
+Set  (301 171) to 3
+Set  (171 301) to 3
+Set  (301 379) to 6
+Set  (379 80) to 3
+Set  (80 377) to 3
+Set  (377 348) to 3
+Set  (348 350) to 6
+Set  (350 344) to 3
+Set  (344 346) to 11
+Set  (346 347) to 8
+Set  (347 218) to 3
+Set  (218 110) to 3
+Set  (110 110) to 3
+Set  (110 320) to 5
+Set  (320 322) to 8
+Set  (322 85) to 3
+Set  (85 325) to 3
+Set  (325 326) to 3
+Set  (326 327) to 3
+Set  (327 85) to 3
+Set  (85 85) to 3
+Set  (85 301) to 9
+Set  (301 311) to 3
+Set  (311 312) to 3
+Set  (312 379) to 3
+Set  (379 300) to 6
+Set  (300 348) to 3
+Set  (348 350) to 7
+Set  (350 351) to 4
+Set  (351 110) to 4
+Set  (110 85) to 7
+Set  (85 215) to 4
+Set  (215 373) to 4
+Set  (373 85) to 4
+Set  (85 301) to 10
+Set  (301 325) to 4
+Set  (325 359) to 4
+Set  (359 379) to 4
+Set  (379 320) to 4
+Set  (320 322) to 9
+Set  (322 301) to 4
+Set  (301 171) to 4
+Set  (171 301) to 4
+Set  (301 379) to 7
+Set  (379 80) to 4
+Set  (80 377) to 4
+Set  (377 348) to 4
+Set  (348 350) to 8
+Set  (350 344) to 4
+Set  (344 346) to 12
+Set  (346 347) to 9
+Set  (347 218) to 4
+Set  (218 110) to 4
+Set  (110 110) to 4
+Set  (110 320) to 6
+Set  (320 322) to 10
+Set  (322 85) to 4
+Set  (85 325) to 4
+Set  (325 326) to 4
+Set  (326 327) to 4
+Set  (327 85) to 4
+Set  (85 85) to 4
+Set  (85 301) to 11
+Set  (301 311) to 4
+Set  (311 312) to 4
+Set  (312 379) to 4
+Set  (379 300) to 7
+Set  (300 348) to 4
+Set  (348 350) to 9
+Set  (350 351) to 5
+Set  (351 110) to 5
+Set  (110 85) to 8
+Set  (85 215) to 5
+Set  (215 373) to 5
+Set  (373 85) to 5
+Set  (85 301) to 12
+Set  (301 325) to 5
+Set  (325 359) to 5
+Set  (359 379) to 5
+Set  (379 320) to 5
+Set  (320 322) to 11
+Set  (322 301) to 5
+Set  (301 171) to 5
+Set  (171 301) to 5
+Set  (301 379) to 8
+Set  (379 80) to 5
+Set  (80 377) to 5
+Set  (377 348) to 5
+Set  (348 350) to 10
+Set  (350 344) to 5
+Set  (344 346) to 13
+Set  (346 347) to 10
+Set  (347 218) to 5
+Set  (218 110) to 5
+Set  (110 110) to 5
+Set  (110 320) to 7
+Set  (320 322) to 12
+Set  (322 85) to 5
+Set  (85 325) to 5
+Set  (325 326) to 5
+Set  (326 327) to 5
+Set  (327 85) to 5
+Set  (85 85) to 5
+Set  (85 301) to 13
+Set  (301 311) to 5
+Set  (311 312) to 5
+Set  (312 379) to 5
+Set  (379 300) to 8
+Set  (300 348) to 5
+Set  (348 350) to 11
+Set  (350 351) to 6
+Set  (351 110) to 6
+Set  (110 85) to 9
+Set  (85 215) to 6
+Set  (215 373) to 6
+Set  (373 85) to 6
+Set  (85 301) to 14
+Set  (301 325) to 6
+Set  (325 359) to 6
+Set  (359 379) to 6
+Set  (379 320) to 6
+Set  (320 322) to 13
+Set  (322 301) to 6
+Set  (301 171) to 6
+Set  (171 301) to 6
+Set  (301 379) to 9
+Set  (379 80) to 6
+Set  (80 377) to 6
+Set  (377 348) to 6
+Set  (348 350) to 12
+Set  (350 344) to 6
+Set  (344 346) to 14
+Set  (346 348) to 2
+Set  (348 350) to 13
+Set  (350 351) to 7
+Set  (351 110) to 7
+Set  (110 85) to 10
+Set  (85 215) to 7
+Set  (215 373) to 7
+Set  (373 85) to 7
+Set  (85 301) to 15
+Set  (301 325) to 7
+Set  (325 359) to 7
+Set  (359 379) to 7
+Set  (379 320) to 7
+Set  (320 322) to 14
+Set  (322 301) to 7
+Set  (301 171) to 7
+Set  (171 301) to 7
+Set  (301 379) to 10
+Set  (379 80) to 7
+Set  (80 377) to 7
+Set  (377 348) to 7
+Set  (348 350) to 14
+Set  (350 344) to 7
+Set  (344 346) to 15
+Set  (346 347) to 11
+Set  (347 218) to 6
+Set  (218 110) to 6
+Set  (110 110) to 6
+Set  (110 320) to 8
+Set  (320 322) to 15
+Set  (322 85) to 6
+Set  (85 325) to 6
+Set  (325 326) to 6
+Set  (326 327) to 6
+Set  (327 85) to 6
+Set  (85 85) to 6
+Set  (85 301) to 16
+Set  (301 311) to 6
+Set  (311 312) to 6
+Set  (312 379) to 6
+Set  (379 300) to 9
+Set  (300 348) to 6
+Set  (348 350) to 15
+Set  (350 351) to 8
+Set  (351 110) to 8
+Set  (110 85) to 11
+Set  (85 215) to 8
+Set  (215 373) to 8
+Set  (373 85) to 8
+Set  (85 301) to 17
+Set  (301 325) to 8
+Set  (325 359) to 8
+Set  (359 379) to 8
+Set  (379 320) to 8
+Set  (320 322) to 16
+Set  (322 301) to 8
+Set  (301 171) to 8
+Set  (171 301) to 8
+Set  (301 379) to 11
+Set  (379 80) to 8
+Set  (80 377) to 8
+Set  (377 348) to 8
+Set  (348 350) to 16
+Set  (350 344) to 8
+Set  (344 346) to 16
+Set  (346 347) to 12
+Set  (347 218) to 7
+Set  (218 110) to 7
+Set  (110 110) to 7
+Set  (110 320) to 9
+Set  (320 322) to 17
+Set  (322 85) to 7
+Set  (85 325) to 7
+Set  (325 326) to 7
+Set  (326 327) to 7
+Set  (327 85) to 7
+Set  (85 85) to 7
+Set  (85 301) to 18
+Set  (301 311) to 7
+Set  (311 312) to 7
+Set  (312 379) to 7
+Set  (379 300) to 10
+Set  (300 348) to 7
+Set  (348 350) to 17
+Set  (350 351) to 9
+Set  (351 110) to 9
+Set  (110 85) to 12
+Set  (85 215) to 9
+Set  (215 373) to 9
+Set  (373 85) to 9
+Set  (85 301) to 19
+Set  (301 325) to 9
+Set  (325 359) to 9
+Set  (359 379) to 9
+Set  (379 320) to 9
+Set  (320 322) to 18
+Set  (322 301) to 9
+Set  (301 171) to 9
+Set  (171 301) to 9
+Set  (301 379) to 12
+Set  (379 80) to 9
+Set  (80 377) to 9
+Set  (377 348) to 9
+Set  (348 350) to 18
+Set  (350 344) to 9
+Set  (344 346) to 17
+Set  (346 347) to 13
+Set  (347 218) to 8
+Set  (218 110) to 8
+Set  (110 110) to 8
+Set  (110 320) to 10
+Set  (320 322) to 19
+Set  (322 85) to 8
+Set  (85 325) to 8
+Set  (325 326) to 8
+Set  (326 327) to 8
+Set  (327 85) to 8
+Set  (85 85) to 8
+Set  (85 301) to 20
+Set  (301 311) to 8
+Set  (311 312) to 8
+Set  (312 379) to 8
+Set  (379 300) to 11
+Set  (300 348) to 8
+Set  (348 350) to 19
+Set  (350 351) to 10
+Set  (351 110) to 10
+Set  (110 85) to 13
+Set  (85 215) to 10
+Set  (215 373) to 10
+Set  (373 85) to 10
+Set  (85 301) to 21
+Set  (301 325) to 10
+Set  (325 359) to 10
+Set  (359 379) to 10
+Set  (379 320) to 10
+Set  (320 322) to 20
+Set  (322 301) to 10
+Set  (301 171) to 10
+Set  (171 301) to 10
+Set  (301 379) to 13
+Set  (379 80) to 10
+Set  (80 377) to 10
+Set  (377 348) to 10
+Set  (348 350) to 20
+Set  (350 344) to 10
+Set  (344 346) to 18
+Set  (346 347) to 14
+Set  (347 218) to 9
+Set  (218 110) to 9
+Set  (110 110) to 9
+Set  (110 320) to 11
+Set  (320 322) to 21
+Set  (322 85) to 9
+Set  (85 325) to 9
+Set  (325 326) to 9
+Set  (326 327) to 9
+Set  (327 85) to 9
+Set  (85 85) to 9
+Set  (85 301) to 22
+Set  (301 311) to 9
+Set  (311 312) to 9
+Set  (312 379) to 9
+Set  (379 300) to 12
+Set  (300 348) to 9
+Set  (348 350) to 21
+Set  (350 351) to 11
+Set  (351 110) to 11
+Set  (110 85) to 14
+Set  (85 215) to 11
+Set  (215 373) to 11
+Set  (373 85) to 11
+Set  (85 301) to 23
+Set  (301 325) to 11
+Set  (325 359) to 11
+Set  (359 379) to 11
+Set  (379 320) to 11
+Set  (320 322) to 22
+Set  (322 301) to 11
+Set  (301 171) to 11
+Set  (171 301) to 11
+Set  (301 379) to 14
+Set  (379 80) to 11
+Set  (80 377) to 11
+Set  (377 348) to 11
+Set  (348 350) to 22
+Jit Compile: Last:511    Op:301  patches[HoleValue_LASTUOP] = 511  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:343  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:343    Op:379  patches[HoleValue_LASTUOP] = 343  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:110  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:110    Op:301  patches[HoleValue_LASTUOP] = 110  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:84  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:84    Op:301  patches[HoleValue_LASTUOP] = 84  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:379  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:325  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:325    Op:359  patches[HoleValue_LASTUOP] = 325  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:359    Op:379  patches[HoleValue_LASTUOP] = 359  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:85  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:85    Op:300  patches[HoleValue_LASTUOP] = 85  patches[HoleValue_PYSTATS] = 563e21a28966
+Set  (350 301) to 1
+Set  (301 343) to 1
+Set  (343 348) to 1
+Set  (348 350) to 23
+Set  (350 351) to 12
+Set  (351 110) to 12
+Set  (110 85) to 15
+Set  (85 215) to 12
+Set  (215 373) to 12
+Set  (373 85) to 12
+Set  (85 301) to 24
+Set  (301 325) to 12
+Set  (325 359) to 12
+Set  (359 379) to 12
+Set  (379 320) to 12
+Set  (320 322) to 23
+Set  (322 301) to 12
+Set  (301 171) to 12
+Set  (171 301) to 12
+Set  (301 379) to 15
+Set  (379 80) to 12
+Set  (80 377) to 12
+Set  (377 348) to 12
+Set  (348 350) to 24
+Set  (350 351) to 13
+Set  (351 110) to 13
+Set  (110 85) to 16
+Set  (85 215) to 13
+Set  (215 373) to 13
+Set  (373 85) to 13
+Set  (85 301) to 25
+Set  (301 325) to 13
+Set  (325 359) to 13
+Set  (359 379) to 13
+Set  (379 320) to 13
+Set  (320 322) to 24
+Set  (322 301) to 13
+Set  (301 171) to 13
+Set  (171 301) to 13
+Set  (301 379) to 16
+Set  (379 80) to 13
+Set  (80 377) to 13
+Set  (377 348) to 13
+Set  (348 350) to 25
+Set  (350 301) to 2
+Set  (301 343) to 2
+Set  (343 348) to 2
+Set  (348 350) to 26
+Set  (350 351) to 14
+Set  (351 110) to 14
+Set  (110 85) to 17
+Set  (85 215) to 14
+Set  (215 373) to 14
+Set  (373 85) to 14
+Set  (85 301) to 26
+Set  (301 325) to 14
+Set  (325 359) to 14
+Set  (359 379) to 14
+Set  (379 320) to 14
+Set  (320 322) to 25
+Set  (322 301) to 14
+Set  (301 171) to 14
+Set  (171 301) to 14
+Set  (301 379) to 17
+Set  (379 80) to 14
+Set  (80 377) to 14
+Set  (377 348) to 14
+Set  (348 350) to 27
+Set  (350 351) to 15
+Set  (351 110) to 15
+Set  (110 85) to 18
+Set  (85 215) to 15
+Set  (215 373) to 15
+Set  (373 85) to 15
+Set  (85 301) to 27
+Set  (301 325) to 15
+Set  (325 359) to 15
+Set  (359 379) to 15
+Set  (379 320) to 15
+Set  (320 322) to 26
+Set  (322 301) to 15
+Set  (301 171) to 15
+Set  (171 301) to 15
+Set  (301 379) to 18
+Set  (379 80) to 15
+Set  (80 377) to 15
+Set  (377 348) to 15
+Set  (348 350) to 28
+Jit Compile: Last:511    Op:301  patches[HoleValue_LASTUOP] = 511  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:352  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:352    Op:354  patches[HoleValue_LASTUOP] = 352  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:354    Op:355  patches[HoleValue_LASTUOP] = 354  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:355    Op:301  patches[HoleValue_LASTUOP] = 355  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:379  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:114  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:114    Op:301  patches[HoleValue_LASTUOP] = 114  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:379  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:92  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:92    Op:379  patches[HoleValue_LASTUOP] = 92  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:34  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:34    Op:301  patches[HoleValue_LASTUOP] = 34  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:92  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:92    Op:301  patches[HoleValue_LASTUOP] = 92  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:301    Op:379  patches[HoleValue_LASTUOP] = 301  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:166  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:166    Op:379  patches[HoleValue_LASTUOP] = 166  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:379    Op:32  patches[HoleValue_LASTUOP] = 379  patches[HoleValue_PYSTATS] = 563e21a28966
+Jit Compile: Last:32    Op:377  patches[HoleValue_LASTUOP] = 32  patches[HoleValue_PYSTATS] = 563e21a28966
+Set  (350 301) to 3
+Set  (301 352) to 1
+Set  (352 354) to 1
+Set  (354 355) to 1
+Set  (355 301) to 1
+Set  (301 379) to 19
+Set  (379 114) to 1
+Set  (114 301) to 1
+Set  (301 379) to 20
+Set  (379 92) to 1
+Set  (92 379) to 1
+Set  (379 34) to 1
+Set  (34 301) to 1
+Set  (301 92) to 1
+Set  (92 301) to 1
+Set  (301 379) to 21
+Set  (379 166) to 1
+Set  (166 379) to 1
+Set  (379 32) to 1
+Set  (32 377) to 1
+Set  (377 301) to 1
+Set  (301 352) to 2
+Set  (352 354) to 2
+Set  (354 355) to 2
+Set  (355 301) to 2
+Set  (301 379) to 22
+Set  (379 114) to 2
+Set  (114 301) to 2
+Set  (301 379) to 23
+Set  (379 92) to 2
+Set  (92 379) to 2
+Set  (379 34) to 2
+Set  (34 301) to 2
+Set  (301 92) to 2
+Set  (92 301) to 2
+Set  (301 379) to 24
+Set  (379 166) to 2
+Set  (166 379) to 2
+Set  (379 32) to 2
+Set  (32 377) to 2
+Set  (377 301) to 2
+Set  (301 352) to 3
+Set  (352 354) to 3
+Set  (354 355) to 3
+Set  (355 301) to 3
+Set  (301 379) to 25
+Set  (379 114) to 3
+Set  (114 301) to 3
+Set  (301 379) to 26
+Set  (379 92) to 3
+Set  (92 379) to 3
+Set  (379 34) to 3
+Set  (34 301) to 3
+Set  (301 92) to 3
+Set  (92 301) to 3
+Set  (301 379) to 27
+Set  (379 166) to 3
+Set  (166 379) to 3
+Set  (379 32) to 3
+Set  (32 377) to 3
+Set  (377 301) to 3
+Set  (301 352) to 4
+Set  (352 354) to 4
+Set  (354 355) to 4
+Set  (355 301) to 4
+Set  (301 379) to 28
+Set  (379 114) to 4
+Set  (114 301) to 4
+Set  (301 379) to 29
+Set  (379 92) to 4
+Set  (92 379) to 4
+Set  (379 34) to 4
+Set  (34 301) to 4
+Set  (301 92) to 4
+Set  (92 301) to 4
+Set  (301 379) to 30
+Set  (379 166) to 4
+Set  (166 379) to 4
+Set  (379 32) to 4
+Set  (32 377) to 4
+Set  (377 301) to 4
+Set  (301 352) to 5
+Set  (352 354) to 5
+Set  (354 355) to 5
+Set  (355 301) to 5
+Set  (301 379) to 31
+Set  (379 114) to 5
+Set  (114 301) to 5
+Set  (301 379) to 32
+Set  (379 92) to 5
+Set  (92 379) to 5
+Set  (379 34) to 5
+Set  (34 301) to 5
+Set  (301 92) to 5
+Set  (92 301) to 5
+Set  (301 379) to 33
+Set  (379 166) to 5
+Set  (166 379) to 5
+Set  (379 32) to 5
+Set  (32 377) to 5
+Set  (377 301) to 5
+Set  (301 352) to 6
+Set  (352 354) to 6
+Set  (354 355) to 6
+Set  (355 301) to 6
+Set  (301 379) to 34
+Set  (379 114) to 6
+Set  (114 301) to 6
+Set  (301 379) to 35
+Set  (379 92) to 6
+Set  (92 379) to 6
+Set  (379 34) to 6
+Set  (34 301) to 6
+Set  (301 92) to 6
+Set  (92 301) to 6
+Set  (301 379) to 36
+Set  (379 166) to 6
+Set  (166 379) to 6
+Set  (379 32) to 6
+Set  (32 377) to 6
+Set  (377 301) to 6
+Set  (301 352) to 7
+Set  (352 354) to 7
+Set  (354 355) to 7
+Set  (355 301) to 7
+Set  (301 379) to 37
+Set  (379 114) to 7
+Set  (114 301) to 7
+Set  (301 379) to 38
+Set  (379 92) to 7
+Set  (92 379) to 7
+Set  (379 34) to 7
+Set  (34 301) to 7
+Set  (301 92) to 7
+Set  (92 301) to 7
+Set  (301 379) to 39
+Set  (379 166) to 7
+Set  (166 379) to 7
+Set  (379 32) to 7
+Set  (32 377) to 7
+Set  (377 301) to 7
+Set  (301 352) to 8
+Set  (352 354) to 8
+Set  (354 355) to 8
+Set  (355 301) to 8
+Set  (301 379) to 40
+Set  (379 114) to 8
+Set  (114 301) to 8
+Set  (301 379) to 41
+Set  (379 92) to 8
+Set  (92 379) to 8
+Set  (379 34) to 8
+Set  (34 301) to 8
+Set  (301 92) to 8
+Set  (92 301) to 8
+Set  (301 379) to 42
+Set  (379 166) to 8
+Set  (166 379) to 8
+Set  (379 32) to 8
+Set  (32 377) to 8
+Set  (377 301) to 8
+Set  (301 352) to 9
+Set  (352 354) to 9
+Set  (354 355) to 9
+Set  (355 301) to 9
+Set  (301 379) to 43
+Set  (379 114) to 9
+Set  (114 301) to 9
+Set  (301 379) to 44
+Set  (379 92) to 9
+Set  (92 379) to 9
+Set  (379 34) to 9
+Set  (34 301) to 9
+Set  (301 92) to 9
+Set  (92 301) to 9
+Set  (301 379) to 45
+Set  (379 166) to 9
+Set  (166 379) to 9
+Set  (379 32) to 9
+Set  (32 377) to 9
+Set  (377 301) to 9
+Set  (301 352) to 10
+Set  (352 354) to 10
+Set  (354 355) to 10
+Set  (355 301) to 10
+Set  (301 379) to 46
+Set  (379 114) to 10
+Set  (114 301) to 10
+Set  (301 379) to 47
+Set  (379 92) to 10
+Set  (92 379) to 10
+Set  (379 34) to 10
+Set  (34 301) to 10
+Set  (301 92) to 10
+Set  (92 301) to 10
+Set  (301 379) to 48
+Set  (379 166) to 10
+Set  (166 379) to 10
+Set  (379 32) to 10
+Set  (32 377) to 10
+Set  (377 301) to 10
+Set  (301 352) to 11
+Set  (352 354) to 11
+Set  (354 355) to 11
+Set  (355 301) to 11
+Set  (301 379) to 49
+Set  (379 114) to 11
+Set  (114 301) to 11
+Set  (301 379) to 50
+Set  (379 92) to 11
+Set  (92 379) to 11
+Set  (379 34) to 11
+Set  (34 301) to 11
+Set  (301 92) to 11
+Set  (92 301) to 11
+Set  (301 379) to 51
+Set  (379 166) to 11
+Set  (166 379) to 11
+Set  (379 32) to 11
+Set  (32 377) to 11
+Set  (377 301) to 11
+Set  (301 352) to 12
+Set  (352 354) to 12
+Set  (354 355) to 12
+Set  (355 301) to 12
+Set  (301 379) to 52
+Set  (379 114) to 12
+Set  (114 301) to 12
+Set  (301 379) to 53
+Set  (379 92) to 12
+Set  (92 379) to 12
+Set  (379 34) to 12
+Set  (34 301) to 12
+Set  (301 92) to 12
+Set  (92 301) to 12
+Set  (301 379) to 54
+Set  (379 166) to 12
+Set  (166 379) to 12
+Set  (379 32) to 12
+Set  (32 377) to 12
+Set  (377 301) to 12
+Set  (301 352) to 13
+Set  (352 354) to 13
+Set  (354 355) to 13
+Set  (355 301) to 13
+Set  (301 379) to 55
+Set  (379 114) to 13
+Set  (114 301) to 13
+Set  (301 379) to 56
+Set  (379 92) to 13
+Set  (92 379) to 13
+Set  (379 34) to 13
+Set  (34 301) to 13
+Set  (301 92) to 13
+Set  (92 301) to 13
+Set  (301 379) to 57
+Set  (379 166) to 13
+Set  (166 379) to 13
+Set  (379 32) to 13
+Set  (32 377) to 13
+Set  (377 301) to 13
+Set  (301 352) to 14
+Set  (352 354) to 14
+Set  (354 355) to 14
+Set  (355 301) to 14
+Set  (301 379) to 58
+Set  (379 114) to 14
+Set  (114 301) to 14
+Set  (301 379) to 59
+Set  (379 92) to 14
+Set  (92 379) to 14
+Set  (379 34) to 14
+Set  (34 301) to 14
+Set  (301 92) to 14
+Set  (92 301) to 14
+Set  (301 379) to 60
+Set  (379 166) to 14
+Set  (166 379) to 14
+Set  (379 32) to 14
+Set  (32 377) to 14
+Set  (377 301) to 14
+Set  (301 352) to 15
+Set  (352 354) to 15
+Set  (354 355) to 15
+Set  (355 301) to 15
+Set  (301 379) to 61
+Set  (379 114) to 15
+Set  (114 301) to 15
+Set  (301 379) to 62
+Set  (379 92) to 15
+Set  (92 379) to 15
+Set  (379 34) to 15
+Set  (34 301) to 15
+Set  (301 92) to 15
+Set  (92 301) to 15
+Set  (301 379) to 63
+Set  (379 166) to 15
+Set  (166 379) to 15
+Set  (379 32) to 15
+Set  (32 377) to 15
+Set  (377 301) to 15
+Set  (301 352) to 16
+Set  (352 354) to 16
+Set  (354 355) to 16
+Set  (355 301) to 16
+Set  (301 379) to 64
+Set  (379 114) to 16
+Set  (114 301) to 16
+Set  (301 379) to 65
+Set  (379 92) to 16
+Set  (92 379) to 16
+Set  (379 34) to 16
+Set  (34 301) to 16
+Set  (301 92) to 16
+Set  (92 301) to 16
+Set  (301 379) to 66
+Set  (379 166) to 16
+Set  (166 379) to 16
+Set  (379 32) to 16
+Set  (32 377) to 16
+Set  (377 301) to 16
+Set  (301 352) to 17
+Set  (352 354) to 17
+Set  (354 355) to 17
+Set  (355 301) to 17
+Set  (301 379) to 67
+Set  (379 114) to 17
+Set  (114 301) to 17
+Set  (301 379) to 68
+Set  (379 92) to 17
+Set  (92 379) to 17
+Set  (379 34) to 17
+Set  (34 301) to 17
+Set  (301 92) to 17
+Set  (92 301) to 17
+Set  (301 379) to 69
+Set  (379 166) to 17
+Set  (166 379) to 17
+Set  (379 32) to 17
+Set  (32 377) to 17
+Set  (377 301) to 17
+Set  (301 352) to 18
+Set  (352 354) to 18
+Set  (354 355) to 18
+Set  (355 301) to 18
+Set  (301 379) to 70
+Set  (379 114) to 18
+Set  (114 301) to 18
+Set  (301 379) to 71
+Set  (379 92) to 18
+Set  (92 379) to 18
+Set  (379 34) to 18
+Set  (34 301) to 18
+Set  (301 92) to 18
+Set  (92 301) to 18
+Set  (301 379) to 72
+Set  (379 166) to 18
+Set  (166 379) to 18
+Set  (379 32) to 18
+Set  (32 377) to 18
+Set  (377 301) to 18
+Set  (301 352) to 19
+Set  (352 354) to 19
+Set  (354 355) to 19
+Set  (355 301) to 19
+Set  (301 379) to 73
+Set  (379 114) to 19
+Set  (114 301) to 19
+Set  (301 379) to 74
+Set  (379 92) to 19
+Set  (92 379) to 19
+Set  (379 34) to 19
+Set  (34 301) to 19
+Set  (301 92) to 19
+Set  (92 301) to 19
+Set  (301 379) to 75
+Set  (379 166) to 19
+Set  (166 379) to 19
+Set  (379 32) to 19
+Set  (32 377) to 19
+Set  (377 301) to 19
+Set  (301 352) to 20
+Set  (352 354) to 20
+Set  (354 355) to 20
+Set  (355 301) to 20
+Set  (301 379) to 76
+Set  (379 114) to 20
+Set  (114 301) to 20
+Set  (301 379) to 77
+Set  (379 92) to 20
+Set  (92 379) to 20
+Set  (379 34) to 20
+Set  (34 301) to 20
+Set  (301 92) to 20
+Set  (92 301) to 20
+Set  (301 379) to 78
+Set  (379 166) to 20
+Set  (166 379) to 20
+Set  (379 32) to 20
+Set  (32 377) to 20
+Set  (377 301) to 20
+Set  (301 352) to 21
+Set  (352 354) to 21
+Set  (354 355) to 21
+Set  (355 301) to 21
+Set  (301 379) to 79
+Set  (379 114) to 21
+Set  (114 301) to 21
+Set  (301 379) to 80
+Set  (379 92) to 21
+Set  (92 379) to 21
+Set  (379 34) to 21
+Set  (34 301) to 21
+Set  (301 92) to 21
+Set  (92 301) to 21
+Set  (301 379) to 81
+Set  (379 166) to 21
+Set  (166 379) to 21
+Set  (379 32) to 21
+Set  (32 377) to 21
+Set  (377 301) to 21
+Set  (301 352) to 22
+Set  (352 354) to 22
+Set  (354 355) to 22
+Set  (355 301) to 22
+Set  (301 379) to 82
+Set  (379 114) to 22
+Set  (114 301) to 22
+Set  (301 379) to 83
+Set  (379 92) to 22
+Set  (92 379) to 22
+Set  (379 34) to 22
+Set  (34 301) to 22
+Set  (301 92) to 22
+Set  (92 301) to 22
+Set  (301 379) to 84
+Set  (379 166) to 22
+Set  (166 379) to 22
+Set  (379 32) to 22
+Set  (32 377) to 22
+Set  (377 301) to 22
+Set  (301 352) to 23
+Set  (352 354) to 23
+Set  (354 355) to 23
+Set  (355 301) to 23
+Set  (301 379) to 85
+Set  (379 114) to 23
+Set  (114 301) to 23
+Set  (301 379) to 86
+Set  (379 92) to 23
+Set  (92 379) to 23
+Set  (379 34) to 23
+Set  (34 301) to 23
+Set  (301 92) to 23
+Set  (92 301) to 23
+Set  (301 379) to 87
+Set  (379 166) to 23
+Set  (166 379) to 23
+Set  (379 32) to 23
+Set  (32 377) to 23
+Set  (377 301) to 23
+Set  (301 352) to 24
+Set  (352 354) to 24
+Set  (354 355) to 24
+Set  (355 301) to 24
+Set  (301 379) to 88
+Set  (379 114) to 24
+Set  (114 301) to 24
+Set  (301 379) to 89
+Set  (379 92) to 24
+Set  (92 379) to 24
+Set  (379 34) to 24
+Set  (34 301) to 24
+Set  (301 92) to 24
+Set  (92 301) to 24
+Set  (301 379) to 90
+Set  (379 166) to 24
+Set  (166 379) to 24
+Set  (379 32) to 24
+Set  (32 377) to 24
+Set  (377 301) to 24
+Set  (301 352) to 25
+Set  (352 354) to 25
+Set  (354 355) to 25
+Set  (355 301) to 25
+Set  (301 379) to 91
+Set  (379 114) to 25
+Set  (114 301) to 25
+Set  (301 379) to 92
+Set  (379 92) to 25
+Set  (92 379) to 25
+Set  (379 34) to 25
+Set  (34 301) to 25
+Set  (301 92) to 25
+Set  (92 301) to 25
+Set  (301 379) to 93
+Set  (379 166) to 25
+Set  (166 379) to 25
+Set  (379 32) to 25
+Set  (32 377) to 25
+Set  (377 301) to 25
+Set  (301 352) to 26
+Set  (352 354) to 26
+Set  (354 355) to 26
+Set  (355 301) to 26
+Set  (301 379) to 94
+Set  (379 114) to 26
+Set  (114 301) to 26
+Set  (301 379) to 95
+Set  (379 92) to 26
+Set  (92 379) to 26
+Set  (379 34) to 26
+Set  (34 301) to 26
+Set  (301 92) to 26
+Set  (92 301) to 26
+Set  (301 379) to 96
+Set  (379 166) to 26
+Set  (166 379) to 26
+Set  (379 32) to 26
+Set  (32 377) to 26
+Set  (377 301) to 26
+Set  (301 352) to 27
+Set  (352 354) to 27
+Set  (354 355) to 27
+Set  (355 301) to 27
+Set  (301 379) to 97
+Set  (379 114) to 27
+Set  (114 301) to 27
+Set  (301 379) to 98
+Set  (379 92) to 27
+Set  (92 379) to 27
+Set  (379 34) to 27
+Set  (34 301) to 27
+Set  (301 92) to 27
+Set  (92 301) to 27
+Set  (301 379) to 99
+Set  (379 166) to 27
+Set  (166 379) to 27
+Set  (379 32) to 27
+Set  (32 377) to 27
+Set  (377 301) to 27
+Set  (301 352) to 28
+Set  (352 354) to 28
+Set  (354 355) to 28
+Set  (355 301) to 28
+Set  (301 379) to 100
+Set  (379 114) to 28
+Set  (114 301) to 28
+Set  (301 379) to 101
+Set  (379 92) to 28
+Set  (92 379) to 28
+Set  (379 34) to 28
+Set  (34 301) to 28
+Set  (301 92) to 28
+Set  (92 301) to 28
+Set  (301 379) to 102
+Set  (379 166) to 28
+Set  (166 379) to 28
+Set  (379 32) to 28
+Set  (32 377) to 28
+Set  (377 301) to 28
+Set  (301 352) to 29
+Set  (352 354) to 29
+Set  (354 355) to 29
+Set  (355 301) to 29
+Set  (301 379) to 103
+Set  (379 114) to 29
+Set  (114 301) to 29
+Set  (301 379) to 104
+Set  (379 92) to 29
+Set  (92 379) to 29
+Set  (379 34) to 29
+Set  (34 301) to 29
+Set  (301 92) to 29
+Set  (92 301) to 20
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+9
+Set  (301 379) to 105
+Set  (379 166) to 29
+Set  (166 379) to 29
+Set  (379 32) to 29
+Set  (32 377) to 29
+Set  (377 301) to 29
+Set  (301 352) to 30
+Set  (352 354) to 30
+Set  (354 355) to 30
+Set  (355 301) to 30
+Set  (301 379) to 106
+Set  (379 114) to 30
+Set  (114 301) to 30
+Set  (301 379) to 107
+Set  (379 92) to 30
+Set  (92 379) to 30
+Set  (379 34) to 30
+Set  (34 301) to 30
+Set  (301 92) to 30
+Set  (92 301) to 30
+Set  (301 379) to 108
+Set  (379 166) to 30
+Set  (166 379) to 30
+Set  (379 32) to 30
+Set  (32 377) to 30
+Set  (377 301) to 30
+Set  (301 352) to 31
+Set  (352 354) to 31
+Set  (354 355) to 31
+Set  (355 301) to 31
+Set  (301 379) to 109
+Set  (379 114) to 31
+Set  (114 301) to 31
+Set  (301 379) to 110
+Set  (379 92) to 31
+Set  (92 379) to 31
+Set  (379 34) to 31
+Set  (34 301) to 31
+Set  (301 92) to 31
+Set  (92 301) to 31
+Set  (301 379) to 111
+Set  (379 166) to 31
+Set  (166 379) to 31
+Set  (379 32) to 31
+Set  (32 377) to 31
+Set  (377 301) to 31
+Set  (301 352) to 32
+Set  (352 354) to 32
+Set  (354 355) to 32
+Set  (355 301) to 32
+Set  (301 379) to 112
+Set  (379 114) to 32
+Set  (114 301) to 32
+Set  (301 379) to 113
+Set  (379 92) to 32
+Set  (92 379) to 32
+Set  (379 34) to 32
+Set  (34 301) to 32
+Set  (301 92) to 32
+Set  (92 301) to 32
+Set  (301 379) to 114
+Set  (379 166) to 32
+Set  (166 379) to 32
+Set  (379 32) to 32
+Set  (32 377) to 32
+Set  (377 301) to 32
+Set  (301 352) to 33
+Set  (352 354) to 33
+Set  (354 355) to 33
+Set  (355 301) to 33
+Set  (301 379) to 115
+Set  (379 114) to 33
+Set  (114 301) to 33
+Set  (301 379) to 116
+Set  (379 92) to 33
+Set  (92 379) to 33
+Set  (379 34) to 33
+Set  (34 301) to 33
+Set  (301 92) to 33
+Set  (92 301) to 33
+Set  (301 379) to 117
+Set  (379 166) to 33
+Set  (166 379) to 33
+Set  (379 32) to 33
+Set  (32 377) to 33
+Set  (377 301) to 33
+Set  (301 352) to 34
+Set  (352 354) to 34
