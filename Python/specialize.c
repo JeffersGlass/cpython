@@ -38,24 +38,6 @@ void testprint(uint64_t x, uint64_t b){
     }
 }
 
-#ifdef Py_STATS
-    /* void uop_stats(uint64_t lastuop, uint64_t uop){
-        if (_Py_stats) {
-            _Py_stats->uop_stats[(uint16_t)lastuop].pair_count[(uint16_t)uop]++;
-            lastuop = uop; 
-        }
-    } */
-    void uop_stats(uint64_t lastuop, uint64_t uop){
-        printf("JIT FUNC?? %ld", uop);
-    }
-#else
-    void uop_stats(uint64_t lastuop, uint16_t uop){
-      do {
-
-      } while(0);
-    }
-#endif
-
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
         PyObject *val = PyLong_FromUnsignedLongLong(stats->field); \
@@ -352,7 +334,6 @@ _Py_StatsClear(void)
 {
     memset(&_py_gc_stats, 0, sizeof(_py_gc_stats));
     memset(&_Py_stats_struct, 0, sizeof(_Py_stats_struct));
-
     _Py_stats_struct.gc_stats = _py_gc_stats;
 }
 
