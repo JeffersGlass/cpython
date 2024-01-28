@@ -143,7 +143,6 @@ typedef struct _stats {
     OptimizationStats optimization_stats;
     RareEventStats rare_event_stats;
     GCStats *gc_stats;
-    UOpStats uop_stats[512];
 } PyStats;
 
 

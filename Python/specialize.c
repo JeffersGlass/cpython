@@ -29,9 +29,7 @@ PyStats *_Py_stats = NULL;
 
 void testprint(uint64_t lastuop, uint64_t uop){
     if (_Py_stats) {
-        printf("Set  (%ld %ld) to ", lastuop, uop);
-        _Py_stats->uop_stats[lastuop].pair_count[uop] += 1;
-        printf("%ld\n", _Py_stats->uop_stats[lastuop].pair_count[uop]);
+        _Py_stats->optimization_stats.opcode[lastuop].pair_count[uop] += 1;
     }
 }
 
@@ -174,14 +172,14 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
 extern const char *_PyUOpName(int index);
 
 static void
-print_uop_stats(FILE *out, PyStats *stats)
+print_uop_stats(FILE *out, OptimizationStats *stats)
 {
     fprintf(out, "UOP Stats:\n");
     for (int i = 0; i < 512; i++){
         for (int j = 0; j < 512; j++) {
-            if (stats->uop_stats[i].pair_count[j]) {
+            if (stats->opcode[i].pair_count[j]) {
                 fprintf(out, "uop[%d-%s].pair_count[%d-%s] : %" PRIu64 "\n",
-                        i, _PyUOpName(i), j, _PyUOpName(j), stats->uop_stats[i].pair_count[j]);
+                        i, _PyUOpName(i), j, _PyUOpName(j), stats->opcode[i].pair_count[j]);
             }
         }
     }
