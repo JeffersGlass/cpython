@@ -27,14 +27,14 @@ GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
 PyStats *_Py_stats = NULL;
 
-uint64_t a = 511;
+uint64_t lastuop = 511;
 
 void testprint(uint64_t x, uint64_t b){
     if (_Py_stats) {
-        printf("Set  (%ld %ld) to ", a, b);
-        _Py_stats->uop_stats[(uint64_t)a].pair_count[(uint64_t)b] += 1;
-        printf("%ld\n", _Py_stats->uop_stats[(uint64_t)a].pair_count[(uint64_t)b]);
-        a = b;
+        printf("Set  (%ld %ld) to ", lastuop, b);
+        _Py_stats->uop_stats[(uint64_t)lastuop].pair_count[(uint64_t)b] += 1;
+        printf("%ld\n", _Py_stats->uop_stats[(uint64_t)lastuop].pair_count[(uint64_t)b]);
+        lastuop = b;
     }
 }
 
@@ -199,10 +199,10 @@ print_uop_stats(FILE *out, PyStats *stats)
 {
     fprintf(out, "UOP Stats:\n");
     for (int i = 0; i < 512; i++){
-        for (int j = 0; j < 256; j++) {
+        for (int j = 0; j < 512; j++) {
             if (stats->uop_stats[i].pair_count[j]) {
-                fprintf(out, "uop[%d].pair_count[%d] : %" PRIu64 "\n",
-                        i, j, stats->uop_stats[i].pair_count[j]);
+                fprintf(out, "uop[%d-%s].pair_count[%d-%s] : %" PRIu64 "\n",
+                        i, _PyUOpName(i), j, _PyUOpName(j), stats->uop_stats[i].pair_count[j]);
             }
         }
     }
@@ -352,6 +352,7 @@ _Py_StatsClear(void)
 {
     memset(&_py_gc_stats, 0, sizeof(_py_gc_stats));
     memset(&_Py_stats_struct, 0, sizeof(_Py_stats_struct));
+
     _Py_stats_struct.gc_stats = _py_gc_stats;
 }
 
