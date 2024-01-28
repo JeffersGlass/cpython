@@ -28,11 +28,14 @@ static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
 PyStats *_Py_stats = NULL;
 
 #ifdef Py_STATS
-    void uop_stats(uint64_t lastuop, uint16_t uop){
+    /* void uop_stats(uint64_t lastuop, uint64_t uop){
         if (_Py_stats) {
-            _Py_stats->optimization_stats.opcode[lastuop].pair_count[uop]++;
+            _Py_stats->uop_stats[(uint16_t)lastuop].pair_count[(uint16_t)uop]++;
             lastuop = uop; 
         }
+    } */
+    void uop_stats(uint64_t lastuop, uint64_t uop){
+        printf("JIT FUNC?? %ld", uop);
     }
 #else
     void uop_stats(uint64_t lastuop, uint16_t uop){

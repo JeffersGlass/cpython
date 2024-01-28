@@ -13,7 +13,7 @@ extern "C" {
 
 typedef _Py_CODEUNIT *(*jit_func)(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate);
 
-int _PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t length, void (*uop_stats)(uint16_t));
+int _PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t length, void (*uop_stats)(uint64_t, uint64_t));
 void _PyJIT_Free(_PyExecutorObject *executor);
 
 #endif  // _Py_JIT

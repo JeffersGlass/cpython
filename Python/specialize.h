@@ -1,1 +1,1 @@
-void uop_stats(uint16_t uop);
+void uop_stats(uint64_t lastuop, uint64_t uop);

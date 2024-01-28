@@ -301,7 +301,7 @@ emit(const StencilGroup *group, uint64_t patches[])
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
-_PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t length, void (*uop_stats)(uint16_t))
+_PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t length, void (*uop_stats)(uint64_t, uint64_t))
 {
     // Loop once to find the total compiled size:
     size_t code_size = 0;
@@ -328,6 +328,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t len
     for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
+        printf("Jit Compile: Last:%ld    Op:%ld", lastuop, (uint64_t)instruction->opcode);
         // Think of patches as a dictionary mapping HoleValue to uint64_t:
         uint64_t patches[] = GET_PATCHES();
         patches[HoleValue_CODE] = (uint64_t)code;
@@ -341,6 +342,8 @@ _PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t len
         patches[HoleValue_ZERO] = 0;
         patches[HoleValue_PYSTATS] = (uint64_t)uop_stats;
         patches[HoleValue_LASTUOP] = (uint64_t)lastuop;
+        printf("  patches[HoleValue_LASTUOP] = %ld",  patches[HoleValue_LASTUOP]);
+        printf("  patches[HoleValue_PYSTATS] = %lx\n",  patches[HoleValue_PYSTATS]);
         emit(group, patches);
         code += group->code.body_size;
         data += group->data.body_size;
