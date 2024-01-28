@@ -15,6 +15,7 @@
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
 #include "pycore_jit.h"
+#include "pystats.h"
 
 #include "jit_stencils.h"
 
@@ -300,7 +301,7 @@ emit(const StencilGroup *group, uint64_t patches[])
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
-_PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t length)
+PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t length, void (*uop_stats)(uint16_t))
 {
     // Loop once to find the total compiled size:
     size_t code_size = 0;
@@ -337,6 +338,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t len
         patches[HoleValue_TARGET] = instruction->target;
         patches[HoleValue_TOP] = (uint64_t)memory;
         patches[HoleValue_ZERO] = 0;
+        patches[HoleValue_PYSTATS] = (uint64_t)uop_stats;
         emit(group, patches);
         code += group->code.body_size;
         data += group->data.body_size;

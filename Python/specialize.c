@@ -27,6 +27,22 @@ GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
 PyStats *_Py_stats = NULL;
 
+#ifdef Py_STATS
+    void uop_stats(uint16_t uop){
+        if (_Py_stats) {
+            extern uint16_t lastuop;
+            _Py_stats->uop_stats[lastuop].pair_count[uop]++;
+            lastuop = uop; 
+        }
+    }
+#else
+    void uop_stats(uint16_t uop){
+      do {
+
+      } while(0);
+    }
+#endif
+
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
         PyObject *val = PyLong_FromUnsignedLongLong(stats->field); \

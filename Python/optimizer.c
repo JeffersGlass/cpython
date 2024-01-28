@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "opcode.h"
+#include "specialize.h"
 #include "pycore_interp.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
@@ -797,7 +798,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
 #ifdef _Py_JIT
     executor->jit_code = NULL;
     executor->jit_size = 0;
-    if (_PyJIT_Compile(executor, executor->trace, Py_SIZE(executor))) {
+    if (_PyJIT_Compile(executor, executor->trace, Py_SIZE(executor), uop_stats)) {
         Py_DECREF(executor);
         return NULL;
     }

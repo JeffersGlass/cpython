@@ -52,6 +52,13 @@
     __attribute__((musttail))                                \
     return ((jit_func)&ALIAS)(frame, stack_pointer, tstate);
 
+extern void _JIT_PYSTATS();
+
+#define CALL_VOID_FUNC_BY_ADDRESS(FUNC, ARG0)             \
+    typedef void func(uint16_t);                                 \
+    func* f = (func*)&FUNC;                                \
+    f(ARG0);
+
 _Py_CODEUNIT *
 _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *tstate)
 {
@@ -59,6 +66,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
     int opcode = _JIT_OPCODE;
+    CALL_VOID_FUNC_BY_ADDRESS(_JIT_PYSTATS, opcode);
     _PyUOpInstruction *next_uop;
     // Other stuff we need handy:
     PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
