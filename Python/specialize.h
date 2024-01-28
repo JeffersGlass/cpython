@@ -1,1 +1,1 @@
-void testprint(uint64_t lastuop, uint64_t uop);
+void _inc_uop_stats(uint64_t lastuop, uint64_t uop);

@@ -27,10 +27,9 @@ GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
 PyStats *_Py_stats = NULL;
 
-void testprint(uint64_t lastuop, uint64_t uop){
-    if (_Py_stats) {
-        _Py_stats->optimization_stats.opcode[lastuop].pair_count[uop] += 1;
-    }
+void _inc_uop_stats(uint64_t lastuop, uint64_t uop){
+        UOP_EXEC_INC(uop);
+        UOP_PAIR_INC(lastuop, uop);
 }
 
 #define ADD_STAT_TO_DICT(res, field) \

@@ -1009,11 +1009,16 @@ enter_tier_two:
     OPT_STAT_INC(traces_executed);
     _PyUOpInstruction *next_uop = current_executor->trace;
     uint16_t uopcode;
+    uint16_t lastuopcode;
 #ifdef Py_STATS
     uint64_t trace_uop_execution_counter = 0;
 #endif
 
     for (;;) {
+        if (uopcode){
+            lastuopcode = uopcode; 
+            UOP_PAIR_INC(lastuopcode, uopcode);
+        }
         uopcode = next_uop->opcode;
         DPRINTF(3,
                 "%4d: uop %s, oparg %d, operand %" PRIu64 ", target %d, stack_level %d\n",
