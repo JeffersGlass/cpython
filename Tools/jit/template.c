@@ -56,8 +56,7 @@ extern void _JIT_PYSTATS();
 extern uint64_t _JIT_LASTUOP;
 
 #define CALL_VOID_FUNC_BY_ADDRESS(FUNC, ARG0, ARG1)             \
-    printf("%ld", (int64_t)FUNC); \
-    typedef void func(uint64_t, uint16_t);                                 \
+    typedef void func(uint64_t, uint64_t);                                 \
     func* f = (func*)&FUNC;                                \
     f(ARG0, ARG1);
 
@@ -68,9 +67,8 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
     int opcode = _JIT_OPCODE;
-    printf("Pystats: %ld\n", (uint64_t)_JIT_PYSTATS);
     //printf("JIT LASTOP: %ld, OP:%d, PYStats Addr: %lx\n", _JIT_LASTUOP, opcode, (uint64_t)_JIT_PYSTATS);
-    // CALL_VOID_FUNC_BY_ADDRESS(_JIT_PYSTATS, _JIT_LASTUOP, opcode);
+    CALL_VOID_FUNC_BY_ADDRESS(_JIT_PYSTATS, 666, opcode);
     _PyUOpInstruction *next_uop;
     // Other stuff we need handy:
     PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
