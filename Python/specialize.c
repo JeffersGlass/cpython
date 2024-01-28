@@ -174,16 +174,14 @@ extern const char *_PyUOpName(int index);
 static void
 print_uop_stats(FILE *out, OptimizationStats *stats)
 {
-    fprintf(out, "UOP Stats:\n");
     for (int i = 0; i < 512; i++){
         for (int j = 0; j < 512; j++) {
             if (stats->opcode[i].pair_count[j]) {
-                fprintf(out, "uop[%d-%s].pair_count[%d-%s] : %" PRIu64 "\n",
-                        i, _PyUOpName(i), j, _PyUOpName(j), stats->opcode[i].pair_count[j]);
+                fprintf(out, "uop[%s].pair_count[%s] : %" PRIu64 "\n",
+                        _PyUOpName(i), _PyUOpName(j), stats->opcode[i].pair_count[j]);
             }
         }
     }
-    fprintf(out, "UOP Stats Done");
 }
 
 
