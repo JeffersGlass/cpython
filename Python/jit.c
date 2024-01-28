@@ -328,7 +328,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t len
     for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
-        printf("Jit Compile: Last:%ld    Op:%ld", lastuop, (uint64_t)instruction->opcode);
+        printf("Jit Compile: Last:%ld    Op:%ld", (uint64_t*)lastuop, (uint64_t)instruction->opcode);
         // Think of patches as a dictionary mapping HoleValue to uint64_t:
         uint64_t patches[] = GET_PATCHES();
         patches[HoleValue_CODE] = (uint64_t)code;

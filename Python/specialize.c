@@ -27,14 +27,11 @@ GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
 PyStats *_Py_stats = NULL;
 
-uint64_t lastuop = 511;
-
-void testprint(uint64_t x, uint64_t b){
+void testprint(uint64_t lastuop, uint64_t uop){
     if (_Py_stats) {
-        printf("Set  (%ld %ld) to ", lastuop, b);
-        _Py_stats->uop_stats[(uint64_t)lastuop].pair_count[(uint64_t)b] += 1;
-        printf("%ld\n", _Py_stats->uop_stats[(uint64_t)lastuop].pair_count[(uint64_t)b]);
-        lastuop = b;
+        printf("Set  (%ld %ld) to ", lastuop, uop);
+        _Py_stats->uop_stats[lastuop].pair_count[uop] += 1;
+        printf("%ld\n", _Py_stats->uop_stats[lastuop].pair_count[uop]);
     }
 }
 
