@@ -301,7 +301,7 @@ emit(const StencilGroup *group, uint64_t patches[])
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
-PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t length, void (*uop_stats)(uint16_t))
+_PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t length, void (*uop_stats)(uint16_t))
 {
     // Loop once to find the total compiled size:
     size_t code_size = 0;
@@ -324,6 +324,7 @@ PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t leng
     // Loop again to emit the code:
     char *code = memory;
     char *data = memory + code_size;
+    uint64_t lastuop = 511;
     for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = &trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
@@ -339,9 +340,11 @@ PyJIT_Compile(_PyExecutorObject *executor, _PyUOpInstruction *trace, size_t leng
         patches[HoleValue_TOP] = (uint64_t)memory;
         patches[HoleValue_ZERO] = 0;
         patches[HoleValue_PYSTATS] = (uint64_t)uop_stats;
+        patches[HoleValue_LASTUOP] = (uint64_t)lastuop;
         emit(group, patches);
         code += group->code.body_size;
         data += group->data.body_size;
+        lastuop = (uint64_t)instruction->opcode;
     }
     if (mark_executable(memory, code_size) ||
         mark_readable(memory + code_size, data_size))

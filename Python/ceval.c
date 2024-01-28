@@ -1009,7 +1009,6 @@ enter_tier_two:
     OPT_STAT_INC(traces_executed);
     _PyUOpInstruction *next_uop = current_executor->trace;
     uint16_t uopcode;
-    uint16_t lastuop = 512; // Placeholder for start-of-run?
 #ifdef Py_STATS
     uint64_t trace_uop_execution_counter = 0;
 #endif

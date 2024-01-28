@@ -35,8 +35,10 @@ class HoleValue(enum.Enum):
     TOP = enum.auto()
     # A hardcoded value of zero (used for symbol lookups):
     ZERO = enum.auto()
-    # MAYBE?
+    # The address of the uop_stats function
     PYSTATS = enum.auto()
+    # The opcode of the previous uop (for stats)
+    LASTUOP = enum.auto()
 
 @dataclasses.dataclass
 class Hole:

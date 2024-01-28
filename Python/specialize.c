@@ -28,15 +28,14 @@ static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
 PyStats *_Py_stats = NULL;
 
 #ifdef Py_STATS
-    void uop_stats(uint16_t uop){
+    void uop_stats(uint64_t lastuop, uint16_t uop){
         if (_Py_stats) {
-            extern uint16_t lastuop;
-            _Py_stats->uop_stats[lastuop].pair_count[uop]++;
+            _Py_stats->optimization_stats.opcode[lastuop].pair_count[uop]++;
             lastuop = uop; 
         }
     }
 #else
-    void uop_stats(uint16_t uop){
+    void uop_stats(uint64_t lastuop, uint16_t uop){
       do {
 
       } while(0);
@@ -182,14 +181,14 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
 extern const char *_PyUOpName(int index);
 
 static void
-print_uop_stats(FILE *out, UOpStats *stats)
+print_uop_stats(FILE *out, OptimizationStats *stats)
 {
     fprintf(out, "UOP Stats:\n");
     for (int i = 0; i < 512; i++){
         for (int j = 0; j < 256; j++) {
-            if (stats[i].pair_count[j]) {
+            if (stats->opcode[i].pair_count[j]) {
                 fprintf(out, "uop[%s].pair_count[%s] : %" PRIu64 "\n",
-                        _PyOpcode_OpName[i], _PyOpcode_OpName[j], stats[i].pair_count[j]);
+                        _PyOpcode_OpName[i], _PyOpcode_OpName[j], stats->opcode[i].pair_count[j]);
             }
         }
     }
@@ -318,7 +317,7 @@ print_stats(FILE *out, PyStats *stats)
     print_gc_stats(out, stats->gc_stats);
     print_optimization_stats(out, &stats->optimization_stats);
     print_rare_event_stats(out, &stats->rare_event_stats);
-    print_uop_stats(out, &stats->uop_stats);
+    print_uop_stats(out, &stats->optimization_stats);
 }
 
 void
