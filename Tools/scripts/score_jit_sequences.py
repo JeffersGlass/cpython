@@ -1,5 +1,6 @@
 import argparse
 import csv
+import enum
 import functools
 import pathlib
 import re
@@ -10,17 +11,46 @@ TOOLS = TOOLS_SCRIPTS.parent
 CPYTHON = TOOLS.parent
 JIT_STENCILS = CPYTHON / "jit_stencils.h"
 
+class Result(enum.Enum):
+    over = 31
+    same = 33
+    under = 32
+
+class ScoreSet(typing.NamedTuple):
+    ops: typing.List[str]
+    singles_score: int
+    sequence_score: int
+    ratio: float
+    result: Result
+
 supernode_pattern = re.compile(r"static const unsigned char (?P<fullname>([A-Z_]+)(plus([A-Z_]+))+)_code_body\[(?P<length>\d+)\] = {")
 op_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z_]+)_code_body\[(?P<length>\d+)\] = {")
 anynode_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z_plus]+)_code_body\[(?P<length>\d+)\] = {")
 
-def output_scores(sequences: typing.Iterable[typing.Iterable[str]], factor) -> None:
+def output_scores(sequences: typing.Iterable[typing.Iterable[str]], factor, output_mode = "text") -> None:
+    match output_mode:
+        case "text":
+            for scoreset in calculate_scores(sequences, factor):
+                print(f"\033[{scoreset.result.value}mUOps {", ".join(scoreset.ops)}\n\t  Percentage:  %{round(100 * scoreset.ratio, 2)}\n\tSum of Parts: {scoreset.singles_score:> 3}\n\t    Together: {scoreset.sequence_score:> 4}\033[0m")
+        case _:
+            raise ValueError(f"No output mode called {output_mode}")
+
+def calculate_scores(sequences: typing.Iterable[typing.Iterable[str]], factor) -> typing.List[ScoreSet]:
+    scores = []
     for s in sequences:
         opscores = [score_single_instruction(op) for op in s]
         sequence_score = score_sequence(s)
         ratio = sequence_score / sum(opscores)
-        color = 31 if ratio > (1/factor) else (32 if ratio < factor else 33)
-        print(f"\033[{color}mUOps {", ".join(s)}\n\t  Percentage:  %{round(100 * ratio, 2)}\n\tSum of Parts: {sum(opscores):> 3}\n\t    Together: {sequence_score:> 4}\033[0m")
+        result = Result.over if ratio > (1/factor) else (Result.under if ratio < factor else Result.same)
+        scores.append(ScoreSet(
+            ops = s,
+            singles_score = sum(opscores),
+            sequence_score=sequence_score,
+            ratio = ratio,
+            result = result  
+        ))
+    return scores
+        
 
 
 def score_sequence(uops: typing.Iterable[str]) -> int:
