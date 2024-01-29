@@ -138,12 +138,11 @@ def _generate_jit_switch_or_compare(supernodes: list[_supernode.SuperNode], var_
     # Stategy for generating a switch statement at a given level:
     #   Identify all potential opcodes at index 'level'
     #   For each opcode:
-    #       If there's only one supernode with this starting opcode:
-    #           Do direct comparison with the remainder of operations (if any)
-    #               If true, return supernode
-    #               If not, return first opcode
-    #       else (there are multiple supernodes remaining that start with this opcode):
+    #       if there are multiple supernodes starting with this opcode:
     #          Add switch statement for nodes of next level
+    #       else (there's only one supernode with this starting opcode):
+    #           ...
+    
     initial_opcodes = set(node.ops[0] for node in supernodes)
     yield f"{INDENT_UNIT * indent_level}switch ({var_names[level]}) {{"
 
@@ -152,7 +151,10 @@ def _generate_jit_switch_or_compare(supernodes: list[_supernode.SuperNode], var_
         next_nodes = [node.pop_front() for node in supernodes if node.length > 1 and node.ops[0] == initial_op]
         if next_nodes: yield from _generate_jit_switch_or_compare(next_nodes, var_names, level+1, indent_level + 2)
         else: 
-            yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = {supernodes[0].top_parent().name}, .length = {supernodes[0].top_parent().length}}};"
+            first_nodes = [node for node in supernodes if node.ops[0] == initial_op]
+            assert len(first_nodes) == 1
+            only_node = first_nodes[0]
+            yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = {only_node.top_parent().name}, .length = {only_node.top_parent().length}}};"
         yield f"{INDENT_UNIT * (indent_level + 2)}break;"
 
     yield f"{INDENT_UNIT * (indent_level + 1)}default:"
