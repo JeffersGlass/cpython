@@ -92,14 +92,19 @@ def output_scores(
         output_means = print
     ) -> None:
     factor = (1-factor) # Work with a total percentage, rather than a percentage difference
+    scores = sorted(calculate_scores(sequences, factor), key=operator.itemgetter(3))
     match output_mode:
         case "text":
-            for scoreset in sorted(calculate_scores(sequences, factor), key=operator.itemgetter(3)):
+            for scoreset in scores:
                 print(f"\033[{scoreset.result.value}mUOps {", ".join(scoreset.ops)}\n\t  Percentage:  %{round(100 * scoreset.ratio, 2)}\n\tSum of Parts: {scoreset.singles_score:> 3}\n\t    Together: {scoreset.sequence_score:> 4}\033[0m\n")
         case "table":
             headers = ["UOps", "Sum of Individual Ops", "Lengths When Compiled Together", "Percentage"]
-            rows = sorted([(' / '.join(s.ops), str(s.singles_score), str(s.sequence_score), str(round(s.ratio*100, 2)) + "%") for s in calculate_scores(sequences, factor)], key=operator.itemgetter(3))
+            rows = [(' / '.join(s.ops), str(s.singles_score), str(s.sequence_score), str(round(s.ratio*100, 2)) + "%") for s in scores]
             MarkDownTable(headers, rows).render(output_means)
+        case "raw":
+            headers = ["uops", "individual_sum", "compiled_together", "ratio"]
+            for scoreset in scores:
+                print(",".join(["/".join(scoreset.ops),str(scoreset.singles_score),str(scoreset.sequence_score),str(scoreset.ratio)]))
         case _:
             raise ValueError(f"No output mode called {output_mode}")
 
@@ -219,7 +224,7 @@ def main():
         "--output_mode",
         type = str,
         required=False,
-        choices = ["text", "table"],
+        choices = ["text", "table", "raw"],
         help = """
             The formatting of the output contents.
         """,   
