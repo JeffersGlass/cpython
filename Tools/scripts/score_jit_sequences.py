@@ -222,20 +222,33 @@ def main():
         """
     )
 
+    parser.add_argument(
+        "--output_mode",
+        type = str,
+        default = "text",
+        required=False,
+        choices = ["text", "table"],
+        help = """
+            The formatting of the output contents.
+        """,
+        
+    )
+
     args = parser.parse_args()
     if args.string and args.inputs:
-        raise ValueError("Cannot provide both a -s string and file inputs")
+        raise parser.error("Cannot provide both a -s string and file inputs")
     
     if args.inputs:
         input_func = get_sequences_from_files
     elif args.string:\
         input_func = get_sequences_from_string
     else:
-        raise ValueError("Must provide at least one file input or -s string")
+        raise parser.error("Must provide at least one file input or -s string")
     
-    output_mode = ("text" if not args.table else "table")
+    if args.output_mode != "table" and args.table:
+        parser.error("Cannot provide --output_mode={args.output_mode}")
     
-    output_scores(input_func(args.inputs), args.significance_factor, output_mode=output_mode)
+    output_scores(input_func(args.inputs), args.significance_factor, output_mode=args.output_mode)
 
 if __name__ == "__main__":
     main()
