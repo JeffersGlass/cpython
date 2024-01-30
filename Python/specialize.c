@@ -8,6 +8,7 @@
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
 #include "pycore_long.h"          // _PyLong_IsNonNegativeCompact()
 #include "pycore_moduleobject.h"
+#include "pycore_obmalloc.h"      //PyMem_Malloc
 #include "pycore_object.h"
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_uop_metadata.h"    // _PyOpcode_uop_name
@@ -22,15 +23,30 @@
  * ./adaptive.md
  */
 
+void _inc_uop_stats(uint64_t lastuop_val, uint64_t uop_val){
+    UOP_EXEC_INC(uop_val);
+    UOP_PAIR_INC(lastuop_val, uop_val);
+    //printf("Jitting %ld, %ld\n", lastuop_val, uop_val);
+}
+
+void _init_uop_stats(PyStats *stats){
+    for (int i = 0; i < 512; i++){
+        UOpStats* uop_stats = PyMem_RawMalloc(sizeof(UOpStats));
+        uop_stats->miss = 0 ;
+        uop_stats->execution_count = 0;
+        for (int j = 0; j < 512; j++){
+            uop_stats->pair_count[j] = 0;
+        }
+        stats->optimization_stats.opcode[i] = uop_stats;
+    }
+}
+
 #ifdef Py_STATS
 GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
 PyStats *_Py_stats = NULL;
 
-void _inc_uop_stats(uint64_t lastuop, uint64_t uop){
-        UOP_EXEC_INC(uop);
-        UOP_PAIR_INC(lastuop, uop);
-}
+
 
 #define ADD_STAT_TO_DICT(res, field) \
     do { \
@@ -175,9 +191,9 @@ print_uop_stats(FILE *out, OptimizationStats *stats)
 {
     for (int i = 0; i < 512; i++){
         for (int j = 0; j < 512; j++) {
-            if (stats->opcode[i].pair_count[j]) {
-                fprintf(out, "uop[%s].pair_count[%s] : %" PRIu64 "\n",
-                        _PyUOpName(i), _PyUOpName(j), stats->opcode[i].pair_count[j]);
+            if (stats->opcode[i]->pair_count[j]) {
+                fprintf(out, "uop[%s](%d).pair_count[%s](%d) : %" PRIu64 "\n",
+                        _PyUOpName(i), i, _PyUOpName(j), j, stats->opcode[i]->pair_count[j]);
             }
         }
     }
@@ -267,11 +283,11 @@ print_optimization_stats(FILE *out, OptimizationStats *stats)
         } else {
             names = _PyOpcode_uop_name;
         }
-        if (stats->opcode[i].execution_count) {
-            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i].execution_count);
+        if (stats->opcode[i]->execution_count) {
+            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", names[i], stats->opcode[i]->execution_count);
         }
-        if (stats->opcode[i].miss) {
-            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", names[i], stats->opcode[i].miss);
+        if (stats->opcode[i]->miss) {
+            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", names[i], stats->opcode[i]->miss);
         }
     }
 
@@ -313,6 +329,7 @@ void
 _Py_StatsOn(void)
 {
     _Py_stats = &_Py_stats_struct;
+    _init_uop_stats(_Py_stats);
 }
 
 void
