@@ -2,6 +2,7 @@ import argparse
 import csv
 import enum
 import functools
+import operator
 import pathlib
 import re
 import typing
@@ -27,11 +28,77 @@ supernode_pattern = re.compile(r"static const unsigned char (?P<fullname>([A-Z_]
 op_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z_]+)_code_body\[(?P<length>\d+)\] = {")
 anynode_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z_plus]+)_code_body\[(?P<length>\d+)\] = {")
 
-def output_scores(sequences: typing.Iterable[typing.Iterable[str]], factor, output_mode = "text") -> None:
+"""Copied wholesale from pyperf, under the MIT license
+
+The MIT License (MIT)
+Copyright 2016, Red Hat, Inc. and Google Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+"""
+class MarkDownTable:
+    def __init__(self, headers, rows):
+        self.headers = headers
+        self.rows = rows
+        self.widths = [len(header) for header in self.headers]
+        for row in self.rows:
+            for column, cell in enumerate(row):
+                self.widths[column] = max(self.widths[column], len(cell))
+
+    def _render_line(self, char='-'):
+        parts = ['']
+        for idx, width in enumerate(self.widths):
+            if idx == 0:
+                parts.append(char * (width + 2))
+            else:
+                parts.append(f':{char * width}:')
+        parts.append('')
+        return '|'.join(parts)
+
+    def _render_row(self, row):
+        parts = ['']
+        for width, cell in zip(self.widths, row):
+            parts.append(" %s " % cell.ljust(width))
+        parts.append('')
+        return '|'.join(parts)
+
+    def render(self, write_line):
+        write_line(self._render_row(self.headers))
+        write_line(self._render_line('-'))
+        for row in self.rows:
+            write_line(self._render_row(row))
+
+def output_scores(
+        sequences: typing.Iterable[typing.Iterable[str]],
+        factor: float, 
+        output_mode = "text",
+        output_means = print
+    ) -> None:
     match output_mode:
         case "text":
-            for scoreset in calculate_scores(sequences, factor):
-                print(f"\033[{scoreset.result.value}mUOps {", ".join(scoreset.ops)}\n\t  Percentage:  %{round(100 * scoreset.ratio, 2)}\n\tSum of Parts: {scoreset.singles_score:> 3}\n\t    Together: {scoreset.sequence_score:> 4}\033[0m")
+            for scoreset in sorted(calculate_scores(sequences, factor), key=operator.itemgetter(3)):
+                print(f"\033[{scoreset.result.value}mUOps {", ".join(scoreset.ops)}\n\t  Percentage:  %{round(100 * scoreset.ratio, 2)}\n\tSum of Parts: {scoreset.singles_score:> 3}\n\t    Together: {scoreset.sequence_score:> 4}\033[0m\n")
+        case "table":
+            headers = ["UOps", "Sum of Individual Ops", "Lengths When Compiled Together", "Percentage"]
+            rows = sorted([(' / '.join(s.ops), str(s.singles_score), str(s.sequence_score), str(round(s.ratio*100, 2)) + "%") for s in calculate_scores(sequences, factor)], key=operator.itemgetter(3))
+            MarkDownTable(headers, rows).render(output_means)
         case _:
             raise ValueError(f"No output mode called {output_mode}")
 
@@ -50,7 +117,6 @@ def calculate_scores(sequences: typing.Iterable[typing.Iterable[str]], factor) -
             result = result  
         ))
     return scores
-        
 
 
 def score_sequence(uops: typing.Iterable[str]) -> int:
@@ -84,7 +150,7 @@ def get_sequences_from_files(inputs: typing.Iterable[pathlib.Path | str]):
         if not file.exists(): raise ValueError(f"Input '{inp}' does not match any known file")
         
         match file.suffix.lower():
-            case 'csv':
+            case '.csv':
                 sequences.extend(get_sequences_from_csv(file))
             case '.h':
                 sequences.extend(get_sequences_from_stencil_file(file))
@@ -141,10 +207,18 @@ def main():
     parser.add_argument(
         "--significance-factor",
         type=float,
-        default=0.1,
+        default=0.9,
         help="""
             The factor by which the change in score must be different to apply
             coloring rules. Defaults to .1.
+        """
+    )
+
+    parser.add_argument(
+        "--table",
+        action="store_true",
+        help = """
+            Output a (markdown) table of the results
         """
     )
 
@@ -153,11 +227,15 @@ def main():
         raise ValueError("Cannot provide both a -s string and file inputs")
     
     if args.inputs:
-        output_scores(get_sequences_from_files(args.inputs), args.significance_factor)
-    elif args.string:
-        output_scores(get_sequences_from_string(args.string), args.significance_factor)
+        input_func = get_sequences_from_files
+    elif args.string:\
+        input_func = get_sequences_from_string
     else:
         raise ValueError("Must provide at least one file input or -s string")
+    
+    output_mode = ("text" if not args.table else "table")
+    
+    output_scores(input_func(args.inputs), args.significance_factor, output_mode=output_mode)
 
 if __name__ == "__main__":
     main()
