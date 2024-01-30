@@ -91,6 +91,7 @@ def output_scores(
         output_mode = "text",
         output_means = print
     ) -> None:
+    factor = (1-factor) # Work with a total percentage, rather than a percentage difference
     match output_mode:
         case "text":
             for scoreset in sorted(calculate_scores(sequences, factor), key=operator.itemgetter(3)):
@@ -207,7 +208,7 @@ def main():
     parser.add_argument(
         "--significance-factor",
         type=float,
-        default=0.9,
+        default=0.1,
         help="""
             The factor by which the change in score must be different to apply
             coloring rules. Defaults to .1.
@@ -215,23 +216,21 @@ def main():
     )
 
     parser.add_argument(
-        "--table",
-        action="store_true",
-        help = """
-            Output a (markdown) table of the results
-        """
-    )
-
-    parser.add_argument(
         "--output_mode",
         type = str,
-        default = "text",
         required=False,
         choices = ["text", "table"],
         help = """
             The formatting of the output contents.
-        """,
-        
+        """,   
+    )
+
+    parser.add_argument(
+        "--table",
+        action="store_true",
+        help = """
+            Shorthand for output_mode = "table"
+        """
     )
 
     args = parser.parse_args()
@@ -245,10 +244,12 @@ def main():
     else:
         raise parser.error("Must provide at least one file input or -s string")
     
-    if args.output_mode != "table" and args.table:
-        parser.error("Cannot provide --output_mode={args.output_mode}")
+    if args.output_mode and args.output_mode != "table" and args.table:
+        parser.error(f"Cannot provide --output_mode={args.output_mode}")
+    if not args.output_mode:
+        output_mode = "table" if args.table else "text"
     
-    output_scores(input_func(args.inputs), args.significance_factor, output_mode=args.output_mode)
+    output_scores(input_func(args.inputs), args.significance_factor, output_mode=args.output_mode or output_mode)
 
 if __name__ == "__main__":
     main()
