@@ -194,8 +194,8 @@ def main():
         help="""
         Input files(s).
         Each file may be: 
-            - A .csv file containing lists of UOps
-            - A .h file that 'looks like' jit_stencils.h - all multi-uop pairs
+            (1) A .csv file containing lists of UOps
+            (2) A .h file that 'looks like' jit_stencils.h - all multi-uop pairs
                 will be scored
         """,
     )
