@@ -136,6 +136,10 @@ class OpcodeStats:
                 if value and key.startswith("pair_count"):
                     name_j, _, _ = key[len("pair_count") + 1 :].partition("]")
                     pair_counts[(name_i, name_j)] = value
+                elif value and 'pair_count' in key:
+                    print(key)
+                    name_j = re.match(r"\(\d+\).pair_count\[(?P<name_j>[A-Z_0-9]+)\].+", key).group('name_j')
+                    pair_counts[(name_i, name_j)] = value
         return pair_counts
 
     def get_total_execution_count(self) -> int:
