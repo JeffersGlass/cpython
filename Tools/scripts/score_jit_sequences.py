@@ -24,9 +24,9 @@ class ScoreSet(typing.NamedTuple):
     ratio: float
     result: Result
 
-supernode_pattern = re.compile(r"static const unsigned char (?P<fullname>([A-Z_]+)(plus([A-Z_]+))+)_code_body\[(?P<length>\d+)\] = {")
-op_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z_]+)_code_body\[(?P<length>\d+)\] = {")
-anynode_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z_plus]+)_code_body\[(?P<length>\d+)\] = {")
+supernode_pattern = re.compile(r"static const unsigned char (?P<fullname>([A-Z0-9_]+)(plus([A-Z_]+))+)_code_body\[(?P<length>\d+)\] = {")
+op_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z0-9_]+)_code_body\[(?P<length>\d+)\] = {")
+anynode_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z0-9_plus]+)_code_body\[(?P<length>\d+)\] = {")
 
 """Copied wholesale from pyperf, under the MIT license
 
