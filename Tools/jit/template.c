@@ -58,23 +58,43 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     // Locals that the instruction implementations expect to exist:
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
-    int opcode = _JIT_OPCODE;
+    uint64_t _target;
+    uint64_t opcodes[] = _JIT_OPCODES;
+
     _PyUOpInstruction *next_uop;
+    extern int _JIT_OPARG0, _JIT_OPARG1, _JIT_OPARG2, _JIT_OPARG3;
+    int opargs[] = {(uint64_t)&_JIT_OPARG0, (uint64_t)&_JIT_OPARG1, (uint64_t)&_JIT_OPARG2, (uint64_t)&_JIT_OPARG3};
+
+    extern int _JIT_OPERAND0, _JIT_OPERAND1, _JIT_OPERAND2, _JIT_OPERAND3;
+    int operands[] = {(uint64_t)&_JIT_OPERAND0, (uint64_t)&_JIT_OPERAND1, (uint64_t)&_JIT_OPERAND2, (uint64_t)&_JIT_OPERAND3};
+
+    extern int _JIT_TARGET0, _JIT_TARGET1, _JIT_TARGET2, _JIT_TARGET3;
+    int targets[] = {(uint64_t)&_JIT_TARGET0, (uint64_t)&_JIT_TARGET1, (uint64_t)&_JIT_TARGET2, (uint64_t)&_JIT_TARGET3};
+
+    for (int i = 0; i < sizeof(opcodes) / sizeof(uint64_t); i++){
+
+        int opcode = opcodes[i];
+        _target = targets[i];
+
     // Other stuff we need handy:
-    PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
-    PATCH_VALUE(uint64_t, _operand, _JIT_OPERAND)
-    PATCH_VALUE(uint32_t, _target, _JIT_TARGET)
     // The actual instruction definitions (only one will be used):
     if (opcode == _JUMP_TO_TOP) {
         CHECK_EVAL_BREAKER();
         PATCH_JUMP(_JIT_TOP);
     }
+
+    #undef CURRENT_OPARG
+    #define CURRENT_OPARG() (opargs[i])
+    #undef CURRENT_OPERAND
+    #define CURRENT_OPERAND() (operands[i])
     switch (opcode) {
 #include "executor_cases.c.h"
         default:
             Py_UNREACHABLE();
     }
+    }
     PATCH_JUMP(_JIT_CONTINUE);
+
     // Labels that the instruction implementations expect to exist:
 unbound_local_error_tier_two:
     _PyEval_FormatExcCheckArg(

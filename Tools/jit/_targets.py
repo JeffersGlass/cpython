@@ -12,6 +12,7 @@ import typing
 
 import _llvm
 import _schema
+import _supernode
 import _stencils
 import _writer
 
@@ -101,14 +102,14 @@ class _Target(typing.Generic[_S, _R]):
         raise NotImplementedError(type(self))
 
     async def _compile(
-        self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
+        self, opnames: typing.Iterable[str], c: pathlib.Path, tempdir: pathlib.Path
     ) -> _stencils.StencilGroup:
-        o = tempdir / f"{opname}.o"
+        o = tempdir / f"{'plus'.join(opnames)}.o"
         args = [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
-            f"-D_JIT_OPCODE={opname}",
+            f"-D_JIT_OPCODES={{ {','.join(opnames)} }}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
             "-I.",
@@ -148,11 +149,11 @@ class _Target(typing.Generic[_S, _R]):
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
                 for opname in opnames:
-                    coro = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
+                    coro = self._compile([opname], TOOLS_JIT_TEMPLATE_C, work)
                     tasks.append(group.create_task(coro, name=opname))
         return {task.get_name(): task.result() for task in tasks}
 
-    def build(self, out: pathlib.Path, *, comment: str = "") -> None:
+    def build(self, out: pathlib.Path, *, comment: str = "",  supernodes: list[_supernode.SuperNode] | None = None) -> None:
         """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
         jit_stencils = out / "jit_stencils.h"
