@@ -60,6 +60,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     int oparg;
     uint64_t _target;
     uint64_t opcodes[] = _JIT_OPCODES;
+    // TODO change this to a #define to allow loo
 
     _PyUOpInstruction *next_uop;
     extern int _JIT_OPARG0, _JIT_OPARG1, _JIT_OPARG2, _JIT_OPARG3;
