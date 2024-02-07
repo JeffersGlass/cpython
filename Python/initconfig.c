@@ -9,7 +9,7 @@
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_pystats.h"       // _Py_StatsOn()
+#include "pycore_pystats.h"       // _Py_StatsOn(), _Py_Stats_Maybe_Set_Depth
 
 #include "osdefs.h"               // DELIM
 
@@ -2202,6 +2202,7 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
 #ifdef Py_STATS
+    printf("PY_STATS HERE\n");
     if (config_get_xoption(config, L"pystats")) {
         config->_pystats = 1;
     }
@@ -2211,11 +2212,14 @@ config_read(PyConfig *config, int compute_path_config)
     if (config->_pystats < 0) {
         config->_pystats = 0;
     }
+
     if (config_get_env(config, "PYTHONSTATSDEPTH")) {
-        config->_pystats_depth = (int) config_get_env(config, "PYTHONSTATSDEPTH") - '0';
-        if (config->_pystats_depth < 2) config->_pystats_depth = 2;
+        config->_pystats_depth = atol(config_get_env(config, "PYTHONSTATSDEPTH"));
+        printf("Python Stats Depth: %d\n", config->_pystats_depth);
+        if (config->_pystats_depth < 2){ printf("Setting default stats depth to 2"); config->_pystats_depth = 2; }
     }
     else {
+        printf("PYTHONSTATSDEPTH NOT IN ENVIRONMENT\n");
         config->_pystats_depth = 2;
     }
 
@@ -2359,8 +2363,12 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
 
 #ifdef Py_STATS
     if (config->_pystats) {
-        _Py_Stats_Maybe_Set_Depth(config->_pystats_depth);
+        printf("In _PyConfig_Write, turning stats on\n");
         _Py_StatsOn();        
+        if (config->_pystats_depth){
+            printf("In _PyConfig_Write, setting stats depth to %d\n", config->_pystats_depth);
+            _Py_Stats_Maybe_Set_Depth(config->_pystats_depth);
+        }
     }
 #endif
 

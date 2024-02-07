@@ -345,12 +345,18 @@ void
 _Py_StatsOn(void)
 {
     _Py_stats = &_Py_stats_struct;
-    _Py_Stats_Maybe_Set_Depth(2);
+    //_Py_Stats_Maybe_Set_Depth(2);
     if (!_Py_stats->optimization_stats.opcode[0]) _init_pystats(_Py_stats);
 }
 
-void _Py_Stats_Maybe_Set_Depth(uint16_t depth){
-    if (!_Py_stats->optimization_stats.max_uop_chain_depth) _Py_stats->optimization_stats.max_uop_chain_depth = depth;
+void _Py_Stats_Maybe_Set_Depth(uint64_t depth){
+    //if (!_Py_stats->optimization_stats.max_uop_chain_depth){
+        _Py_stats->optimization_stats.max_uop_chain_depth = depth;
+    //} 
+    //else{
+    //    printf("In _Py_Stats_Maybe_Set_Depth, depth already set to %d, not changing\n", _Py_stats->optimization_stats.max_uop_chain_depth);
+    //}
+    
 }
 
 void
