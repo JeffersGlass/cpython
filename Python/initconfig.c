@@ -117,6 +117,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(_is_python_build, UINT),
 #ifdef Py_STATS
     SPEC(_pystats, UINT),
+    SPEC(_pystats_depth, UINT),
 #endif
 #ifdef Py_DEBUG
     SPEC(run_presite, WSTR_OPT),
@@ -310,6 +311,7 @@ static const char usage_envvars[] =
 "PYTHONWARNINGS=arg      : warning control (-W arg)\n"
 #ifdef Py_STATS
 "PYTHONSTATS             : turns on statistics gathering\n"
+"PYTHONSTATSDEPTH        : sets the maximum length of UOp sequences to track\n"
 #endif
 #ifdef Py_DEBUG
 "PYTHON_PRESITE=pkg.mod  : import this module before site.py is run\n"
@@ -2209,6 +2211,15 @@ config_read(PyConfig *config, int compute_path_config)
     if (config->_pystats < 0) {
         config->_pystats = 0;
     }
+    if (config_get_env(config, "PYTHONSTATSDEPTH")) {
+        config->_pystats_depth = (int) config_get_env(config, "PYTHONSTATSDEPTH") - '0';
+        if (config->_pystats_depth < 2) config->_pystats_depth = 2;
+    }
+    else {
+        config->_pystats_depth = 2;
+    }
+
+    
 #endif
 
     status = config_read_complex_options(config);
@@ -2348,6 +2359,7 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
 
 #ifdef Py_STATS
     if (config->_pystats) {
+        _Py_Stats_Maybe_Set_Depth(config->_pystats_depth);
         _Py_StatsOn();        
     }
 #endif

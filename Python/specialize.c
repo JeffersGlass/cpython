@@ -10,6 +10,7 @@
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
+#include "pycore_pystats.h"         // _Py_Stats_Maybe_Set_Depth
 #include "pycore_uop_metadata.h"    // _PyOpcode_uop_name
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
@@ -344,7 +345,12 @@ void
 _Py_StatsOn(void)
 {
     _Py_stats = &_Py_stats_struct;
+    _Py_Stats_Maybe_Set_Depth(2);
     if (!_Py_stats->optimization_stats.opcode[0]) _init_pystats(_Py_stats);
+}
+
+void _Py_Stats_Maybe_Set_Depth(uint16_t depth){
+    if (!_Py_stats->optimization_stats.max_uop_chain_depth) _Py_stats->optimization_stats.max_uop_chain_depth = depth;
 }
 
 void
