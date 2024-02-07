@@ -171,16 +171,16 @@ class _Target(typing.Generic[_S, _R]):
     
     async def _build_multiple_ops(self, supernodes: typing.Iterable[_supernode.SuperNode]) -> dict[str, _stencils.StencilGroup]:
         tasks = []
-        with CPYTHON / "work" as tempdir:
-            work = pathlib.Path(tempdir).resolve()
-            async with asyncio.TaskGroup() as group:
-                for node in supernodes:
-                    template_path = work / f"template_{node.length}.c"
-                    if not template_path.exists():
-                        _template.create_template_file(node.length, template_path)
-                    coro = self._compile(template_path, work, node.ops)
-                    tasks.append(group.create_task(coro, name=node.name))
-            return {task.get_name(): task.result() for task in tasks}
+        tempdir = CPYTHON / "work"
+        work = pathlib.Path(tempdir).resolve()
+        async with asyncio.TaskGroup() as group:
+            for node in supernodes:
+                template_path = work / f"template_{node.length}.c"
+                if not template_path.exists():
+                    _template.create_template_file(node.length, template_path)
+                coro = self._compile(template_path, work, node.ops)
+                tasks.append(group.create_task(coro, name=node.name))
+        return {task.get_name(): task.result() for task in tasks}
 
     def build(self, out: pathlib.Path, supernodes: list[_supernode.SuperNode] | None) -> None:
         """Build jit_stencils.h in the given directory."""
