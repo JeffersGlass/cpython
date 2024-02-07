@@ -2214,7 +2214,7 @@ config_read(PyConfig *config, int compute_path_config)
     }
 
     if (config_get_env(config, "PYTHONSTATSDEPTH")) {
-        config->_pystats_depth = atol(config_get_env(config, "PYTHONSTATSDEPTH"));
+        config->_pystats_depth = atoi(config_get_env(config, "PYTHONSTATSDEPTH"));
         printf("Python Stats Depth: %d\n", config->_pystats_depth);
         if (config->_pystats_depth < 2){ printf("Setting default stats depth to 2"); config->_pystats_depth = 2; }
     }
@@ -2364,11 +2364,12 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
 #ifdef Py_STATS
     if (config->_pystats) {
         printf("In _PyConfig_Write, turning stats on\n");
-        _Py_StatsOn();        
         if (config->_pystats_depth){
             printf("In _PyConfig_Write, setting stats depth to %d\n", config->_pystats_depth);
             _Py_Stats_Maybe_Set_Depth(config->_pystats_depth);
         }
+        _Py_StatsOn();        
+        
     }
 #endif
 
