@@ -24,7 +24,6 @@
  */
 
 #ifdef Py_STATS
-
 GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
 static PyStats _Py_stats_struct = { .gc_stats = _py_gc_stats };
 PyStats *_Py_stats = NULL;
@@ -46,7 +45,7 @@ PyStats *_Py_stats = NULL;
 
 void 
 _init_pystats(){
-    //Make UOpstats structs for all initial opcodes, with null pointers
+    //Make UOpstats structs for all initial opcodes, with null pointers to deeper opcodes
     for (int i = 0; i < 512; i++){
         _Py_stats_struct.optimization_stats.opcode[i] = PyMem_RawCalloc(1, sizeof(UOpStats));
         for (int j = 0; j < 512; j++){
@@ -54,21 +53,15 @@ _init_pystats(){
         }
     }
 
-    
-    int DEPTH = _Py_stats_struct.optimization_stats.max_uop_chain_depth ? _Py_stats_struct.optimization_stats.max_uop_chain_depth : 2;
-    
+    int DEPTH = _Py_stats_struct.optimization_stats.max_uop_chain_depth ? _Py_stats_struct.optimization_stats.max_uop_chain_depth : 2;    
     
     if (_Py_stats_struct.optimization_stats.last_opcodes){
         uint64_t *tmp;
         tmp = PyMem_RawRealloc(DEPTH, sizeof(uint64_t));
-        if (tmp != NULL){
-            _Py_stats_struct.optimization_stats.last_opcodes = tmp;
-        }
-        else {
-            int z = 1/0;
-        }
-        
-    } else{
+        if (tmp != NULL) _Py_stats_struct.optimization_stats.last_opcodes = tmp;
+        else return PyErr_NoMemory(); 
+    } 
+    else {
         _Py_stats_struct.optimization_stats.last_opcodes = PyMem_RawCalloc(DEPTH, sizeof(uint64_t));
     }    
 }
@@ -265,13 +258,10 @@ print_uop_sequence(FILE *out, UOpStats *uop_stats, const char* prefix){
                 } else {
                     names = _PyOpcode_uop_name;
                 }
-                fprintf(out, "UOp Sequence Count[%s,%s]: %ld\n", prefix, names[i], uop_stats->next_stats[i]->execution_count);
-                char pre[strlen(prefix) + 256]; // TODO why is this constant so large?
-                pre[0] = '\0';
-                strcat(pre, prefix);
-                strcat(pre, ",");
-                strcat(pre, names[i]);
-                print_uop_sequence(out, uop_stats->next_stats[i], pre);
+                fprintf(out, "UOp sequence count[%s,%s]: %ld\n", prefix, names[i], uop_stats->next_stats[i]->execution_count);
+                char new_prefix[strlen(prefix) + 64];
+                sprintf(new_prefix, "%s,%s", prefix, names[i]);
+                print_uop_sequence(out, uop_stats->next_stats[i], new_prefix);
             }
         }
     }  
