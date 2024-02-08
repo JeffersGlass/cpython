@@ -9,7 +9,7 @@
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
 #include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_pystats.h"       // _Py_StatsOn(), _Py_Stats_Maybe_Set_Depth
+#include "pycore_pystats.h"       // _Py_StatsOn(), _Py_Stats_Set_Depth
 
 #include "osdefs.h"               // DELIM
 
@@ -2366,7 +2366,7 @@ _PyConfig_Write(const PyConfig *config, _PyRuntimeState *runtime)
         printf("In _PyConfig_Write, turning stats on\n");
         if (config->_pystats_depth){
             printf("In _PyConfig_Write, setting stats depth to %d\n", config->_pystats_depth);
-            _Py_Stats_Maybe_Set_Depth(config->_pystats_depth);
+            _Py_Stats_Set_Depth(config->_pystats_depth);
         }
         _Py_StatsOn();        
         
