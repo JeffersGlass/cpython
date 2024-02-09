@@ -315,6 +315,11 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
             } \
         } while (0); \
     }
+#define RESET_LAST_OPCODE_LIST do { \
+    if (_Py_stats){ \
+        memset(_Py_stats->optimization_stats.last_opcodes, 0, _Py_stats->optimization_stats.max_uop_chain_depth * sizeof(uint64_t)); \
+        } \
+    } while (0)
 #define RARE_EVENT_STAT_INC(name) do { if (_Py_stats) _Py_stats->rare_event_stats.name++; } while (0)
 
 // Export for '_opcode' shared extension
@@ -338,6 +343,7 @@ void _init_pystats(void);
 #define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
 #define OPT_HIST(length, name) ((void)0)
 #define UOP_CHAIN_UPDATE(op) printf("UOP CHAINER NOT RUNNING\n");
+#define RESET_LAST_OPCODE_LIST ((void)0)
 #define RARE_EVENT_STAT_INC(name) ((void)0)
 #endif  // !Py_STATS
 

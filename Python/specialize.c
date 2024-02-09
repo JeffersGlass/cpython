@@ -370,8 +370,8 @@ _Py_StatsOff(void)
 void
 _Py_StatsClear(void)
 {
-    memset(&_py_gc_stats, 0, sizeof(_py_gc_stats));
-    memset(&_Py_stats_struct, 0, sizeof(_Py_stats_struct));
+    //memset(&_py_gc_stats, 0, sizeof(_py_gc_stats));
+    //memset(&_Py_stats_struct, 0, sizeof(_Py_stats_struct));
     _Py_stats_struct.gc_stats = _py_gc_stats;
 }
 
