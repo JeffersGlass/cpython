@@ -370,9 +370,12 @@ _Py_StatsOff(void)
 void
 _Py_StatsClear(void)
 {
-    //memset(&_py_gc_stats, 0, sizeof(_py_gc_stats));
-    //memset(&_Py_stats_struct, 0, sizeof(_Py_stats_struct));
+    uint64_t depth = _Py_stats_struct.optimization_stats.max_uop_chain_depth;
+    memset(&_py_gc_stats, 0, sizeof(_py_gc_stats));
+    memset(&_Py_stats_struct, 0, sizeof(_Py_stats_struct));
     _Py_stats_struct.gc_stats = _py_gc_stats;
+    _init_pystats();
+    _Py_stats_struct.optimization_stats.max_uop_chain_depth = depth;
 }
 
 static int

@@ -295,31 +295,29 @@ extern int _PyStaticCode_Init(PyCodeObject *co);
             _Py_stats->optimization_stats.name[bucket]++; \
         } \
     } while (0)
-#define UOP_CHAIN_UPDATE(op) \
+#define UOP_CHAIN_UPDATE(op, last_opcodes) \
     if (_Py_stats){ \
         for (uint64_t i = _Py_stats->optimization_stats.max_uop_chain_depth - 1; i > 0; i--){ \
-            _Py_stats->optimization_stats.last_opcodes[i] = _Py_stats->optimization_stats.last_opcodes[i-1]; \
+            last_opcodes[i] = last_opcodes[i-1]; \
         } \
-        _Py_stats->optimization_stats.last_opcodes[0] = op; \
+        last_opcodes[0] = op; \
         do { \
             UOpStats *head = _Py_stats->optimization_stats.opcode[op]; \
             for (uint64_t i = 0; i < _Py_stats->optimization_stats.max_uop_chain_depth - 1; i++){ \
-                if (!_Py_stats->optimization_stats.last_opcodes[i+1]){ break; } \
-                if (head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]]){ \
-                    head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]]->execution_count++; } \
+                if (!last_opcodes[i+1]){ break; } \
+                if (head->next_stats[last_opcodes[i+1]]){ \
+                    head->next_stats[last_opcodes[i+1]]->execution_count++; } \
                 else { \
-                    head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]] = calloc(1, sizeof(UOpStats)); \
-                    head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]]->execution_count = 1; \
+                    head->next_stats[last_opcodes[i+1]] = calloc(1, sizeof(UOpStats)); \
+                    head->next_stats[last_opcodes[i+1]]->execution_count = 1; \
                 } \
-                head = head->next_stats[_Py_stats->optimization_stats.last_opcodes[i+1]]; \
+                head = head->next_stats[last_opcodes[i+1]]; \
             } \
         } while (0); \
     }
-#define RESET_LAST_OPCODE_LIST do { \
-    if (_Py_stats){ \
-        memset(_Py_stats->optimization_stats.last_opcodes, 0, _Py_stats->optimization_stats.max_uop_chain_depth * sizeof(uint64_t)); \
-        } \
-    } while (0)
+#define RESET_LAST_OPCODE_LIST(last_opcodes) do { \
+    memset(last_opcodes, 0, 50 * sizeof(uint64_t)); \
+    } while (0)    
 #define RARE_EVENT_STAT_INC(name) do { if (_Py_stats) _Py_stats->rare_event_stats.name++; } while (0)
 
 // Export for '_opcode' shared extension

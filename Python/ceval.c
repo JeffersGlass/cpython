@@ -1009,9 +1009,12 @@ enter_tier_two:
     OPT_STAT_INC(traces_executed);
     _PyUOpInstruction *next_uop = current_executor->trace;
     uint16_t uopcode;
-    //RESET_LAST_OPCODE_LIST;
+    
+    
 #ifdef Py_STATS
+    uint64_t last_opcodes[50];
     uint64_t trace_uop_execution_counter = 0;
+    RESET_LAST_OPCODE_LIST(last_opcodes);
 #endif
 
     for (;;) {
@@ -1027,7 +1030,7 @@ enter_tier_two:
         next_uop++;
         OPT_STAT_INC(uops_executed);
         UOP_STAT_INC(uopcode, execution_count);
-        UOP_CHAIN_UPDATE(uopcode);
+        UOP_CHAIN_UPDATE(uopcode, last_opcodes);
 #ifdef Py_STATS
         trace_uop_execution_counter++;
 #endif
