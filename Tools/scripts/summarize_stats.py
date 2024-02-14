@@ -60,7 +60,7 @@ def _load_metadata_from_source():
                     continue
                 line = line[len(start) :]
                 name, val = line.split()
-                defines[int(val.strip())].append(name.strip())
+                defines[int(val.strip(" ()"))].append(name.strip())
         return defines
 
     import opcode
@@ -73,6 +73,7 @@ def _load_metadata_from_source():
             Path("Include") / "cpython" / "pystats.h", "EVAL_CALL"
         ),
         "_defines": get_defines(Path("Python") / "specialize.c"),
+        "_flag_defines": get_defines(Path("Include") / "internal" / "pycore_opcode_metadata.h", "HAS")
     }
 
 
@@ -114,6 +115,29 @@ def load_raw_data(input: Path) -> RawData:
 def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
 
+@functools.cache
+def _get_uop_flags_from_file(flag_names: tuple[str], filepath: str | Path = "Include/internal/pycore_uop_metadata.h") -> dict[str, list[str]]:
+    flags = {}
+    with open(SOURCE_DIR / filepath) as spec_src:
+        pattern = r"\s+\[(?P<name>[_A-Z0-9]+)\] =(?P<flags>(\s(0|HAS_DEOPT_FLAG|HAS_ARG_FLAG|HAS_LOCAL_FLAG|HAS_PURE_FLAG|HAS_ERROR_FLAG|_HAS_ESCAPES_FLAG|HAS_CONST_FLAG|HAS_ESCAPES_FLAG|HAS_PASSTHROUGH_FLAG|HAS_NAME_FLAG|HAS_FREE_FLAG|HAS_EVAL_BREAK_FLAG)(\s\|)?)+)"
+        for line in spec_src:
+            if m:= re.match(pattern, line):
+                flags[m.group('name')] = [f.strip() for f in m.group('flags').split("|") if "0" not in flags]
+                pass
+    return flags
+
+@functools.cache
+def _get_ops_that_use_operands(filepath: str | Path = "Python/executor_cases.c.h") -> list[str]:
+    ops = []
+    current_op = None
+    with open(SOURCE_DIR / filepath) as spec_src:
+        start_of_op_pattern = r"\s*case (?P<name>[_A-Z0-9]+): {"
+        for line in spec_src:
+            if m:= re.match(start_of_op_pattern, line): 
+                current_op = m.group("name")
+            elif "CURRENT_OPERAND()" in line:
+                ops.append(current_op)
+    return ops
 
 class OpcodeStats:
     """
@@ -630,8 +654,22 @@ def execution_count_section() -> Section:
         ],
     )
 
+def opcode_input_overlap(uop_flags: dict[str, list[str]],opcode_i: str, opcode_j: str) -> str:
+    ops_that_use_operand = _get_ops_that_use_operands()
+    result = ""
+    operand_status = not (opcode_i in ops_that_use_operand and opcode_j in ops_that_use_operand)
+    if operand_status: result
+    oparg_status = not ("HAS_ARG_FLAG" in uop_flags[opcode_i] and "HAS_ARG_FLAG" in uop_flags[opcode_j])
+    target_status = True
+    results = (operand_status, oparg_status, target_status)
+    if results.count(False) == 0:
+        return "No Overlap"
+    if results.count(False) == 1:
+        return "Single overlap"
+    return "Multiple Overlaps"
 
-def pair_count_section(prefix: str) -> Section:
+
+def pair_count_section(prefix: str, sharing_data = False) -> Section:
     def calc_pair_count_table(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats(prefix)
         pair_counts = opcode_stats.get_pair_counts()
@@ -643,22 +681,26 @@ def pair_count_section(prefix: str) -> Section:
             sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 100
         ):
             cumulative += count
-            rows.append(
-                (
+            next_row = [
                     f"{opcode_i} {opcode_j}",
                     Count(count),
                     Ratio(count, total),
                     Ratio(cumulative, total),
-                )
-            )
+                ]
+            if sharing_data: 
+                uop_flags = _get_uop_flags_from_file(tuple(stats._data['_flag_defines'].keys()))
+                next_row.append(opcode_input_overlap(uop_flags, opcode_i, opcode_j))
+            rows.append(next_row)
         return rows
 
+    headings = ["Pair", "Count:", "Self:", "Cumulative:"]
+    if sharing_data: headings.append("Overlapping Use of Oparg/Operand/Target")
     return Section(
         "Pair counts",
         f"Pair counts for top 100 {prefix} pairs",
         [
             Table(
-                ("Pair", "Count:", "Self:", "Cumulative:"),
+                headings,
                 calc_pair_count_table,
             )
         ],
@@ -1053,7 +1095,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
-        yield pair_count_section("uop")
+        yield pair_count_section("uop", sharing_data=True)
         yield Section(
             "Unsupported opcodes",
             "",

@@ -785,7 +785,7 @@ make_executor_from_uops(_PyUOpInstruction *buffer, _PyBloomFilter *dependencies)
     if (lltrace >= 2) {
         printf("Optimized executor (length %d):\n", length);
         for (int i = 0; i < length; i++) {
-            printf("%4d %s(%d, %d, %" PRIu64 ")\n",
+            printf("%4d %30s(oparg:%2d, target %2d, operand:%2" PRIu64 ")\n",
                    i,
                    _PyUOpName(executor->trace[i].opcode),
                    executor->trace[i].oparg,
