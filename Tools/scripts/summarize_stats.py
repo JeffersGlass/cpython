@@ -657,16 +657,18 @@ def execution_count_section() -> Section:
 def opcode_input_overlap(uop_flags: dict[str, list[str]],opcode_i: str, opcode_j: str) -> str:
     ops_that_use_operand = _get_ops_that_use_operands()
     result = ""
-    operand_status = not (opcode_i in ops_that_use_operand and opcode_j in ops_that_use_operand)
-    if operand_status: result
-    oparg_status = not ("HAS_ARG_FLAG" in uop_flags[opcode_i] and "HAS_ARG_FLAG" in uop_flags[opcode_j])
-    target_status = True
-    results = (operand_status, oparg_status, target_status)
+    operand_use_compatible = not (opcode_i in ops_that_use_operand and opcode_j in ops_that_use_operand)
+    result += f"Operands are {"\x1b[35mnot " if not operand_use_compatible else "\x1b[36m"}Compatible.\033[0m "
+    oparg_status_compatible = not ("HAS_ARG_FLAG" in uop_flags[opcode_i] and "HAS_ARG_FLAG" in uop_flags[opcode_j])
+    result += f"Opargs are {"\x1b[35mnot " if not oparg_status_compatible else "\x1b[36m"}Compatibile.\033[0m " 
+    target_status_compatible = True #TODO this is a lie
+    if target_status_compatible: result += f"Targets are {"\x1b[35mnot " if not target_status_compatible else "\x1b[36m"} Compatible.\033[0m"
+    results = (operand_use_compatible, oparg_status_compatible, target_status_compatible)
     if results.count(False) == 0:
-        return "No Overlap"
+        return "\x1b[32mNo Overlap.\x1b[0m " + result 
     if results.count(False) == 1:
-        return "Single overlap"
-    return "Multiple Overlaps"
+        return "\x1b[33mSingle overlap.\x1b[0m " + result
+    return "\x1b[31mMultiple Overlaps.\x1b[0m " + result
 
 
 def pair_count_section(prefix: str, sharing_data = False) -> Section:
@@ -678,7 +680,7 @@ def pair_count_section(prefix: str, sharing_data = False) -> Section:
         cumulative = 0
         rows: Rows = []
         for (opcode_i, opcode_j), count in itertools.islice(
-            sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 100
+            sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 1000
         ):
             cumulative += count
             next_row = [
