@@ -73,7 +73,9 @@ def _load_metadata_from_source():
             Path("Include") / "cpython" / "pystats.h", "EVAL_CALL"
         ),
         "_defines": get_defines(Path("Python") / "specialize.c"),
-        "_flag_defines": get_defines(Path("Include") / "internal" / "pycore_opcode_metadata.h", "HAS")
+        "_flag_defines": get_defines(
+            Path("Include") / "internal" / "pycore_opcode_metadata.h", "HAS"
+        ),
     }
 
 
@@ -115,29 +117,39 @@ def load_raw_data(input: Path) -> RawData:
 def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
 
+
 @functools.cache
-def _get_uop_flags_from_file(flag_names: tuple[str], filepath: str | Path = "Include/internal/pycore_uop_metadata.h") -> dict[str, list[str]]:
+def _get_uop_flags_from_file(
+    flag_names: tuple[str],
+    filepath: str | Path = "Include/internal/pycore_uop_metadata.h",
+) -> dict[str, list[str]]:
     flags = {}
     with open(SOURCE_DIR / filepath) as spec_src:
         pattern = r"\s+\[(?P<name>[_A-Z0-9]+)\] =(?P<flags>(\s(0|HAS_DEOPT_FLAG|HAS_ARG_FLAG|HAS_LOCAL_FLAG|HAS_PURE_FLAG|HAS_ERROR_FLAG|_HAS_ESCAPES_FLAG|HAS_CONST_FLAG|HAS_ESCAPES_FLAG|HAS_PASSTHROUGH_FLAG|HAS_NAME_FLAG|HAS_FREE_FLAG|HAS_EVAL_BREAK_FLAG)(\s\|)?)+)"
         for line in spec_src:
-            if m:= re.match(pattern, line):
-                flags[m.group('name')] = [f.strip() for f in m.group('flags').split("|") if "0" not in flags]
+            if m := re.match(pattern, line):
+                flags[m.group("name")] = [
+                    f.strip() for f in m.group("flags").split("|") if "0" not in flags
+                ]
                 pass
     return flags
 
+
 @functools.cache
-def _get_ops_that_use_operands(filepath: str | Path = "Python/executor_cases.c.h") -> list[str]:
+def _get_ops_that_use_operands(
+    filepath: str | Path = "Python/executor_cases.c.h",
+) -> list[str]:
     ops = []
     current_op = None
     with open(SOURCE_DIR / filepath) as spec_src:
         start_of_op_pattern = r"\s*case (?P<name>[_A-Z0-9]+): {"
         for line in spec_src:
-            if m:= re.match(start_of_op_pattern, line): 
+            if m := re.match(start_of_op_pattern, line):
                 current_op = m.group("name")
             elif "CURRENT_OPERAND()" in line:
                 ops.append(current_op)
     return ops
+
 
 class OpcodeStats:
     """
@@ -439,7 +451,7 @@ class Stats:
     def get_rare_events(self) -> list[tuple[str, int]]:
         prefix = "Rare event "
         return [
-            (key[len(prefix) + 1: -1].replace("_", " "), val)
+            (key[len(prefix) + 1 : -1].replace("_", " "), val)
             for key, val in self._data.items()
             if key.startswith(prefix)
         ]
@@ -654,24 +666,43 @@ def execution_count_section() -> Section:
         ],
     )
 
-def opcode_input_overlap(uop_flags: dict[str, list[str]],opcode_i: str, opcode_j: str) -> str:
+
+def opcode_input_overlap(
+    uop_flags: dict[str, list[str]], opcode_i: str, opcode_j: str
+) -> str:
     ops_that_use_operand = _get_ops_that_use_operands()
-    result = ""
-    operand_use_compatible = not (opcode_i in ops_that_use_operand and opcode_j in ops_that_use_operand)
-    result += f"Operands are {"\x1b[35mnot " if not operand_use_compatible else "\x1b[36m"}Compatible.\033[0m "
-    oparg_status_compatible = not ("HAS_ARG_FLAG" in uop_flags[opcode_i] and "HAS_ARG_FLAG" in uop_flags[opcode_j])
-    result += f"Opargs are {"\x1b[35mnot " if not oparg_status_compatible else "\x1b[36m"}Compatibile.\033[0m " 
-    target_status_compatible = True #TODO this is a lie
-    if target_status_compatible: result += f"Targets are {"\x1b[35mnot " if not target_status_compatible else "\x1b[36m"} Compatible.\033[0m"
-    results = (operand_use_compatible, oparg_status_compatible, target_status_compatible)
+    operand_use_compatible = not (
+        opcode_i in ops_that_use_operand and opcode_j in ops_that_use_operand
+    )
+
+    oparg_status_compatible = not (
+        "HAS_ARG_FLAG" in uop_flags[opcode_i] and "HAS_ARG_FLAG" in uop_flags[opcode_j]
+    )
+
+    i_has_target = (
+        "HAS_DEOPT_FLAG" in uop_flags[opcode_i]
+        or "HAS_ESCAPE_FLAG" in uop_flags[opcode_i]
+    )
+    j_has_target = (
+        "HAS_DEOPT_FLAG" in uop_flags[opcode_j]
+        or "HAS_ESCAPE_FLAG" in uop_flags[opcode_j]
+    )
+    target_status_compatible = not (i_has_target and j_has_target)
+
+    results = (
+        operand_use_compatible,
+        oparg_status_compatible,
+        target_status_compatible,
+    )
+    result_names = ("Operand", "Oparg", "Target")
     if results.count(False) == 0:
-        return "\x1b[32mNo Overlap.\x1b[0m " + result 
+        return "Ok. =)"
     if results.count(False) == 1:
-        return "\x1b[33mSingle overlap.\x1b[0m " + result
-    return "\x1b[31mMultiple Overlaps.\x1b[0m " + result
+        return f"Single overlap: {result_names[results.index(False)]}"
+    return f"Multiple Overlaps: {','.join(result_names[r] for r in range(3) if not results[r])}"
 
 
-def pair_count_section(prefix: str, sharing_data = False) -> Section:
+def pair_count_section(prefix: str, sharing_data=False) -> Section:
     def calc_pair_count_table(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats(prefix)
         pair_counts = opcode_stats.get_pair_counts()
@@ -684,19 +715,22 @@ def pair_count_section(prefix: str, sharing_data = False) -> Section:
         ):
             cumulative += count
             next_row = [
-                    f"{opcode_i} {opcode_j}",
-                    Count(count),
-                    Ratio(count, total),
-                    Ratio(cumulative, total),
-                ]
-            if sharing_data: 
-                uop_flags = _get_uop_flags_from_file(tuple(stats._data['_flag_defines'].keys()))
+                f"{opcode_i} {opcode_j}",
+                Count(count),
+                Ratio(count, total),
+                Ratio(cumulative, total),
+            ]
+            if sharing_data:
+                uop_flags = _get_uop_flags_from_file(
+                    tuple(v[0] for v in stats._data["_flag_defines"].values())
+                )
                 next_row.append(opcode_input_overlap(uop_flags, opcode_i, opcode_j))
             rows.append(next_row)
         return rows
 
     headings = ["Pair", "Count:", "Self:", "Cumulative:"]
-    if sharing_data: headings.append("Overlapping Use of Oparg/Operand/Target")
+    if sharing_data:
+        headings.append("Overlapping Use of Oparg/Operand/Target")
     return Section(
         "Pair counts",
         f"Pair counts for top 100 {prefix} pairs",
