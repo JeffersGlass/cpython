@@ -135,22 +135,6 @@ def _get_uop_flags_from_file(
     return flags
 
 
-@functools.cache
-def _get_ops_that_use_operands(
-    filepath: str | Path = "Python/executor_cases.c.h",
-) -> list[str]:
-    ops = []
-    current_op = None
-    with open(SOURCE_DIR / filepath) as spec_src:
-        start_of_op_pattern = r"\s*case (?P<name>[_A-Z0-9]+): {"
-        for line in spec_src:
-            if m := re.match(start_of_op_pattern, line):
-                current_op = m.group("name")
-            elif "CURRENT_OPERAND()" in line:
-                ops.append(current_op)
-    return ops
-
-
 class OpcodeStats:
     """
     Manages the data related to specific set of opcodes, e.g. tier1 (with prefix
@@ -670,33 +654,18 @@ def execution_count_section() -> Section:
 def opcode_input_overlap(
     uop_flags: dict[str, list[str]], opcode_i: str, opcode_j: str
 ) -> str:
-    ops_that_use_operand = _get_ops_that_use_operands()
-    operand_use_compatible = not (
-        opcode_i in ops_that_use_operand and opcode_j in ops_that_use_operand
-    )
-
-    oparg_status_compatible = not (
-        "HAS_ARG_FLAG" in uop_flags[opcode_i] and "HAS_ARG_FLAG" in uop_flags[opcode_j]
-    )
-
-    i_has_target = (
-        "HAS_DEOPT_FLAG" in uop_flags[opcode_i]
-        or "HAS_ESCAPE_FLAG" in uop_flags[opcode_i]
-    )
-    j_has_target = (
-        "HAS_DEOPT_FLAG" in uop_flags[opcode_j]
-        or "HAS_ESCAPE_FLAG" in uop_flags[opcode_j]
-    )
-    target_status_compatible = not (i_has_target and j_has_target)
+    def flag_compatible(flag):
+        return not (flag in uop_flags[opcode_i] and flag in uop_flags[opcode_j])
 
     results = (
-        operand_use_compatible,
-        oparg_status_compatible,
-        target_status_compatible,
+        flag_compatible("HAS_ARG_FLAG"),
+        flag_compatible("HAS_OPERAND_FLAG"),
+        flag_compatible("HAS_JUMP_FLAG"),
     )
-    result_names = ("Operand", "Oparg", "Target")
+    result_names = ("Oparg", "Operand", "Target")
+
     if results.count(False) == 0:
-        return "Ok. =)"
+        return "No Overlap"
     if results.count(False) == 1:
         return f"Single overlap: {result_names[results.index(False)]}"
     return f"Multiple Overlaps: {','.join(result_names[r] for r in range(3) if not results[r])}"
