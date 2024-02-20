@@ -213,6 +213,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_PURE_FLAG")
     if p.passthrough:
         flags.append("HAS_PASSTHROUGH_FLAG")
+    if p.operand:
+        flags.append("HAS_OPERAND_FLAG")
     if flags:
         return " | ".join(flags)
     else:
