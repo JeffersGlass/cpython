@@ -52,6 +52,7 @@ FLAGS = [
     "ESCAPES",
     "PURE",
     "PASSTHROUGH",
+    "OPERAND"
 ]
 
 
