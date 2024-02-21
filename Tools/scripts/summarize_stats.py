@@ -131,8 +131,7 @@ def _get_uop_flags_from_file(
 ) -> dict[str, list[str]]:
     flags = {}
     with open(SOURCE_DIR / filepath) as spec_src:
-        # TODO make this robust to adding new flag names from provided flag names
-        pattern = r"\s+\[(?P<name>[_A-Z0-9]+)\] =(?P<flags>(\s(0|HAS_DEOPT_FLAG|HAS_ARG_FLAG|HAS_LOCAL_FLAG|HAS_PURE_FLAG|HAS_ERROR_FLAG|_HAS_ESCAPES_FLAG|HAS_CONST_FLAG|HAS_ESCAPES_FLAG|HAS_PASSTHROUGH_FLAG|HAS_NAME_FLAG|HAS_FREE_FLAG|HAS_EVAL_BREAK_FLAG|HAS_OPERAND_FLAG|HAS_EXIT_FLAG|HAS_OPARG_AND_1_FLAG)(\s\|)?)+)"
+        pattern = fr"\s+\[(?P<name>[_A-Z0-9]+)\] =(?P<flags>(\s({'|'.join(f for f in flag_names + ['0'])})(\s\|)?)+)"
         for line in spec_src:
             if m := re.match(pattern, line):
                 flags[m.group("name")] = [
