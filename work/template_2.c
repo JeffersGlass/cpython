@@ -13,6 +13,7 @@
 #include "pycore_range.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
+#include "jit_defines.h"
 
 #include "ceval_macros.h"
 
