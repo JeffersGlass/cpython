@@ -44,7 +44,7 @@ def _create_size_loop(supernodes: list[_supernode.SuperNode]) -> typing.Generato
 
     yield f"for (Py_ssize_t i = 0; i <= Py_SIZE(executor)-{depth};) {{"
     for d in range(depth):
-        yield f"\t_PyUOpInstruction *instruction{d} = &executor->trace[i+{d}];"
+        yield f"\t_PyUOpInstruction *instruction{d} = (_PyUOpInstruction *)&trace[i+{d}];"
     yield f"\tconst SuperNode node = _JIT_INDEX({', '.join(f'instruction{i}->opcode' for i in range(depth))});"
     yield f"\t\tconst StencilGroup *group = &stencil_groups[node.index];"
     yield "\t\tcode_size += group->code.body_size;"
@@ -60,7 +60,7 @@ def _create_size_loop(supernodes: list[_supernode.SuperNode]) -> typing.Generato
     yield "\t// be too awful."
     yield ""
     yield f""" for (Py_ssize_t i = final_index; i < Py_SIZE(executor); i++) {{
-        _PyUOpInstruction *instruction = &executor->trace[i];
+        _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
         const SuperNode node = _JIT_INDEX({', '.join(['instruction->opcode', *["-1" for _ in range(depth-1)]])});
         const StencilGroup *group = &stencil_groups[node.index];
         code_size += group->code.body_size;
@@ -72,8 +72,7 @@ def _create_patch_loop(supernodes):
         depth = _supernode.SuperNode.max_depth(supernodes)
         yield f"for (Py_ssize_t i = 0; i <= Py_SIZE(executor) - {depth}; ) {{"
         for i in range(depth):
-            yield f"\t_PyUOpInstruction *instruction{i} = &executor->trace[i+{i}];"
-
+            yield f"\t_PyUOpInstruction *instruction{i} = (_PyUOpInstruction *)&trace[i+{i}];"
         yield f"\tconst SuperNode node = _JIT_INDEX({', '.join(f'instruction{i}->opcode' for i in range(depth))});"
         yield f"\t\tconst StencilGroup *group = &stencil_groups[node.index];"
         yield "\t// Think of patches as a dictionary mapping HoleValue to uint64_t:"
@@ -102,7 +101,7 @@ def _create_patch_loop(supernodes):
         yield "\t// be too awful."
         yield ""
         yield f"""for (Py_ssize_t i = final_index; i < Py_SIZE(executor); i++) {{
-		_PyUOpInstruction *instruction = &executor->trace[i];
+        _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
 		const SuperNode node = _JIT_INDEX({', '.join(['instruction->opcode', *["-1" for _ in range(depth-1)]])});
         const StencilGroup *group = &stencil_groups[node.index];
 		// Think of patches as a dictionary mapping HoleValue to uint64_t:
