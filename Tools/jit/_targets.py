@@ -109,7 +109,6 @@ class _Target(typing.Generic[_S, _R]):
     async def _compile(
         self, c: pathlib.Path, tempdir: pathlib.Path, opnames: typing.Iterable[str]
     ) -> _stencils.StencilGroup:
-        print(f"Compiling {','.join(opnames)}")
         o = tempdir / f"{_superop_name(opnames)}.o"
         args = [
             f"--target={self.triple}",
@@ -153,7 +152,6 @@ class _Target(typing.Generic[_S, _R]):
         return await self._parse(o)
 
     async def _build_stencils(self,  supernodes: typing.Iterable[typing.Iterable[str]] | None = None) -> dict[str, _stencils.StencilGroup]:        
-        print("Building single stencils")
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
         tasks = []

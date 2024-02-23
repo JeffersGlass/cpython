@@ -143,7 +143,6 @@ def _create_jit_index(supernodes: list[_supernode.SuperNode]) -> typing.Generato
     param_names = list(_parameter_names(depth))
 
     yield f"_JIT_INDEX({', '.join(f'uint16_t {name}' for name in param_names)}) {{"
-    yield f'//printf("Called _JIT_INDEX with args {','.join("%d" for name in param_names)}", {','.join(name for name in param_names)});'
     yield from _generate_jit_switch_or_compare(supernodes, param_names, level=0, indent_level=1)
 
     yield "}" # _JIT_INDEX
@@ -167,7 +166,7 @@ def _generate_jit_switch_or_compare(supernodes: list[_supernode.SuperNode], var_
         else: 
             first_nodes = [node for node in supernodes if node.ops[0] == initial_op]
             if len(first_nodes) != 1:
-                raise ValueError(f"Wrong number of first_nodes {len(first_nodes)=}\n{'\n'.join(str(f) for f in first_nodes)}")
+                raise ValueError(f"Wrong number of first_nodes") # {len(first_nodes)=}\n{'\n'.join(str(f) for f in first_nodes)}")
             only_node = first_nodes[0]
             yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = {only_node.top_parent().name}, .length = {only_node.top_parent().length}}};"
         yield f"{INDENT_UNIT * (indent_level + 2)}break;"
