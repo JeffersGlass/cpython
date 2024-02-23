@@ -309,7 +309,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         
     // Stores the final value of loop variables, so we can clean
     // up remaining opcodes at the end
-    size_t final_index;
+    size_t final_index = 0;
 
 
     // SIZE LOOP HERE

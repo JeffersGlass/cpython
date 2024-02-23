@@ -33,7 +33,7 @@ def _patch_jit_c(supernodes: list[_supernode.SuperNode]):
 
 def _create_size_loop(supernodes: list[_supernode.SuperNode]) -> typing.Generator[str, None, None]:
     """ //Original:
-    for (Py_ssize_t i = 0; i < Py_SIZE(executor);) {
+    for (size_t i = 0; i < length;) {
         _PyUOpInstruction *instruction = &executor->trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         code_size += group->code.body_size;
@@ -41,17 +41,23 @@ def _create_size_loop(supernodes: list[_supernode.SuperNode]) -> typing.Generato
     } """
 
     depth = _supernode.SuperNode.max_depth(supernodes)
-
-    yield f"for (Py_ssize_t i = 0; i <= Py_SIZE(executor)-{depth};) {{"
+    yield f'if (length > {depth}){{'
+    yield '//printf("About to run size loop on executor of size %ld\\n", length);'
+    yield f"for (size_t i = 0; i <= length-{depth};) {{"
     for d in range(depth):
         yield f"\t_PyUOpInstruction *instruction{d} = (_PyUOpInstruction *)&trace[i+{d}];"
+    yield '//printf("Calling _JIT_INDEX from primary size loop:");'
     yield f"\tconst SuperNode node = _JIT_INDEX({', '.join(f'instruction{i}->opcode' for i in range(depth))});"
     yield f"\t\tconst StencilGroup *group = &stencil_groups[node.index];"
+    yield '\t\t//printf("Node index: %ld\\n", node.index);'
     yield "\t\tcode_size += group->code.body_size;"
     yield "\t\tdata_size += group->data.body_size;"
     yield "\t\ti += node.length;"
     yield "\t\tfinal_index = i;"
+    yield '\t\t//printf("At end of loop: node.length: %d, i: %ld, final_index: %ld\\n", node.length, i, final_index);'
     yield "\t}"
+    yield "}"
+    yield ""
     yield "\t// Once we're closer to the end of the stencil than the depth of our"
     yield "\t// longest stencil, just single-jit the remaining opcodes. This can be"
     yield "\t// improved to look only at short-enough patterns by passing, say, -1"
@@ -59,8 +65,10 @@ def _create_size_loop(supernodes: list[_supernode.SuperNode]) -> typing.Generato
     yield "\t// superinstruction is likely to still be short, the current approach sholdn't"
     yield "\t// be too awful."
     yield ""
-    yield f""" for (Py_ssize_t i = final_index; i < Py_SIZE(executor); i++) {{
+    yield '//printf("After primary size loop for executor of size %ld, final_index is %ld", length, final_index);'
+    yield f""" for (size_t i = final_index; i < length; i++) {{
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
+        //printf("Calling _JIT_INDEX from secondary size loop:");
         const SuperNode node = _JIT_INDEX({', '.join(['instruction->opcode', *["-1" for _ in range(depth-1)]])});
         const StencilGroup *group = &stencil_groups[node.index];
         code_size += group->code.body_size;
@@ -70,9 +78,12 @@ def _create_size_loop(supernodes: list[_supernode.SuperNode]) -> typing.Generato
 
 def _create_patch_loop(supernodes):
         depth = _supernode.SuperNode.max_depth(supernodes)
-        yield f"for (Py_ssize_t i = 0; i <= Py_SIZE(executor) - {depth}; ) {{"
+        yield f'if (length > {depth}){{'
+        yield '//printf("About to run patch loop\\n");'
+        yield f"for (size_t i = 0; i <= length - {depth}; ) {{"
         for i in range(depth):
             yield f"\t_PyUOpInstruction *instruction{i} = (_PyUOpInstruction *)&trace[i+{i}];"
+        yield '//printf("Calling _JIT_INDEX from primary patch loop:");'
         yield f"\tconst SuperNode node = _JIT_INDEX({', '.join(f'instruction{i}->opcode' for i in range(depth))});"
         yield f"\t\tconst StencilGroup *group = &stencil_groups[node.index];"
         yield "\t// Think of patches as a dictionary mapping HoleValue to uint64_t:"
@@ -85,14 +96,16 @@ def _create_patch_loop(supernodes):
         patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
         patches[HoleValue_DATA] = (uint64_t)data;
         patches[HoleValue_EXECUTOR] = (uint64_t)executor;
-        patches[HoleValue_TOP] = (uint64_t)memory;
+        patches[HoleValue_TOP] = (uint64_t)top;
         patches[HoleValue_ZERO] = 0;
         emit(group, patches);
         code += group->code.body_size;
         data += group->data.body_size;
         i += node.length;
         final_index = i;
+    }
 }"""
+        
         yield "\t// Once we're closer to the end of the stencil than the depth of our"
         yield "\t// longest stencil, just single-jit the remaining opcodes. This can be"
         yield "\t// improved to look only at short-enough patterns by passing, say, -1"
@@ -100,8 +113,9 @@ def _create_patch_loop(supernodes):
         yield "\t// superinstruction is likely to still be short, the current approach sholdn't"
         yield "\t// be too awful."
         yield ""
-        yield f"""for (Py_ssize_t i = final_index; i < Py_SIZE(executor); i++) {{
+        yield f"""for (size_t i = final_index; i < length; i++) {{
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
+        //printf("Calling _JIT_INDEX from secondary patch loop: ");
 		const SuperNode node = _JIT_INDEX({', '.join(['instruction->opcode', *["-1" for _ in range(depth-1)]])});
         const StencilGroup *group = &stencil_groups[node.index];
 		// Think of patches as a dictionary mapping HoleValue to uint64_t:
@@ -114,7 +128,7 @@ def _create_patch_loop(supernodes):
         patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
         patches[HoleValue_DATA] = (uint64_t)data;
         patches[HoleValue_EXECUTOR] = (uint64_t)executor;
-        patches[HoleValue_TOP] = (uint64_t)memory;
+        patches[HoleValue_TOP] = (uint64_t)top;
         patches[HoleValue_ZERO] = 0;
         emit(group, patches);
         code += group->code.body_size;
@@ -129,6 +143,7 @@ def _create_jit_index(supernodes: list[_supernode.SuperNode]) -> typing.Generato
     param_names = list(_parameter_names(depth))
 
     yield f"_JIT_INDEX({', '.join(f'uint16_t {name}' for name in param_names)}) {{"
+    yield f'//printf("Called _JIT_INDEX with args {','.join("%d" for name in param_names)}", {','.join(name for name in param_names)});'
     yield from _generate_jit_switch_or_compare(supernodes, param_names, level=0, indent_level=1)
 
     yield "}" # _JIT_INDEX
