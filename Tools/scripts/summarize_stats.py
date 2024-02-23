@@ -709,7 +709,7 @@ def pair_count_section(prefix: str) -> Section:
         cumulative = 0
         rows: Rows = []
         for (opcode_i, opcode_j), count in itertools.islice(
-            sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 100
+            sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 500
         ):
             cumulative += count
             rows.append(
@@ -724,7 +724,7 @@ def pair_count_section(prefix: str) -> Section:
 
     return Section(
         "Pair counts",
-        f"Pair counts for top 100 {prefix} pairs",
+        f"Pair counts for top 500 {prefix} pairs",
         [
             Table(
                 ("Pair", "Count:", "Self:", "Cumulative:"),

@@ -24,6 +24,10 @@ class ScoreSet(typing.NamedTuple):
     ratio: float
     result: Result
 
+    @property
+    def delta(self):
+        return self.sequence_score - self.singles_score
+
 supernode_pattern = re.compile(r"static const unsigned char (?P<fullname>([A-Z_]+)(plus([A-Z_]+))+)_code_body\[(?P<length>\d+)\] = {")
 op_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z_]+)_code_body\[(?P<length>\d+)\] = {")
 anynode_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z_plus]+)_code_body\[(?P<length>\d+)\] = {")
@@ -89,22 +93,23 @@ def output_scores(
         sequences: typing.Iterable[typing.Iterable[str]],
         factor: float, 
         output_mode = "text",
-        output_means = print
+        output_means = print,
+        sortkey = "ratio"
     ) -> None:
     factor = (1-factor) # Work with a total percentage, rather than a percentage difference
-    scores = sorted(calculate_scores(sequences, factor), key=operator.itemgetter(3))
+    scores = sorted(calculate_scores(sequences, factor), key=operator.attrgetter(sortkey))
     match output_mode:
         case "text":
             for scoreset in scores:
-                print(f"\033[{scoreset.result.value}mUOps {", ".join(scoreset.ops)}\n\t  Percentage:  %{round(100 * scoreset.ratio, 2)}\n\tSum of Parts: {scoreset.singles_score:> 3}\n\t    Together: {scoreset.sequence_score:> 4}\033[0m\n")
+                print(f"\033[{scoreset.result.value}m        UOps:  {", ".join(scoreset.ops)}\n       Delta:  {scoreset.delta}\n  Percentage:  %{round(100 * scoreset.ratio, 2)}\nSum of Parts: {scoreset.singles_score:> 3}\n    Together: {scoreset.sequence_score:> 4}\033[0m\n")
         case "table":
-            headers = ["UOps", "Sum of Individual Ops", "Lengths When Compiled Together", "Percentage"]
-            rows = [(' / '.join(s.ops), str(s.singles_score), str(s.sequence_score), str(round(s.ratio*100, 2)) + "%") for s in scores]
+            headers = ["UOps", "Sum of Individual Ops", "Lengths When Compiled Together", "Percentage", "Delta"]
+            rows = [(' / '.join(s.ops), str(s.singles_score), str(s.sequence_score), str(round(s.ratio*100, 2)) + "%", str(s.delta)) for s in scores]
             MarkDownTable(headers, rows).render(output_means)
         case "raw":
-            headers = ["uops", "individual_sum", "compiled_together", "ratio"]
+            headers = ["uops", "individual_sum", "compiled_together", "ratio", "delta"]
             for scoreset in scores:
-                print(",".join(["/".join(scoreset.ops),str(scoreset.singles_score),str(scoreset.sequence_score),str(scoreset.ratio)]))
+                print(",".join(["/".join(scoreset.ops),str(scoreset.singles_score),str(scoreset.sequence_score),str(scoreset.ratio), str(scoreset.delta)]))
         case _:
             raise ValueError(f"No output mode called {output_mode}")
 
@@ -233,6 +238,16 @@ def main():
     )
 
     parser.add_argument(
+        "--sort_by",
+        type = str,
+        required=False,
+        choices = ["ratio", "delta"],
+        help = """
+            How the results are sorted.
+        """,   
+    )
+
+    parser.add_argument(
         "--table",
         action="store_true",
         help = """
@@ -256,7 +271,7 @@ def main():
     if not args.output_mode:
         output_mode = "table" if args.table else "text"
     
-    output_scores(input_func(args.inputs), args.significance_factor, output_mode=args.output_mode or output_mode)
+    output_scores(input_func(args.inputs), args.significance_factor, output_mode=args.output_mode or output_mode, sortkey=args.sort_by)
 
 if __name__ == "__main__":
     main()
