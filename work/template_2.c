@@ -13,34 +13,32 @@
 #include "pycore_range.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
-#include "jit_defines.h"
 
 #include "ceval_macros.h"
+
+#undef CURRENT_OPARG
+#define CURRENT_OPARG() (_oparg)
 
 #undef CURRENT_OPERAND
 #define CURRENT_OPERAND() (_operand)
 
 #undef DEOPT_IF
-#define DEOPT_IF(COND, INSTNAME) \
-    do {                         \
-        if ((COND)) {            \
-            goto deoptimize;     \
-        }                        \
-    } while (0)
+#define DEOPT_IF(COND, INSTNAME)     do {                                 if ((COND)) {                        goto deoptimize;             }                            } while (0)
 
 #undef ENABLE_SPECIALIZATION
 #define ENABLE_SPECIALIZATION (0)
 
 #undef GOTO_ERROR
-#define GOTO_ERROR(LABEL)        \
-    do {                         \
-        goto LABEL ## _tier_two; \
-    } while (0)
+#define GOTO_ERROR(LABEL)            do {                                 goto LABEL ## _tier_two;     } while (0)
+
+#undef GOTO_TIER_TWO
+#define GOTO_TIER_TWO(EXECUTOR) do {      __attribute__((musttail))                         return ((jit_func)((EXECUTOR)->jit_code))(frame, stack_pointer, tstate); } while (0)
+
+#undef GOTO_TIER_ONE
+#define GOTO_TIER_ONE(TARGET) do {      _PyFrame_SetStackPointer(frame, stack_pointer);     return TARGET; } while (0)
 
 #undef LOAD_IP
-#define LOAD_IP(UNUSED) \
-    do {                \
-    } while (0)
+#define LOAD_IP(UNUSED)     do {                    } while (0)
 
 #define PATCH_VALUE(TYPE, NAME, ALIAS)  \
     extern void ALIAS;                  \
@@ -63,6 +61,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     int oparg;
     _PyUOpInstruction *next_uop;
     PATCH_VALUE(uint32_t, _target, _JIT_TARGET0)
+    int opcode;
 
     #undef CURRENT_OPARG
     #define CURRENT_OPARG() (_oparg0)
@@ -70,6 +69,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     #define CURRENT_OPERAND() (_operand0)
     
     int opcode0 = _JIT_OPCODE0;
+    opcode = opcode0;
     PATCH_VALUE(uint16_t, _oparg0, _JIT_OPARG0)
     PATCH_VALUE(uint64_t, _operand0, _JIT_OPERAND0)
     
@@ -89,6 +89,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     #define CURRENT_OPERAND() (_operand1)
     
     int opcode1 = _JIT_OPCODE1;
+    opcode = opcode1;
     PATCH_VALUE(uint16_t, _oparg1, _JIT_OPARG1)
     PATCH_VALUE(uint64_t, _operand1, _JIT_OPERAND1)
     REASSIGN_VALUE(uint32_t, _target, _JIT_TARGET1);
@@ -115,9 +116,16 @@ pop_2_error_tier_two:
 pop_1_error_tier_two:
     STACK_SHRINK(1);
 error_tier_two:
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    return NULL;
+    tstate->previous_executor = (PyObject *)current_executor;
+    GOTO_TIER_ONE(NULL);
 deoptimize:
-    _PyFrame_SetStackPointer(frame, stack_pointer);
-    return _PyCode_CODE(_PyFrame_GetCode(frame)) + _target;
+    tstate->previous_executor = (PyObject *)current_executor;
+    GOTO_TIER_ONE(_PyCode_CODE(_PyFrame_GetCode(frame)) + _target);
+side_exit:
+    {
+        _PyExitData *exit = &current_executor->exits[_target];
+        Py_INCREF(exit->executor);
+        tstate->previous_executor = (PyObject *)current_executor;
+        GOTO_TIER_TWO(exit->executor);
+    }
 }
