@@ -28,9 +28,9 @@ class ScoreSet(typing.NamedTuple):
     def delta(self):
         return self.sequence_score - self.singles_score
 
-supernode_pattern = re.compile(r"static const unsigned char (?P<fullname>([A-Z_]+)(plus([A-Z_]+))+)_code_body\[(?P<length>\d+)\] = {")
-op_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z_]+)_code_body\[(?P<length>\d+)\] = {")
-anynode_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z_plus]+)_code_body\[(?P<length>\d+)\] = {")
+supernode_pattern = re.compile(r"static const unsigned char (?P<fullname>([A-Z0-9_]+)(plus([A-Z0-9_]+))+)_code_body\[(?P<length>\d+)\] = {")
+op_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z0-9_]+)_code_body\[(?P<length>\d+)\] = {")
+anynode_pattern = re.compile(r"static const unsigned char (?P<fullname>[A-Z0-9_plus]+)_code_body\[(?P<length>\d+)\] = {")
 
 """Copied wholesale from pyperf, under the MIT license
 
@@ -180,7 +180,6 @@ def get_sequences_from_csv(path: pathlib.Path | str) -> typing.List[typing.List[
 def get_sequences_from_stencil_file(path: pathlib.Path | str) -> typing.List[typing.List[str]]:
     path = pathlib.Path(path)
     sequences = []
-    supernode_pattern = re.compile(r"static const unsigned char (?P<fullname>([A-Z_]+)(plus([A-Z_]+))+)_code_body\[(\d+)\] = {")
     with open(path, "r") as f:
         for line in f.readlines():
             if m:= re.match(supernode_pattern, line):
