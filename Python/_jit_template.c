@@ -167,22 +167,8 @@ set_bits(uint32_t *loc, uint8_t loc_start, uint64_t value, uint8_t value_start,
 #define IS_AARCH64_LDR_OR_STR(I) (((I) & 0x3B000000) == 0x39000000)
 #define IS_AARCH64_MOV(I)        (((I) & 0x9F800000) == 0x92800000)
 
-// LLD is an awesome reference for how to perform relocations... just keep in
-// mind that Tools/jit/build.py does some filtering and preprocessing for us!
-// Here's a good place to start for each platform:
-// - aarch64-apple-darwin:
-//   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.cpp
-//   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.h
-// - aarch64-unknown-linux-gnu:
-//   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/AArch64.cpp
-// - i686-pc-windows-msvc:
-//   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
-// - x86_64-apple-darwin:
-//   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/X86_64.cpp
-// - x86_64-pc-windows-msvc:
-//   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
-// - x86_64-unknown-linux-gnu:
-//   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/X86_64.cpp
+// Fill all of stencil's holes in the memory pointed to by base, using the
+// values in patches.
 static void
 patch(char *base, const Stencil *stencil, uint64_t *patches)
 {
@@ -192,6 +178,22 @@ patch(char *base, const Stencil *stencil, uint64_t *patches)
         uint64_t value = patches[hole->value] + (uint64_t)hole->symbol + hole->addend;
         uint32_t *loc32 = (uint32_t *)location;
         uint64_t *loc64 = (uint64_t *)location;
+        // LLD is a great reference for performing relocations... just keep in
+        // mind that Tools/jit/build.py does filtering and preprocessing for us!
+        // Here's a good place to start for each platform:
+        // - aarch64-apple-darwin:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.cpp
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/ARM64Common.h
+        // - aarch64-unknown-linux-gnu:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/AArch64.cpp
+        // - i686-pc-windows-msvc:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
+        // - x86_64-apple-darwin:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/MachO/Arch/X86_64.cpp
+        // - x86_64-pc-windows-msvc:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/COFF/Chunks.cpp
+        // - x86_64-unknown-linux-gnu:
+        //   - https://github.com/llvm/llvm-project/blob/main/lld/ELF/Arch/X86_64.cpp
         switch (hole->kind) {
             case HoleKind_IMAGE_REL_I386_DIR32:
                 // 32-bit absolute address.
@@ -299,26 +301,25 @@ emit(const StencilGroup *group, uint64_t patches[])
 
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
-_PyJIT_Compile(_PyExecutorObject *executor)
+_PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length)
 {
     // Loop once to find the total compiled size:
     size_t code_size = 0;
     size_t data_size = 0;
-    
+        
     // Stores the final value of loop variables, so we can clean
     // up remaining opcodes at the end
-    size_t final_index;
+    size_t final_index = 0;
 
-    /*for (Py_ssize_t i = 0; i < Py_SIZE(executor); i++) {
-        _PyUOpInstruction *instruction = &executor->trace[i];
+
+    // SIZE LOOP HERE
+    // END SIZE LOOP
+    /*for (size_t i = 0; i < length; i++) {
+        _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         code_size += group->code.body_size;
         data_size += group->data.body_size;
     }*/
-    // DPRINTF("\n---Start Size Loop---");
-    // SIZE LOOP HERE
-    // END SIZE LOOP
-    // DPRINTF("\n---Size loop done---");
     // Round up to the nearest page (code and data need separate pages):
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
@@ -331,21 +332,31 @@ _PyJIT_Compile(_PyExecutorObject *executor)
     // Loop again to emit the code:
     char *code = memory;
     char *data = memory + code_size;
-    /*for (Py_ssize_t i = 0; i < Py_SIZE(executor); ) {
-		_PyUOpInstruction *instruction0 = &executor->trace[i+0];
-		const SuperNode node = _JIT_INDEX(instruction0->opcode, instruction1->opcode, instruction2->opcode);
-        const StencilGroup *group = &stencil_groups[node.index];
-    // Think of patches 1as a dictionary mapping HoleValue to uint64_t:
-        uint64_t patches[] = GET_PATCHES();
-        patches[HoleValue_OPARG0] = instruction0->oparg;
-        patches[HoleValue_OPERAND0] = instruction0->operand;
-        patches[HoleValue_TARGET0] = instruction0->target;*/
-    // DPRINTF("\n---Start Patch Loop--- ");
+    char *top = code;
+    if (trace[0].opcode == _START_EXECUTOR) {
+        // Don't want to execute this more than once:
+        top += stencil_groups[_START_EXECUTOR].code.body_size;
+    }
     // PATCH LOOP INIT HERE
-    
-        // END PATCH LOOP
-    //DPRINTF("\n---Patch loop loop done---");
-
+    // END PATCH LOOP
+    /*for (size_t i = 0; i < length; i++) {
+        _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
+        const StencilGroup *group = &stencil_groups[instruction->opcode];
+        // Think of patches as a dictionary mapping HoleValue to uint64_t:
+        uint64_t patches[] = GET_PATCHES();
+        patches[HoleValue_CODE] = (uint64_t)code;
+        patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
+        patches[HoleValue_DATA] = (uint64_t)data;
+        patches[HoleValue_EXECUTOR] = (uint64_t)executor;
+        patches[HoleValue_OPARG] = instruction->oparg;
+        patches[HoleValue_OPERAND] = instruction->operand;
+        patches[HoleValue_TARGET] = instruction->target;
+        patches[HoleValue_TOP] = (uint64_t)top;
+        patches[HoleValue_ZERO] = 0;
+        emit(group, patches);
+        code += group->code.body_size;
+        data += group->data.body_size;
+    }*/
     if (mark_executable(memory, code_size) ||
         mark_readable(memory + code_size, data_size))
     {
@@ -375,4 +386,4 @@ _PyJIT_Free(_PyExecutorObject *executor)
 
 // _JIT_INDEX END
 
-#endif
+#endif  // _Py_JIT

@@ -1,6 +1,4 @@
 """Utilities for writing StencilGroups out to a C header file."""
-import shlex
-import sys
 import typing
 
 import _schema
@@ -9,8 +7,6 @@ import _supernode
 
 
 def _dump_header() -> typing.Iterator[str]:
-    yield f"// $ {shlex.join([sys.executable, *sys.argv])}"
-    yield ""
     yield "typedef enum {"
     for kind in typing.get_args(_schema.HoleKind):
         yield f"    HoleKind_{kind},"
@@ -96,7 +92,7 @@ def _dump_define(name: str, value: int):
 
 
 def dump(groups: dict[str, _stencils.StencilGroup], supernodes: typing.Iterable[_supernode.SuperNode] = None) -> typing.Iterator[str]:
-    """Yiild a JIT compiler line-by-line as a C header file."""
+    """Yield a JIT compiler line-by-line as a C header file."""
     yield from _dump_header()   
     for opname, group in groups.items():
         yield from _dump_stencil(opname, group)

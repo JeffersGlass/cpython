@@ -8,7 +8,6 @@ import pathlib
 import re
 import sys
 import tempfile
-import textwrap
 import typing
 
 import _jit_c
@@ -19,6 +18,9 @@ import _supernode
 import _stencils
 import _template
 import _writer
+
+import typing
+
 
 if sys.version_info < (3, 11):
     raise RuntimeError("Building the JIT compiler requires Python 3.11 or newer!")
@@ -44,13 +46,13 @@ class _Target(typing.Generic[_S, _R]):
     alignment: int = 1
     prefix: str = ""
     debug: bool = False
+    force: bool = False
     verbose: bool = False
 
     def _compute_digest(self, out: pathlib.Path) -> str:
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
-        hasher.update(self.alignment.to_bytes())
-        hasher.update(self.prefix.encode())
+        hasher.update(self.debug.to_bytes())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((out / "pyconfig.h").read_bytes())
@@ -107,6 +109,7 @@ class _Target(typing.Generic[_S, _R]):
     async def _compile(
         self, c: pathlib.Path, tempdir: pathlib.Path, opnames: typing.Iterable[str]
     ) -> _stencils.StencilGroup:
+        print(f"Compiling {','.join(opnames)}")
         o = tempdir / f"{_superop_name(opnames)}.o"
         args = [
             f"--target={self.triple}",
@@ -127,6 +130,7 @@ class _Target(typing.Generic[_S, _R]):
             "-O3",
             "-c",
             "-fno-asynchronous-unwind-tables",
+            "-fno-builtin",
             # SET_FUNCTION_ATTRIBUTE on 32-bit Windows debug builds:
             "-fno-jump-tables",
             # Position-independent code adds indirection to every load and jump:
@@ -149,6 +153,7 @@ class _Target(typing.Generic[_S, _R]):
         return await self._parse(o)
 
     async def _build_stencils(self,  supernodes: typing.Iterable[typing.Iterable[str]] | None = None) -> dict[str, _stencils.StencilGroup]:        
+        print("Building single stencils")
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
         tasks = []
@@ -182,7 +187,7 @@ class _Target(typing.Generic[_S, _R]):
                 tasks.append(group.create_task(coro, name=node.name))
         return {task.get_name(): task.result() for task in tasks}
 
-    def build(self, out: pathlib.Path, supernodes: list[_supernode.SuperNode] | None) -> None:
+    def build(self, out: pathlib.Path, supernodes: list[_supernode.SuperNode] | None, *, comment: str = "") -> None:
         """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
 
@@ -197,13 +202,20 @@ class _Target(typing.Generic[_S, _R]):
         _jit_defines_h.create_jit_defines_h(supernodes)
 
         jit_stencils = out / "jit_stencils.h"
-        if not jit_stencils.exists() or not jit_stencils.read_text().startswith(digest):
-            stencil_groups = asyncio.run(self._build_stencils(supernodes))
-            with jit_stencils.open("w") as file:
-                file.write(digest)
-                max_id = max_uop_id()
-                for line in _writer.dump(stencil_groups, supernodes=supernodes):
-                    file.write(f"{line}\n")
+        if (
+            not self.force
+            and jit_stencils.exists()
+            and jit_stencils.read_text().startswith(digest)
+        ):
+            return
+        stencil_groups = asyncio.run(self._build_stencils(supernodes))
+        with jit_stencils.open("w") as file:
+            file.write(digest)
+            if comment:
+                file.write(f"// {comment}\n\n")
+            max_id = max_uop_id()
+            for line in _writer.dump(stencil_groups, supernodes=supernodes):
+                file.write(f"{line}\n")
 
 
 class _ELF(
@@ -291,7 +303,8 @@ class _COFF(
             stencil = group.data
         else:
             return
-        base = stencil.sections[section["Number"]] = len(stencil.body)
+        base = len(stencil.body)
+        group.symbols[section["Number"]] = value, base
         stencil.body.extend(section_data_bytes)
         for wrapped_symbol in section["Symbols"]:
             symbol = wrapped_symbol["Symbol"]
@@ -309,23 +322,89 @@ class _COFF(
     ) -> _stencils.Hole:
         match relocation:
             case {
-                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64" as kind},
-                "Symbol": s,
                 "Offset": offset,
+                "Symbol": s,
+                "Type": {"Value": "IMAGE_REL_AMD64_ADDR64" as kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
                 value, symbol = _stencils.symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 8], "little")
             case {
-                "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
-                "Symbol": s,
                 "Offset": offset,
+                "Symbol": s,
+                "Type": {"Value": "IMAGE_REL_I386_DIR32" as kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
                 value, symbol = _stencils.symbol_to_value(s)
                 addend = int.from_bytes(raw[offset : offset + 4], "little")
+            case _:
+                raise NotImplementedError(relocation)
+        return _stencils.Hole(offset, kind, value, symbol, addend)
+
+
+class _ELF(
+    _Target[_schema.ELFSection, _schema.ELFRelocation]
+):  # pylint: disable = too-few-public-methods
+    def _handle_section(
+        self, section: _schema.ELFSection, group: _stencils.StencilGroup
+    ) -> None:
+        section_type = section["Type"]["Value"]
+        flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
+        if section_type == "SHT_RELA":
+            assert "SHF_INFO_LINK" in flags, flags
+            assert not section["Symbols"]
+            value, base = group.symbols[section["Info"]]
+            if value is _stencils.HoleValue.CODE:
+                stencil = group.code
+            else:
+                assert value is _stencils.HoleValue.DATA
+                stencil = group.data
+            for wrapped_relocation in section["Relocations"]:
+                relocation = wrapped_relocation["Relocation"]
+                hole = self._handle_relocation(base, relocation, stencil.body)
+                stencil.holes.append(hole)
+        elif section_type == "SHT_PROGBITS":
+            if "SHF_ALLOC" not in flags:
+                return
+            if "SHF_EXECINSTR" in flags:
+                value = _stencils.HoleValue.CODE
+                stencil = group.code
+            else:
+                value = _stencils.HoleValue.DATA
+                stencil = group.data
+            group.symbols[section["Index"]] = value, len(stencil.body)
+            for wrapped_symbol in section["Symbols"]:
+                symbol = wrapped_symbol["Symbol"]
+                offset = len(stencil.body) + symbol["Value"]
+                name = symbol["Name"]["Value"]
+                name = name.removeprefix(self.prefix)
+                group.symbols[name] = value, offset
+            stencil.body.extend(section["SectionData"]["Bytes"])
+            assert not section["Relocations"]
+        else:
+            assert section_type in {
+                "SHT_GROUP",
+                "SHT_LLVM_ADDRSIG",
+                "SHT_NULL",
+                "SHT_STRTAB",
+                "SHT_SYMTAB",
+            }, section_type
+
+    def _handle_relocation(
+        self, base: int, relocation: _schema.ELFRelocation, raw: bytes
+    ) -> _stencils.Hole:
+        match relocation:
+            case {
+                "Addend": addend,
+                "Offset": offset,
+                "Symbol": {"Value": s},
+                "Type": {"Value": kind},
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.symbol_to_value(s)
             case _:
                 raise NotImplementedError(relocation)
         return _stencils.Hole(offset, kind, value, symbol, addend)
@@ -342,6 +421,8 @@ class _MachO(
         flags = {flag["Name"] for flag in section["Attributes"]["Flags"]}
         name = section["Name"]["Value"]
         name = name.removeprefix(self.prefix)
+        if "Debug" in flags:
+            return
         if "SomeInstructions" in flags:
             value = _stencils.HoleValue.CODE
             stencil = group.code
@@ -352,7 +433,8 @@ class _MachO(
             stencil = group.data
             start_address = len(group.code.body)
             group.symbols[name] = value, len(group.code.body)
-        base = stencil.sections[section["Index"]] = section["Address"] - start_address
+        base = section["Address"] - start_address
+        group.symbols[section["Index"]] = value, base
         stencil.body.extend(
             [0] * (section["Address"] - len(group.code.body) - len(group.data.body))
         )
@@ -376,25 +458,25 @@ class _MachO(
         symbol: str | None
         match relocation:
             case {
+                "Offset": offset,
+                "Symbol": {"Value": s},
                 "Type": {
                     "Value": "ARM64_RELOC_GOT_LOAD_PAGE21"
                     | "ARM64_RELOC_GOT_LOAD_PAGEOFF12" as kind
                 },
-                "Symbol": {"Value": s},
-                "Offset": offset,
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
                 value, symbol = _stencils.HoleValue.GOT, s
                 addend = 0
             case {
-                "Type": {"Value": kind},
+                "Offset": offset,
                 "Section": {"Value": s},
-                "Offset": offset,
-            } | {
                 "Type": {"Value": kind},
-                "Symbol": {"Value": s},
+            } | {
                 "Offset": offset,
+                "Symbol": {"Value": s},
+                "Type": {"Value": kind},
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
@@ -402,9 +484,6 @@ class _MachO(
                 addend = 0
             case _:
                 raise NotImplementedError(relocation)
-        # Turn Clang's weird __bzero calls into normal bzero calls:
-        if symbol == "__bzero":
-            symbol = "bzero"
         return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
