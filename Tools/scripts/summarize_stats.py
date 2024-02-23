@@ -62,7 +62,7 @@ def _load_metadata_from_source():
                     continue
                 line = line[len(start) :]
                 name, val = line.split()
-                defines[int(val.strip())].append(name.strip())
+                defines[int(val.strip(" ()"))].append(name.strip())
         return defines
 
     import opcode
@@ -75,6 +75,9 @@ def _load_metadata_from_source():
             Path("Include") / "cpython" / "pystats.h", "EVAL_CALL"
         ),
         "_defines": get_defines(Path("Python") / "specialize.c"),
+        "_flag_defines": get_defines(
+            Path("Include") / "internal" / "pycore_opcode_metadata.h", "HAS"
+        ),
     }
 
 
@@ -119,6 +122,23 @@ def load_raw_data(input: Path) -> RawData:
 
 def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
+
+
+@functools.cache
+def _get_uop_flags_from_file(
+    flag_names: tuple[str] = None,
+    filepath: str | Path = "Include/internal/pycore_uop_metadata.h",
+) -> dict[str, list[str]]:
+    flags = {}
+    with open(SOURCE_DIR / filepath) as spec_src:
+        pattern = fr"\s+\[(?P<name>[_A-Z0-9]+)\] =(?P<flags>(\s({'|'.join(f for f in flag_names + ['0'])})(\s\|)?)+)"
+        for line in spec_src:
+            if m := re.match(pattern, line):
+                flags[m.group("name")] = [
+                    f.strip() for f in m.group("flags").split("|") if "0" not in flags
+                ]
+                pass
+    return flags
 
 
 @dataclass(frozen=True)
@@ -497,7 +517,10 @@ class Stats:
                 executed,
                 None,
             ),
-            Doc("Uops executed", "The total number of uops (micro-operations) that were executed"): (
+            Doc(
+                "Uops executed",
+                "The total number of uops (micro-operations) that were executed",
+            ): (
                 uops,
                 executed,
             ),
@@ -516,7 +539,7 @@ class Stats:
     def get_rare_events(self) -> list[tuple[str, int]]:
         prefix = "Rare event "
         return [
-            (key[len(prefix) + 1: -1].replace("_", " "), val)
+            (key[len(prefix) + 1 : -1].replace("_", " "), val)
             for key, val in self._data.items()
             if key.startswith(prefix)
         ]
@@ -700,7 +723,34 @@ def execution_count_section() -> Section:
     )
 
 
-def pair_count_section(prefix: str) -> Section:
+def opcode_input_overlap(
+    uop_flags: dict[str, list[str]], opcode_i: str, opcode_j: str
+) -> str:
+    def flag_compatible(*flags: str):
+        return not (
+            any(f in uop_flags[opcode_i] for f in flags)
+            and any(f in uop_flags[opcode_j] for f in flags)
+        )
+
+    results = (
+        flag_compatible(
+            "HAS_ARG_FLAG",
+        ),
+        flag_compatible(
+            "HAS_OPERAND_FLAG",
+        ),
+        flag_compatible("HAS_JUMP_FLAG", "HAS_EXIT_FLAG", "HAS_DEOPT_FLAG"),
+    )
+    result_names = ("Oparg", "Operand", "Target")
+
+    if results.count(False) == 0:
+        return "No Overlap"
+    if results.count(False) == 1:
+        return f"Single overlap: {result_names[results.index(False)]}"
+    return f"Multiple Overlaps: {','.join(result_names[r] for r in range(3) if not results[r])}"
+
+
+def pair_count_section(prefix: str, sharing_data=False) -> Section:
     def calc_pair_count_table(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats(prefix)
         pair_counts = opcode_stats.get_pair_counts()
@@ -712,22 +762,32 @@ def pair_count_section(prefix: str) -> Section:
             sorted(pair_counts.items(), key=itemgetter(1), reverse=True), 500
         ):
             cumulative += count
-            rows.append(
-                (
-                    f"{opcode_i} {opcode_j}",
-                    Count(count),
-                    Ratio(count, total),
-                    Ratio(cumulative, total),
+            next_row = [
+                f"{opcode_i} {opcode_j}",
+                Count(count),
+                Ratio(count, total),
+                Ratio(cumulative, total),
+            ]
+            if sharing_data:
+                uop_flags = _get_uop_flags_from_file(
+                    tuple(v[0] for v in stats._data["_flag_defines"].values())
                 )
-            )
+                # for k, v in sorted(uop_flags.items()):
+                #    print(f"{k}:{v}")
+                # exit()
+                next_row.append(opcode_input_overlap(uop_flags, opcode_i, opcode_j))
+            rows.append(next_row)
         return rows
 
+    headings = ["Pair", "Count:", "Self:", "Cumulative:"]
+    if sharing_data:
+        headings.append("Overlapping Use of Oparg/Operand/Target")
     return Section(
         "Pair counts",
         f"Pair counts for top 500 {prefix} pairs",
         [
             Table(
-                ("Pair", "Count:", "Self:", "Cumulative:"),
+                headings,
                 calc_pair_count_table,
             )
         ],
@@ -1177,7 +1237,7 @@ def optimization_section() -> Section:
                 )
             ],
         )
-        yield pair_count_section("uop")
+        yield pair_count_section("uop", sharing_data=True)
         yield Section(
             "Unsupported opcodes",
             "",
@@ -1383,4 +1443,115 @@ def main():
 
 
 if __name__ == "__main__":
+    uop_flags = _get_uop_flags_from_file()
+
+    def compare(a, b):
+        print(f"{a:<30} {b:<30} => {opcode_input_overlap(uop_flags, a, b)}")
+
+    # TODO remove debugs
+    """
+    #compare("_TO_BOOL_BOOL", "_GUARD_IS_TRUE_POP")
+    #compare("_LOAD_FAST", "_LOAD_CONST_INLINE_BORROW")
+    #compare("_CHECK_VALIDITY", "_TO_BOOL_BOOL")
+    compare("_LOAD_FAST","_LOAD_FAST")
+    compare("_LOAD_FAST","_SET_IP")
+    compare("_LOAD_CONST_INLINE_BORROW","_SET_IP")
+    compare("_LOAD_FAST","_LOAD_CONST_INLINE_BORROW")
+    compare("_STORE_FAST","_LOAD_FAST")
+    compare("_GUARD_IS_FALSE_POP","_LOAD_FAST")
+    compare("_CHECK_VALIDITY","_GUARD_IS_FALSE_POP")
+    compare("_SET_IP","_GUARD_BOTH_INT")
+    compare("_CHECK_VALIDITY","_LOAD_FAST")
+    compare("_GUARD_BOTH_INT","_BINARY_OP_ADD_INT")
+    compare("_COMPARE_OP_STR","_CHECK_VALIDITY")
+    compare("_SET_IP","_COMPARE_OP_STR")
+    compare("_LOAD_FAST","_GUARD_TYPE_VERSION")
+    compare("_CONTAINS_OP","_CHECK_VALIDITY")
+    compare("_SET_IP","_CONTAINS_OP")
+    compare("_CHECK_VALIDITY","_STORE_FAST")
+    compare("_SET_IP","_GUARD_TYPE_VERSION")
+    compare("_BINARY_OP_ADD_INT","_STORE_FAST")
+    compare("_SET_IP","_CHECK_VALIDITY")
+    compare("_JUMP_TO_TOP","_LOAD_FAST")
+    compare("_LOAD_FAST","_BINARY_SUBSCR_STR_INT")
+    compare("_ITER_CHECK_LIST","_GUARD_NOT_EXHAUSTED_LIST")
+    compare("_STORE_FAST","_JUMP_TO_TOP")
+    compare("_GUARD_TYPE_VERSION","_CHECK_MANAGED_OBJECT_HAS_VALUES")
+    compare("_CHECK_MANAGED_OBJECT_HAS_VALUES","_LOAD_ATTR_INSTANCE_VALUE")
+    compare("_BINARY_SUBSCR_STR_INT","_STORE_FAST")
+    compare("_LOAD_FAST","_GUARD_BOTH_FLOAT")
+    compare("_STORE_FAST","_STORE_FAST")
+    compare("_CHECK_FUNCTION_EXACT_ARGS","_CHECK_STACK_SPACE")
+    compare("_CHECK_STACK_SPACE","_INIT_CALL_PY_EXACT_ARGS")
+    compare("_SAVE_RETURN_OFFSET","_PUSH_FRAME")
+    compare("_INIT_CALL_PY_EXACT_ARGS","_SAVE_RETURN_OFFSET")
+    compare("_BINARY_SUBSCR","_CHECK_VALIDITY")
+    compare("_GUARD_NOT_EXHAUSTED_LIST","_ITER_NEXT_LIST")
+    compare("_GUARD_BOTH_FLOAT","_BINARY_OP_MULTIPLY_FLOAT")
+    compare("_LOAD_CONST_INLINE_WITH_NULL","_LOAD_FAST")
+    compare("_PUSH_FRAME","_CHECK_VALIDITY")
+    compare("_CHECK_VALIDITY","_RESUME_CHECK")
+    compare("_SET_IP","_BINARY_SUBSCR")
+    compare("_GUARD_TYPE_VERSION","_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT")
+    compare("_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT","_GUARD_KEYS_VERSION")
+    compare("_SET_IP","_CHECK_FUNCTION_EXACT_ARGS")
+    compare("_ITER_CHECK_RANGE","_GUARD_NOT_EXHAUSTED_RANGE")
+    compare("_GUARD_KEYS_VERSION","_LOAD_ATTR_METHOD_WITH_VALUES")
+    compare("_SET_IP","_ITER_CHECK_RANGE")
+    compare("_GUARD_NOT_EXHAUSTED_RANGE","_ITER_NEXT_RANGE")
+    compare("_ITER_NEXT_RANGE","_CHECK_VALIDITY")
+    compare("_LOAD_ATTR_METHOD_WITH_VALUES","_CHECK_VALIDITY")
+    compare("_CHECK_VALIDITY","_GUARD_IS_TRUE_POP")
+    compare("_GUARD_TYPE_VERSION","_LOAD_ATTR_SLOT")
+    compare("_TO_BOOL_BOOL","_GUARD_IS_FALSE_POP")
+    compare("_ITER_NEXT_LIST","_STORE_FAST")
+    compare("_BINARY_OP_ADD_INT","_SET_IP")
+    compare("_SET_IP","_BINARY_OP")
+    compare("_GUARD_TYPE_VERSION","_LOAD_ATTR_METHOD_NO_DICT")
+    compare("_RESUME_CHECK","_LOAD_FAST")
+    compare("_UNPACK_SEQUENCE_TWO_TUPLE","_STORE_FAST")
+    compare("_CHECK_GLOBALS","_CHECK_BUILTINS")
+    compare("_SET_IP","_COMPARE_OP_INT")
+    compare("_ITER_CHECK_TUPLE","_GUARD_NOT_EXHAUSTED_TUPLE")
+    compare("_COMPARE_OP_INT","_CHECK_VALIDITY")
+    compare("_TO_BOOL_BOOL","_GUARD_IS_TRUE_POP")
+    compare("_JUMP_TO_TOP","_SET_IP")
+    compare("_SET_IP","_LOAD_DEREF")
+    compare("_LOAD_ATTR_INSTANCE_VALUE","_SET_IP")
+    compare("_GUARD_IS_TRUE_POP","_LOAD_FAST")
+    compare("_GUARD_BOTH_FLOAT","_BINARY_OP_ADD_FLOAT")
+    compare("_BINARY_OP_MULTIPLY_FLOAT","_GUARD_BOTH_FLOAT")
+    compare("_LOAD_CONST_INLINE_BORROW","_LOAD_CONST_INLINE_BORROW")
+    compare("_LOAD_DEREF","_CHECK_VALIDITY")
+    compare("_SET_IP","_CALL_BUILTIN_FAST")
+    compare("_CALL_BUILTIN_FAST","_CHECK_VALIDITY")
+    compare("_GUARD_IS_TRUE_POP","_JUMP_TO_TOP")
+    compare("_STORE_FAST","_SET_IP")
+    compare("_CHECK_VALIDITY","_TO_BOOL_BOOL")
+    compare("_LOAD_CONST_INLINE","_SET_IP")
+    compare("_SWAP","_SET_IP")
+    compare("_LOAD_ATTR_SLOT","_SET_IP")
+    compare("_CHECK_VALIDITY","_LOAD_CONST_INLINE_BORROW")
+    compare("_LOAD_CONST_INLINE_BORROW","_LOAD_FAST")
+    compare("_ITER_NEXT_LIST","_UNPACK_SEQUENCE_TWO_TUPLE")
+    compare("_SET_IP","_LOAD_ATTR")
+    compare("_PUSH_NULL","_LOAD_FAST")
+    compare("_STORE_SUBSCR_LIST_INT","_CHECK_VALIDITY")
+    compare("_SET_IP","_STORE_SUBSCR_LIST_INT")
+    compare("_COPY","_COPY")
+    compare("_SWAP","_SWAP")
+    compare("_LOAD_ATTR_METHOD_NO_DICT","_SET_IP")
+    compare("_GUARD_BOTH_INT","_BINARY_OP_SUBTRACT_INT")
+    compare("_LOAD_ATTR_INSTANCE_VALUE","_LOAD_FAST")
+    compare("_CHECK_VALIDITY","_EXIT_TRACE")
+    compare("_BINARY_SUBSCR_STR_INT","_LOAD_FAST")
+    compare("_LOAD_FAST","_LOAD_CONST_INLINE")
+    compare("_SET_IP","_FOR_ITER_TIER_TWO")
+    compare("_GUARD_BOTH_FLOAT","_BINARY_OP_SUBTRACT_FLOAT")
+    compare("_STORE_SUBSCR","_CHECK_VALIDITY")
+    compare("_SET_IP","_STORE_SUBSCR")
+    compare("_GUARD_NOT_EXHAUSTED_TUPLE","_ITER_NEXT_TUPLE")
+    compare("_ITER_NEXT_TUPLE","_STORE_FAST")
+    compare("_LOAD_ATTR","_CHECK_VALIDITY") """
+        
     main()
