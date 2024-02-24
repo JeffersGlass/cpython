@@ -2685,7 +2685,17 @@ config.status:	$(srcdir)/configure
 Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
-Python/jit.o: regen-jit
+JIT_DEPS = \
+	$(srcdir)/Tools/jit/*.c \
+	$(srcdir)/Tools/jit/*.py \
+	$(srcdir)/Python/executor_cases.c.h \
+	pyconfig.h
+
+jit_stencils.h: $(JIT_DEPS)
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/jit/build.py x86_64-pc-linux-gnu
+	
+Python/jit.o: $(srcdir)/Python/jit.c jit_stencils.h
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit
 regen-jit:
