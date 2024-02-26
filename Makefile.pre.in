@@ -2692,9 +2692,9 @@ JIT_DEPS = \
 	pyconfig.h
 
 jit_stencils.h: $(JIT_DEPS)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/jit/build.py x86_64-pc-linux-gnu
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/jit/build.py x86_64-pc-linux-gnu --file Tools/jit/superinstructions.csv
 	
-Python/jit.o: $(srcdir)/Python/jit.c jit_stencils.h
+Python/jit.o: jit_stencils.h
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit
