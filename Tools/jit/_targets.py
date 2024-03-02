@@ -42,11 +42,13 @@ class _Target(typing.Generic[_S, _R]):
     debug: bool = False
     force: bool = False
     verbose: bool = False
+    stats: bool = False
 
     def _compute_digest(self, out: pathlib.Path) -> str:
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
         hasher.update(self.debug.to_bytes())
+        hasher.update(self.stats.to_bytes())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
         hasher.update((out / "pyconfig.h").read_bytes())
@@ -111,6 +113,9 @@ class _Target(typing.Generic[_S, _R]):
             f"-D_JIT_OPCODE={opname}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
+        ]
+        if self.stats: args.append('-DPy_STATS')
+        args.extend([
             "-I.",
             f"-I{CPYTHON / 'Include'}",
             f"-I{CPYTHON / 'Include' / 'internal'}",
@@ -135,7 +140,7 @@ class _Target(typing.Generic[_S, _R]):
             "-std=c11",
             f"{c}",
             *self.args,
-        ]
+        ])
         await _llvm.run("clang", args, echo=self.verbose)
         return await self._parse(o)
 

@@ -2,6 +2,7 @@
 
 #include "pycore_call.h"
 #include "pycore_ceval.h"
+#include "pycore_code.h"
 #include "pycore_dict.h"
 #include "pycore_emscripten_signal.h"
 #include "pycore_intrinsics.h"
@@ -83,6 +84,8 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
         CHECK_EVAL_BREAKER();
         PATCH_JUMP(_JIT_TOP);
     }
+    OPT_STAT_INC(uops_executed);
+    UOP_STAT_INC(opcode, execution_count);
     switch (opcode) {
 #include "executor_cases.c.h"
         default:

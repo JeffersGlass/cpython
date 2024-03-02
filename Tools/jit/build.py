@@ -19,10 +19,14 @@ if __name__ == "__main__":
         "-f", "--force", action="store_true", help="force the entire JIT to be rebuilt"
     )
     parser.add_argument(
+        "--stats", action="store_true", help="Build support for PyStats into the JIT templates"
+    )
+    parser.add_argument(
         "-v", "--verbose", action="store_true", help="echo commands as they are run"
     )
     args = parser.parse_args()
     args.target.debug = args.debug
     args.target.force = args.force
     args.target.verbose = args.verbose
+    args.target.stats = args.stats
     args.target.build(pathlib.Path.cwd(), comment=comment)
