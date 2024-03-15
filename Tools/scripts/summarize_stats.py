@@ -130,8 +130,9 @@ def _get_uop_flags_from_file(
     filepath: str | Path = "Include/internal/pycore_uop_metadata.h",
 ) -> dict[str, list[str]]:
     flags = {}
+    if not flag_names: flag_names = []
     with open(SOURCE_DIR / filepath) as spec_src:
-        pattern = fr"\s+\[(?P<name>[_A-Z0-9]+)\] =(?P<flags>(\s({'|'.join(f for f in flag_names + ['0'])})(\s\|)?)+)"
+        pattern = fr"\s+\[(?P<name>[_A-Z0-9]+)\] =(?P<flags>(\s({'|'.join(f for f in flag_names + ('0',))})(\s\|)?)+)"
         for line in spec_src:
             if m := re.match(pattern, line):
                 flags[m.group("name")] = [
@@ -781,7 +782,8 @@ def pair_count_section(prefix: str, sharing_data=False) -> Section:
                 # for k, v in sorted(uop_flags.items()):
                 #    print(f"{k}:{v}")
                 # exit()
-                next_row.append(opcode_input_overlap(uop_flags, opcode_i, opcode_j))
+                next_row.append("0")
+                #next_row.append(opcode_input_overlap(uop_flags, opcode_i, opcode_j))
             rows.append(next_row)
         return rows
 
@@ -1449,10 +1451,10 @@ def main():
 
 
 if __name__ == "__main__":
-    uop_flags = _get_uop_flags_from_file()
+    #uop_flags = _get_uop_flags_from_file()
 
-    def compare(a, b):
-        print(f"{a:<30} {b:<30} => {opcode_input_overlap(uop_flags, a, b)}")
+    #def compare(a, b):
+    #    print(f"{a:<30} {b:<30} => {opcode_input_overlap(uop_flags, a, b)}")
 
     # TODO remove debugs
     """
