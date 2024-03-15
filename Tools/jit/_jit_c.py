@@ -156,7 +156,10 @@ def _generate_jit_switch_or_compare(supernodes: list[_supernode.SuperNode], var_
     #       else (there's only one supernode with this starting opcode):
     #           ...
     
-    initial_opcodes = set(node.ops[0] for node in supernodes)
+    initial_opcodes = []
+    for node in supernodes:
+        if node.ops[0] not in initial_opcodes: initial_opcodes.append(node.ops[0])
+    
     yield f"{INDENT_UNIT * indent_level}switch ({var_names[level]}) {{"
 
     for initial_op in initial_opcodes:
