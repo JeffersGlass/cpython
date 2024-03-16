@@ -266,7 +266,7 @@ def main():
         raise parser.error("Must provide at least one file input or -s string")
     
     if args.output_mode and args.output_mode != "table" and args.table:
-        parser.error(f"Cannot provide --output_mode={args.output_mode}")
+        parser.error(f"Cannot provide --output_mode={args.output_mode} and --table")
     if not args.output_mode:
         output_mode = "table" if args.table else "text"
     
