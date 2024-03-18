@@ -17,6 +17,7 @@
 #include "pycore_jit.h"
 
 #include "jit_stencils.h"
+#include "jit_defines.h"
 
 // Memory management stuff: ////////////////////////////////////////////////////
 
@@ -403,12 +404,20 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
     // Loop once to find the total compiled size:
     size_t code_size = 0;
     size_t data_size = 0;
-    for (size_t i = 0; i < length; i++) {
+        
+    // Stores the final value of loop variables, so we can clean
+    // up remaining opcodes at the end
+    size_t final_index = 0;
+
+
+    // SIZE LOOP HERE
+    // END SIZE LOOP
+    /*for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         code_size += group->code.body_size;
         data_size += group->data.body_size;
-    }
+    }*/
     // Round up to the nearest page (code and data need separate pages):
     size_t page_size = get_page_size();
     assert((page_size & (page_size - 1)) == 0);
@@ -426,7 +435,9 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         // Don't want to execute this more than once:
         top += stencil_groups[_START_EXECUTOR].code.body_size;
     }
-    for (size_t i = 0; i < length; i++) {
+    // PATCH LOOP INIT HERE
+    // END PATCH LOOP
+    /*for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
         const StencilGroup *group = &stencil_groups[instruction->opcode];
         // Think of patches as a dictionary mapping HoleValue to uint64_t:
@@ -443,7 +454,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         emit(group, patches);
         code += group->code.body_size;
         data += group->data.body_size;
-    }
+    }*/
     if (mark_executable(memory, code_size) ||
         mark_readable(memory + code_size, data_size))
     {
@@ -468,5 +479,9 @@ _PyJIT_Free(_PyExecutorObject *executor)
         }
     }
 }
+
+// _JIT_INDEX HERE
+
+// _JIT_INDEX END
 
 #endif  // _Py_JIT

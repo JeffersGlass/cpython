@@ -773,11 +773,7 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         def _unquote(s):
             return unquote_plus(s, encoding=encoding, errors=errors)
     else:
-        if not qs:
-            return []
-        # Use memoryview() to reject integers and iterables,
-        # acceptable by the bytes constructor.
-        qs = bytes(memoryview(qs))
+        qs = bytes(qs)
         if isinstance(separator, str):
             separator = bytes(separator, 'ascii')
         eq = b'='

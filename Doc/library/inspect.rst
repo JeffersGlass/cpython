@@ -55,11 +55,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |           | __module__        | name of module in which   |
 |           |                   | this class was defined    |
 +-----------+-------------------+---------------------------+
-|           | __type_params__   | A tuple containing the    |
-|           |                   | :ref:`type parameters     |
-|           |                   | <type-params>` of         |
-|           |                   | a generic class           |
-+-----------+-------------------+---------------------------+
 | method    | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
@@ -107,11 +102,6 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 |           |                   | ``"return"`` key is       |
 |           |                   | reserved for return       |
 |           |                   | annotations.              |
-+-----------+-------------------+---------------------------+
-|           | __type_params__   | A tuple containing the    |
-|           |                   | :ref:`type parameters     |
-|           |                   | <type-params>` of         |
-|           |                   | a generic function        |
 +-----------+-------------------+---------------------------+
 |           | __module__        | name of module in which   |
 |           |                   | this function was defined |

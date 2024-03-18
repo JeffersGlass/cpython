@@ -43,9 +43,6 @@ class WindowsConsoleIOTests(unittest.TestCase):
             self.assertEqual(0, f.fileno())
             f.close()   # multiple close should not crash
             f.close()
-            with self.assertWarns(RuntimeWarning):
-                with ConIO(False):
-                    pass
 
         try:
             f = ConIO(1, 'w')
@@ -58,9 +55,6 @@ class WindowsConsoleIOTests(unittest.TestCase):
             self.assertEqual(1, f.fileno())
             f.close()
             f.close()
-            with self.assertWarns(RuntimeWarning):
-                with ConIO(False):
-                    pass
 
         try:
             f = ConIO(2, 'w')

@@ -1,41 +1,36 @@
 """Core data structures for compiled code templates."""
 import dataclasses
 import enum
+import itertools
 import sys
 
 import _schema
 
 
-@enum.unique
-class HoleValue(enum.Enum):
-    """
-    Different "base" values that can be patched into holes (usually combined with the
-    address of a symbol and/or an addend).
-    """
+"""
+    #Different "base" values that can be patched into holes (usually combined with the
+    #address of a symbol and/or an addend).
 
-    # The base address of the machine code for the current uop (exposed as _JIT_ENTRY):
-    CODE = enum.auto()
-    # The base address of the machine code for the next uop (exposed as _JIT_CONTINUE):
-    CONTINUE = enum.auto()
-    # The base address of the read-only data for this uop:
-    DATA = enum.auto()
-    # The address of the current executor (exposed as _JIT_EXECUTOR):
-    EXECUTOR = enum.auto()
-    # The base address of the "global" offset table located in the read-only data.
-    # Shouldn't be present in the final stencils, since these are all replaced with
-    # equivalent DATA values:
-    GOT = enum.auto()
-    # The current uop's oparg (exposed as _JIT_OPARG):
-    OPARG = enum.auto()
-    # The current uop's operand (exposed as _JIT_OPERAND):
-    OPERAND = enum.auto()
-    # The current uop's target (exposed as _JIT_TARGET):
-    TARGET = enum.auto()
-    # The base address of the machine code for the first uop (exposed as _JIT_TOP):
-    TOP = enum.auto()
-    # A hardcoded value of zero (used for symbol lookups):
-    ZERO = enum.auto()
+    CODE: The base address of the machine code for the current uop (exposed as _JIT_ENTRY):    
+    CONTINUE: The base address of the machine code for the next uop (exposed as _JIT_CONTINUE):    
+    DATA: The base address of the read-only data for this uop:    
+    EXECUTOR: The address of the current executor (exposed as _JIT_EXECUTOR)    
+                The base address of the "global" offset table located in the read-only data.
+                Shouldn't be present in the final stencils, since these are all replaced with
+                equivalent DATA values    
+    GOT: ???   
+    TOP: The base address of the machine code for the first uop (exposed as _JIT_TOP):    
+    ZERO: A hardcoded value of zero (used for symbol lookups):    
+    OPARG0: The first uop's oparg (exposed as _JIT_OPARG):    
+    OPERAND0: The first uop's operand (exposed as _JIT_OPERAND):    
+    TARGET0: The first uop's target (exposed as _JIT_TARGET): 
+    # Additional hole types for supernodes:
+    OPARG1, OPERAND1, TARGET1, OPARG2, OPERAND2, TARGET2, ...
+ """
+def create_hole_values(depth):
+    return enum.Enum("HoleValue", list(itertools.chain(["CODE","CONTINUE","DATA","EXECUTOR","GOT","TOP","ZERO"], [x for sublist in ([f"OPARG{i}", f"OPERAND{i}", f"TARGET{i}"] for i in range(depth)) for x in sublist])))
 
+HoleValue = None # Will be patched at runtime with the enum above
 
 @dataclasses.dataclass
 class Hole:

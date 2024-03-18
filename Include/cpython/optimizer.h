@@ -65,7 +65,7 @@ typedef int (*optimize_func)(
     _Py_CODEUNIT *instr, _PyExecutorObject **exec_ptr,
     int curr_stackentries);
 
-struct _PyOptimizerObject {
+typedef struct _PyOptimizerObject {
     PyObject_HEAD
     optimize_func optimize;
     /* These thresholds are treated as signed so do not exceed INT16_MAX
@@ -74,7 +74,7 @@ struct _PyOptimizerObject {
     uint16_t side_threshold;
     uint16_t backedge_threshold;
     /* Data needed by the optimizer goes here, but is opaque to the VM */
-};
+} _PyOptimizerObject;
 
 /** Test support **/
 typedef struct {

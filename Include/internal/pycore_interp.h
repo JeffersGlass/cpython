@@ -245,6 +245,7 @@ struct _is {
 
     uint16_t optimizer_side_threshold;
 
+    uint32_t next_func_version;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;
 

@@ -178,34 +178,15 @@ write code that handles both IP versions correctly.  Address objects are
 
    .. attribute:: is_private
 
-      ``True`` if the address is defined as not globally reachable by
+      ``True`` if the address is allocated for private networks.  See
       iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
-      (for IPv6) with the following exceptions:
-
-      * ``is_private`` is ``False`` for the shared address space (``100.64.0.0/10``)
-      * For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
-        semantics of the underlying IPv4 addresses and the following condition holds
-        (see :attr:`IPv6Address.ipv4_mapped`)::
-
-            address.is_private == address.ipv4_mapped.is_private
-
-      ``is_private`` has value opposite to :attr:`is_global`, except for the shared address space
-      (``100.64.0.0/10`` range) where they are both ``False``.
+      (for IPv6).
 
    .. attribute:: is_global
 
-      ``True`` if the address is defined as globally reachable by
+      ``True`` if the address is allocated for public networks.  See
       iana-ipv4-special-registry_ (for IPv4) or iana-ipv6-special-registry_
-      (for IPv6) with the following exception:
-
-      For IPv4-mapped IPv6-addresses the ``is_private`` value is determined by the
-      semantics of the underlying IPv4 addresses and the following condition holds
-      (see :attr:`IPv6Address.ipv4_mapped`)::
-
-         address.is_global == address.ipv4_mapped.is_global
-
-      ``is_global`` has value opposite to :attr:`is_private`, except for the shared address space
-      (``100.64.0.0/10`` range) where they are both ``False``.
+      (for IPv6).
 
       .. versionadded:: 3.4
 

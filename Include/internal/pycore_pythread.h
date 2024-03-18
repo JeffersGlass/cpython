@@ -78,7 +78,7 @@ struct _pythread_runtime_state {
     } stubs;
 #endif
 
-    // Linked list of ThreadHandles
+    // Linked list of ThreadHandleObjects
     struct llist_node handles;
 };
 

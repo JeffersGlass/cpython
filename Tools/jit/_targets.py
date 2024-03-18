@@ -10,10 +10,17 @@ import sys
 import tempfile
 import typing
 
+import _jit_c
+import _jit_defines_h
 import _llvm
 import _schema
+import _supernode
 import _stencils
+import _template
 import _writer
+
+import typing
+
 
 if sys.version_info < (3, 11):
     raise RuntimeError("Building the JIT compiler requires Python 3.11 or newer!")
@@ -101,14 +108,18 @@ class _Target(typing.Generic[_S, _R]):
         raise NotImplementedError(type(self))
 
     async def _compile(
-        self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
+        self, c: pathlib.Path, tempdir: pathlib.Path, opnames: typing.Iterable[str]
     ) -> _stencils.StencilGroup:
-        o = tempdir / f"{opname}.o"
+        o = tempdir / f"{_superop_name(opnames)}.o"
         args = [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
-            "-D_DEBUG" if self.debug else "-DNDEBUG",
-            f"-D_JIT_OPCODE={opname}",
+            "-D_DEBUG" if self.debug else "-DNDEBUG"]
+        
+        for i, op in enumerate(opnames):
+            args.append(f"-D_JIT_OPCODE{i}={op}")
+
+        args.extend([
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
             "-I.",
@@ -135,25 +146,58 @@ class _Target(typing.Generic[_S, _R]):
             "-std=c11",
             f"{c}",
             *self.args,
-        ]
+        ])
         await _llvm.run("clang", args, echo=self.verbose)
         return await self._parse(o)
 
-    async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
+    async def _build_stencils(self,  supernodes: typing.Iterable[typing.Iterable[str]] | None = None) -> dict[str, _stencils.StencilGroup]:        
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
         tasks = []
+        _stencils.HoleValue = _stencils.create_hole_values(_supernode.SuperNode.max_depth(supernodes))
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
                 for opname in opnames:
-                    coro = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
+                    coro = self._compile(TOOLS_JIT_TEMPLATE_C, work, [opname,])
                     tasks.append(group.create_task(coro, name=opname))
+
+            if supernodes:
+                supernode_stencils = await self._build_multiple_ops(supernodes)
+            else:
+                supernode_stencils = []
+
+        result = {task.get_name(): task.result() for task in tasks}
+        if supernode_stencils: result.update(supernode_stencils)
+        return result
+    
+    async def _build_multiple_ops(self, supernodes: typing.Iterable[_supernode.SuperNode]) -> dict[str, _stencils.StencilGroup]:
+        tasks = []
+        tempdir = CPYTHON / "work"
+        work = pathlib.Path(tempdir).resolve()
+        async with asyncio.TaskGroup() as group:
+            for node in supernodes:
+                template_path = work / f"template_{node.length}.c"
+                if not template_path.exists():
+                    _template.create_template_file(node.length, template_path)
+                coro = self._compile(template_path, work, node.ops)
+                tasks.append(group.create_task(coro, name=node.name))
         return {task.get_name(): task.result() for task in tasks}
 
-    def build(self, out: pathlib.Path, *, comment: str = "") -> None:
+    def build(self, out: pathlib.Path, supernodes: list[_supernode.SuperNode] | None, *, comment: str = "") -> None:
         """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
+
+        # Assign indices to supernodes here
+        # Don't do it when they're loaded/created, to allow for more dynamic
+        # customization later
+        max_id = max_uop_id()
+        for i, s in enumerate(supernodes):
+            s.index = i + max_id + 1 
+
+        _jit_c._patch_jit_c(supernodes)
+        _jit_defines_h.create_jit_defines_h(supernodes)
+
         jit_stencils = out / "jit_stencils.h"
         if (
             not self.force
@@ -161,14 +205,79 @@ class _Target(typing.Generic[_S, _R]):
             and jit_stencils.read_text().startswith(digest)
         ):
             return
-        stencil_groups = asyncio.run(self._build_stencils())
+        stencil_groups = asyncio.run(self._build_stencils(supernodes))
         with jit_stencils.open("w") as file:
             file.write(digest)
             if comment:
                 file.write(f"// {comment}\n\n")
-            file.write("")
-            for line in _writer.dump(stencil_groups):
+            max_id = max_uop_id()
+            for line in _writer.dump(stencil_groups, supernodes=supernodes):
                 file.write(f"{line}\n")
+
+
+class _ELF(
+    _Target[_schema.ELFSection, _schema.ELFRelocation]
+):  # pylint: disable = too-few-public-methods
+    def _handle_section(
+        self, section: _schema.ELFSection, group: _stencils.StencilGroup
+    ) -> None:
+        section_type = section["Type"]["Value"]
+        flags = {flag["Name"] for flag in section["Flags"]["Flags"]}
+        if section_type == "SHT_RELA":
+            assert "SHF_INFO_LINK" in flags, flags
+            assert not section["Symbols"]
+            if section["Info"] in group.code.sections:
+                stencil = group.code
+            else:
+                stencil = group.data
+            base = stencil.sections[section["Info"]]
+            for wrapped_relocation in section["Relocations"]:
+                relocation = wrapped_relocation["Relocation"]
+                hole = self._handle_relocation(base, relocation, stencil.body)
+                stencil.holes.append(hole)
+        elif section_type == "SHT_PROGBITS":
+            if "SHF_ALLOC" not in flags:
+                return
+            if "SHF_EXECINSTR" in flags:
+                value = _stencils.HoleValue.CODE
+                stencil = group.code
+            else:
+                value = _stencils.HoleValue.DATA
+                stencil = group.data
+            stencil.sections[section["Index"]] = len(stencil.body)
+            for wrapped_symbol in section["Symbols"]:
+                symbol = wrapped_symbol["Symbol"]
+                offset = len(stencil.body) + symbol["Value"]
+                name = symbol["Name"]["Value"]
+                name = name.removeprefix(self.prefix)
+                group.symbols[name] = value, offset
+            stencil.body.extend(section["SectionData"]["Bytes"])
+            assert not section["Relocations"]
+        else:
+            assert section_type in {
+                "SHT_GROUP",
+                "SHT_LLVM_ADDRSIG",
+                "SHT_NULL",
+                "SHT_STRTAB",
+                "SHT_SYMTAB",
+            }, section_type
+
+    def _handle_relocation(
+        self, base: int, relocation: _schema.ELFRelocation, raw: bytes
+    ) -> _stencils.Hole:
+        match relocation:
+            case {
+                "Type": {"Value": kind},
+                "Symbol": {"Value": s},
+                "Offset": offset,
+                "Addend": addend,
+            }:
+                offset += base
+                s = s.removeprefix(self.prefix)
+                value, symbol = _stencils.symbol_to_value(s)
+            case _:
+                raise NotImplementedError(relocation)
+        return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
 class _COFF(
@@ -465,3 +574,12 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
         return _ELF(host)
     raise ValueError(host)
+
+def max_uop_id():
+    with open(CPYTHON / "Include" / "internal" / "pycore_uop_ids.h") as file:
+        for line in file.readlines():
+            if m:= re.match(r"#define MAX_UOP_ID (?P<id>\d+)", line):
+                return int(m.group("id"))
+
+def _superop_name(opset: list[str]):
+    return 'plus'.join(opset)

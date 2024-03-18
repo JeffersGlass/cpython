@@ -136,7 +136,8 @@ The :mod:`glob` module defines the following functions:
    separators, and ``*`` pattern segments match precisely one path segment.
 
    If *recursive* is true, the pattern segment "``**``" will match any number
-   of path segments.
+   of path segments. If "``**``" occurs in any position other than a full
+   pattern segment, :exc:`ValueError` is raised.
 
    If *include_hidden* is true, wildcards can match path segments that start
    with a dot (``.``).

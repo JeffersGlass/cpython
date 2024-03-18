@@ -81,6 +81,20 @@
     <Exec Command="$(PythonForBuild) Tools\build\generate_global_objects.py"
           WorkingDirectory="$(PySourcePath)" />
   </Target>
+  
+  <Target Name="_RegenJIT"
+          Condition="'$(UseJIT)' == 'true'"
+          DependsOnTargets="_UpdatePyconfig;FindPythonForBuild"
+          Inputs="@(_JITSources)"
+          Outputs="@(_JITOutputs)">
+    <PropertyGroup>
+      <JITArgs Condition="$(Platform) == 'ARM64'">aarch64-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Platform) == 'Win32'">i686-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Platform) == 'x64'">x86_64-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Configuration) == 'Debug'">$(JITArgs) --debug</JITArgs>
+    </PropertyGroup>
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs)' WorkingDirectory="$(IntDir)"/>
+  </Target>
 
   <Target Name="_RegenCases"
           Inputs="@(_CasesSources)" Outputs="@(_CasesOutputs)"

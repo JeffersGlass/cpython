@@ -4,6 +4,7 @@ import pathlib
 import shlex
 import sys
 
+import _opfile
 import _targets
 
 if __name__ == "__main__":
@@ -11,6 +12,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "target", type=_targets.get_target, help="a PEP 11 target triple to compile for"
+    )
+    parser.add_argument(
+        "--file", default='', help="Filepath to a csv of superinstructions to build" 
     )
     parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"
@@ -25,4 +29,4 @@ if __name__ == "__main__":
     args.target.debug = args.debug
     args.target.force = args.force
     args.target.verbose = args.verbose
-    args.target.build(pathlib.Path.cwd(), comment=comment)
+    args.target.build(pathlib.Path.cwd(), _opfile._retrieve_ops_from_path(args.file) if args.file else None, comment=comment)

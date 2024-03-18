@@ -83,10 +83,6 @@ class GetLineTestsBadData(TempFile):
 class EmptyFile(GetLineTestsGoodData, unittest.TestCase):
     file_list = []
 
-    def test_getlines(self):
-        lines = linecache.getlines(self.file_name)
-        self.assertEqual(lines, ['\n'])
-
 
 class SingleEmptyLine(GetLineTestsGoodData, unittest.TestCase):
     file_list = ['\n']
