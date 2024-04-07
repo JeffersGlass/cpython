@@ -1,17 +1,18 @@
 """Core data structures for compiled code templates."""
 import dataclasses
 import enum
+import itertools
 import sys
 
 import _schema
 
 
-@enum.unique
+""" @enum.unique
 class HoleValue(enum.Enum):
-    """
-    Different "base" values that can be patched into holes (usually combined with the
-    address of a symbol and/or an addend).
-    """
+    
+    # Different "base" values that can be patched into holes (usually combined with the
+    # address of a symbol and/or an addend).
+    
 
     # The base address of the machine code for the current uop (exposed as _JIT_ENTRY):
     CODE = enum.auto()
@@ -43,8 +44,12 @@ class HoleValue(enum.Enum):
     # The base address of the machine code for the first uop (exposed as _JIT_TOP):
     TOP = enum.auto()
     # A hardcoded value of zero (used for symbol lookups):
-    ZERO = enum.auto()
+    ZERO = enum.auto() """
 
+def create_hole_values(depth):
+    return enum.Enum("HoleValue", list(itertools.chain(["CODE","CONTINUE","DATA","EXECUTOR","GOT","TOP","ZERO"], [x for sublist in ([f"OPARG{i}", f"OPERAND{i}", f"TARGET{i}", f"OPERAND_HI{i}", f"OPERAND_LO{i}", f"JUMP_TARGET{i}", f"ERROR_TARGET{i}", f"EXIT_INDEX{i}" ] for i in range(depth)) for x in sublist])))
+
+HoleValue = None # Will be patched at runtime with the enum above
 
 @dataclasses.dataclass
 class Hole:

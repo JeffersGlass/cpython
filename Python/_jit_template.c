@@ -387,39 +387,6 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
     size_t data_size = 0;
     size_t final_index = 0;
     // SIZE LOOP HERE
-	if (length > 2){
-	//printf("About to run size loop on executor of size %ld\n", length);
-	for (size_t i = 0; i <= length-2;) {
-		_PyUOpInstruction *instruction0 = (_PyUOpInstruction *)&trace[i+0];
-		_PyUOpInstruction *instruction1 = (_PyUOpInstruction *)&trace[i+1];
-	//printf("Calling _JIT_INDEX from primary size loop:");
-		const SuperNode node = _JIT_INDEX(instruction0->opcode, instruction1->opcode);
-			const StencilGroup *group = &stencil_groups[node.index];
-			//printf("Node index: %ld\n", node.index);
-			code_size += group->code.body_size;
-			data_size += group->data.body_size;
-			i += node.length;
-			final_index = i;
-			//printf("At end of loop: node.length: %d, i: %ld, final_index: %ld\n", node.length, i, final_index);
-		}
-	}
-	
-		// Once we're closer to the end of the stencil than the depth of our
-		// longest stencil, just single-jit the remaining opcodes. This can be
-		// improved to look only at short-enough patterns by passing, say, -1
-		// to any instructions past the end of the trace; since the longest
-		// superinstruction is likely to still be short, the current approach sholdn't
-		// be too awful.
-	
-	//printf("After primary size loop for executor of size %ld, final_index is %ld", length, final_index);
-	 for (size_t i = final_index; i < length; i++) {
-        _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
-        //printf("Calling _JIT_INDEX from secondary size loop:");
-        const SuperNode node = _JIT_INDEX(instruction->opcode, -1);
-        const StencilGroup *group = &stencil_groups[node.index];
-        code_size += group->code.body_size;
-        data_size += group->data.body_size;
-    } 
     // END SIZE LOOP
     /*for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
@@ -444,123 +411,6 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
     unsigned char *data = memory + code_size;
     assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
     // PATCH LOOP INIT HERE
-	if (length > 2){
-	//printf("About to run patch loop\n");
-	for (size_t i = 0; i <= length - 2; ) {
-		_PyUOpInstruction *instruction0 = (_PyUOpInstruction *)&trace[i+0];
-		_PyUOpInstruction *instruction1 = (_PyUOpInstruction *)&trace[i+1];
-	//printf("Calling _JIT_INDEX from primary patch loop:");
-		const SuperNode node = _JIT_INDEX(instruction0->opcode, instruction1->opcode);
-			const StencilGroup *group = &stencil_groups[node.index];
-		// Think of patches as a dictionary mapping HoleValue to uint64_t:
-			uint64_t patches[] = GET_PATCHES();
-	patches[HoleValue_CODE] = (uintptr_t)code;
-	patches[HoleValue_CONTINUE] = (uintptr_t)code + group->code.body_size;
-	patches[HoleValue_DATA] = (uintptr_t)data;
-	patches[HoleValue_EXECUTOR] = (uintptr_t)executor;
-			patches[HoleValue_OPARG0] = instruction0->oparg;
-			patches[HoleValue_TARGET0] = instruction0->target;
-	#if SIZEOF_VOID_P == 8
-                        patches[HoleValue_OPERAND0] = instruction0->operand;
-                    #else
-                        assert(SIZEOF_VOID_P == 4);
-                        patches[HoleValue_OPERAND_HI0] = instruction0->operand >> 32;
-                        patches[HoleValue_OPERAND_LO0] = instruction0->operand & UINT32_MAX;
-                    #endif
-
-                    switch (instruction0->format) {
-                        case UOP_FORMAT_TARGET:
-                            patches[HoleValue_TARGET0] = instruction0->target;
-                            break;
-                        case UOP_FORMAT_EXIT:
-                            assert(instruction0->exit_index < executor->exit_count);
-                            patches[HoleValue_EXIT_INDEX0] = instruction0->exit_index;
-                            if (instruction0->error_target < length) {
-                                patches[HoleValue_ERROR_TARGET0] = (uintptr_t)memory + instruction_starts[instruction0->error_target];
-                            }
-                            break;
-                        case UOP_FORMAT_JUMP:
-                            assert(instruction0->jump_target < length);
-                            patches[HoleValue_JUMP_TARGET0] = (uintptr_t)memory + instruction_starts[instruction0->jump_target];
-                            if (instruction0->error_target < length) {
-                                patches[HoleValue_ERROR_TARGET0] = (uintptr_t)memory + instruction_starts[instruction0->error_target];
-                            }
-                            break;
-                        default:
-                            assert(0);
-                            Py_FatalError("Illegal instruction format");
-                    }                     
-                    
-			patches[HoleValue_OPARG1] = instruction1->oparg;
-			patches[HoleValue_TARGET1] = instruction1->target;
-	#if SIZEOF_VOID_P == 8
-                        patches[HoleValue_OPERAND1] = instruction1->operand;
-                    #else
-                        assert(SIZEOF_VOID_P == 4);
-                        patches[HoleValue_OPERAND_HI1] = instruction1->operand >> 32;
-                        patches[HoleValue_OPERAND_LO1] = instruction1->operand & UINT32_MAX;
-                    #endif
-
-                    switch (instruction1->format) {
-                        case UOP_FORMAT_TARGET:
-                            patches[HoleValue_TARGET1] = instruction1->target;
-                            break;
-                        case UOP_FORMAT_EXIT:
-                            assert(instruction1->exit_index < executor->exit_count);
-                            patches[HoleValue_EXIT_INDEX1] = instruction1->exit_index;
-                            if (instruction1->error_target < length) {
-                                patches[HoleValue_ERROR_TARGET1] = (uintptr_t)memory + instruction_starts[instruction1->error_target];
-                            }
-                            break;
-                        case UOP_FORMAT_JUMP:
-                            assert(instruction1->jump_target < length);
-                            patches[HoleValue_JUMP_TARGET1] = (uintptr_t)memory + instruction_starts[instruction1->jump_target];
-                            if (instruction1->error_target < length) {
-                                patches[HoleValue_ERROR_TARGET1] = (uintptr_t)memory + instruction_starts[instruction1->error_target];
-                            }
-                            break;
-                        default:
-                            assert(0);
-                            Py_FatalError("Illegal instruction format");
-                    }                     
-                    
-	patches[HoleValue_TOP] = (uintptr_t)memory + instruction_starts[1];
-        patches[HoleValue_ZERO] = 0;
-        emit(group, patches);
-        code += group->code.body_size;
-        data += group->data.body_size;
-        i += node.length;
-        final_index = i;
-    }
-}
-		// Once we're closer to the end of the stencil than the depth of our
-		// longest stencil, just single-jit the remaining opcodes. This can be
-		// improved to look only at short-enough patterns by passing, say, -1
-		// to any instructions past the end of the trace; since the longest
-		// superinstruction is likely to still be short, the current approach sholdn't
-		// be too awful.
-	
-	for (size_t i = final_index; i < length; i++) {
-        _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
-        //printf("Calling _JIT_INDEX from secondary patch loop: ");
-		const SuperNode node = _JIT_INDEX(instruction->opcode, -1);
-        const StencilGroup *group = &stencil_groups[node.index];
-		// Think of patches as a dictionary mapping HoleValue to uint64_t:
-			uint64_t patches[] = GET_PATCHES();
-			patches[HoleValue_OPARG0] = instruction->oparg;
-			patches[HoleValue_OPERAND0] = instruction->operand;
-			patches[HoleValue_TARGET0] = instruction->target;
-        // END PATCH LOOP
-        patches[HoleValue_CODE] = (uint64_t)code;
-        patches[HoleValue_CONTINUE] = (uint64_t)code + group->code.body_size;
-        patches[HoleValue_DATA] = (uint64_t)data;
-        patches[HoleValue_EXECUTOR] = (uint64_t)executor;
-        patches[HoleValue_TOP] = (uintptr_t)memory + instruction_starts[1];
-        patches[HoleValue_ZERO] = 0;
-        emit(group, patches);
-        code += group->code.body_size;
-        data += group->data.body_size;
-    }
     // END PATCH LOOP
     /* for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
@@ -645,34 +495,6 @@ _PyJIT_Free(_PyExecutorObject *executor)
 }
 
 // _JIT_INDEX HERE
-SuperNode
-_JIT_INDEX(uint16_t a, uint16_t b) {
-  switch (a) {
-    case _SET_IP:
-      switch (b) {
-        case _STORE_NAME:
-          return (SuperNode) {.index = _SET_IPplus_STORE_NAME, .length = 2};
-          break;
-        case _GUARD_BOTH_UNICODE:
-          return (SuperNode) {.index = _SET_IPplus_GUARD_BOTH_UNICODE, .length = 2};
-          break;
-        default:
-          return (SuperNode) {.index = a, .length = 1};
-      }
-      break;
-    case _GUARD_NOT_EXHAUSTED_LIST:
-      switch (b) {
-        case _ITER_NEXT_LIST:
-          return (SuperNode) {.index = _GUARD_NOT_EXHAUSTED_LISTplus_ITER_NEXT_LIST, .length = 2};
-          break;
-        default:
-          return (SuperNode) {.index = a, .length = 1};
-      }
-      break;
-    default:
-      return (SuperNode) {.index = a, .length = 1};
-  }
-}
 
 // _JIT_INDEX END
 

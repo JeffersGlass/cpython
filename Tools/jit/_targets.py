@@ -10,9 +10,13 @@ import sys
 import tempfile
 import typing
 
+import _jit_c
+import _jit_defines_h
 import _llvm
 import _schema
+import _supernode
 import _stencils
+import _template
 import _writer
 
 if sys.version_info < (3, 11):
@@ -101,15 +105,18 @@ class _Target(typing.Generic[_S, _R]):
         raise NotImplementedError(type(self))
 
     async def _compile(
-        self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
+        self, c: pathlib.Path, tempdir: pathlib.Path, opnames: typing.Iterable[str]
     ) -> _stencils.StencilGroup:
-        o = tempdir / f"{opname}.o"
+        o = tempdir / f"{_superop_name(opnames)}.o"
         args = [
-            f"--target={self.triple}",
+            f"--target={self.triple}", 
             "-DPy_BUILD_CORE_MODULE",
-            "-D_DEBUG" if self.debug else "-DNDEBUG",
-            f"-D_JIT_OPCODE={opname}",
-            "-D_PyJIT_ACTIVE",
+            "-D_DEBUG" if self.debug else "-DNDEBUG"
+        ]
+        for i, op in enumerate(opnames):
+            args.append(f"-D_JIT_OPCODE{i}={op}")
+
+        args.extend([f"-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
             "-I.",
             f"-I{CPYTHON / 'Include'}",
@@ -135,25 +142,55 @@ class _Target(typing.Generic[_S, _R]):
             "-std=c11",
             f"{c}",
             *self.args,
-        ]
+        ])
+        #print(f"Compiling with args {'\n'.join(args)}")
         await _llvm.run("clang", args, echo=self.verbose)
         return await self._parse(o)
 
-    async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
+    async def _build_stencils(self, supernodes: typing.Iterable[typing.Iterable[str]] | None = None) -> dict[str, _stencils.StencilGroup]:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
+        _stencils.HoleValue = _stencils.create_hole_values(_supernode.SuperNode.max_depth(supernodes))
         tasks = []
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
                 for opname in opnames:
-                    coro = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
+                    coro = self._compile(TOOLS_JIT_TEMPLATE_C, work, [opname,])
                     tasks.append(group.create_task(coro, name=opname))
+            if supernodes:
+                supernode_stencils = await self._build_multiple_ops(supernodes, tempdir)
+            else:
+                supernode_stencils = []
+
+        result = {task.get_name(): task.result() for task in tasks}
+        if supernode_stencils: result.update(supernode_stencils)
+        return result
+
+    async def _build_multiple_ops(self, supernodes: typing.Iterable[_supernode.SuperNode], tempdir: tempfile.TemporaryDirectory) -> dict[str, _stencils.StencilGroup]:
+        tasks = []
+        #tempdir = CPYTHON / "work"
+        work = pathlib.Path(tempdir).resolve()
+        async with asyncio.TaskGroup() as group:
+            for node in supernodes:
+                template_path = work / f"template_{node.length}.c"
+                if not template_path.exists():
+                    _template.create_template_file(node.length, template_path)
+                coro = self._compile(template_path, work, node.ops)
+                tasks.append(group.create_task(coro, name=node.name))
         return {task.get_name(): task.result() for task in tasks}
 
-    def build(self, out: pathlib.Path, *, comment: str = "") -> None:
+    def build(self, out: pathlib.Path, supernodes: typing.Iterable[_supernode.SuperNode], *, comment: str = "") -> None:
         """Build jit_stencils.h in the given directory."""
         digest = f"// {self._compute_digest(out)}\n"
+
+        max_id = max_uop_id()
+        for i, s in enumerate(supernodes):
+            s.index = i + max_id + 1 
+
+        _jit_c._patch_jit_c(supernodes)
+        _jit_defines_h.create_jit_defines_h(supernodes)
+
         jit_stencils = out / "jit_stencils.h"
         if (
             not self.force
@@ -161,13 +198,13 @@ class _Target(typing.Generic[_S, _R]):
             and jit_stencils.read_text().startswith(digest)
         ):
             return
-        stencil_groups = asyncio.run(self._build_stencils())
+        stencil_groups = asyncio.run(self._build_stencils(supernodes))
         with jit_stencils.open("w") as file:
             file.write(digest)
             if comment:
                 file.write(f"// {comment}\n\n")
             file.write("")
-            for line in _writer.dump(stencil_groups):
+            for line in _writer.dump(stencil_groups, supernodes=supernodes):
                 file.write(f"{line}\n")
 
 
@@ -465,3 +502,12 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     if re.fullmatch(r"x86_64-.*-linux-gnu", host):
         return _ELF(host)
     raise ValueError(host)
+
+def max_uop_id():
+    with open(CPYTHON / "Include" / "internal" / "pycore_uop_ids.h") as file:
+        for line in file.readlines():
+            if m:= re.match(r"#define MAX_UOP_ID (?P<id>\d+)", line):
+                return int(m.group("id"))
+
+def _superop_name(opset: list[str]):
+    return 'plus'.join(opset)
