@@ -419,7 +419,12 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size
         const StencilGroup *group = &stencil_groups[node.index];
         code_size += group->code.body_size;
         data_size += group->data.body_size;
-    } 
+    }
+    
+    for (size_t i = 0; i < length; i++) {
+        instruction_starts[i] = code_size;
+    }
+    
     // END SIZE LOOP
     /*for (size_t i = 0; i < length; i++) {
         _PyUOpInstruction *instruction = (_PyUOpInstruction *)&trace[i];
@@ -648,18 +653,6 @@ _PyJIT_Free(_PyExecutorObject *executor)
 SuperNode
 _JIT_INDEX(uint16_t a, uint16_t b) {
   switch (a) {
-    case _SET_IP:
-      switch (b) {
-        case _STORE_NAME:
-          return (SuperNode) {.index = _SET_IPplus_STORE_NAME, .length = 2};
-          break;
-        case _GUARD_BOTH_UNICODE:
-          return (SuperNode) {.index = _SET_IPplus_GUARD_BOTH_UNICODE, .length = 2};
-          break;
-        default:
-          return (SuperNode) {.index = a, .length = 1};
-      }
-      break;
     case _GUARD_NOT_EXHAUSTED_LIST:
       switch (b) {
         case _ITER_NEXT_LIST:

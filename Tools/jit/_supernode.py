@@ -33,5 +33,6 @@ class SuperNode:
     
     @classmethod
     def max_depth(cls, supernodes: typing.Iterable[typing.Self]):
+        if not supernodes: return 0
         return max(len(node.ops) for node in supernodes)
 

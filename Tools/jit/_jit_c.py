@@ -74,7 +74,12 @@ def _create_size_loop(supernodes: list[_supernode.SuperNode]) -> typing.Generato
         const StencilGroup *group = &stencil_groups[node.index];
         code_size += group->code.body_size;
         data_size += group->data.body_size;
-    }} """
+    }}
+    
+    for (size_t i = 0; i < length; i++) {{
+        instruction_starts[i] = code_size;
+    }}
+    """
 
 
 def _create_patch_loop(supernodes):
