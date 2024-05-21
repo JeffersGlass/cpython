@@ -730,7 +730,7 @@ class Section:
         self.comparative = comparative
 
 
-def calc_execution_count_table(prefix: str, jit_data = None) -> RowCalculator:
+def calc_execution_count_table(prefix: str) -> RowCalculator:
     def calc(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats(prefix)
         counts = opcode_stats.get_execution_counts()
@@ -752,9 +752,22 @@ def calc_execution_count_table(prefix: str, jit_data = None) -> RowCalculator:
                     Ratio(cumulative, total),
                     miss_val,
                 ]
-            if jit_data: new_row.insert(1, str(jit_data[opcode] * count))
             rows.append(new_row)
-        if jit_data: rows.sort(key=itemgetter(1))
+        return rows
+
+    return calc
+
+def calc_execution_cost_table(prefix: str, jit_data: JitData) -> RowCalculator:
+    def calc(stats: Stats) -> Rows:
+        opcode_stats = stats.get_opcode_stats(prefix)
+        counts = opcode_stats.get_execution_counts()
+        rows: Rows = []
+        for opcode, (count, miss) in counts.items():
+            rows.append(
+                    (opcode,
+                    jit_data[opcode] * count)
+            )
+        rows.sort(key=itemgetter(1), reverse=True)
         return rows
 
     return calc
@@ -1298,17 +1311,28 @@ def optimization_section() -> Section:
                     )
                 ],
             )
-        exec_stat_headers = ["Name", "Count:", "Self:", "Cumulative:", "Miss ratio:"]
-        if base_stats._jit_data: exec_stat_headers.insert(1, "Exec Count * Code Length")
         yield Section(
             "Uop execution stats",
             "",
             [
                 Table(
-                    exec_stat_headers,
-                    calc_execution_count_table("uops", jit_data = base_stats._jit_data),
+                    ("Name", "Count:", "Self:", "Cumulative:", "Miss ratio:"),
+                    calc_execution_count_table("uops"),
                     JoinMode.CHANGE_ONE_COLUMN,
-                )
+                ),
+                
+            ],
+        )
+        yield Section(
+            "Uop Cost stats",
+            "",
+            [
+                Table(
+                    ("Name", "Exec Count * Uop Code Length"),
+                    calc_execution_cost_table("uops", jit_data = base_stats._jit_data),
+                    JoinMode.CHANGE_ONE_COLUMN,
+                ),
+                
             ],
         )
         yield pair_count_section(prefix="uop", title="Non-JIT uop", compat_data=True)
@@ -1397,6 +1421,8 @@ def output_markdown(
             return x.markdown()
         elif isinstance(x, str):
             return x
+        elif isinstance(x, int):
+            return str(x)
         elif x is None:
             return ""
         else:
