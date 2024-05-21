@@ -27,6 +27,7 @@ from typing import Any, Callable, TextIO, TypeAlias
 
 
 RawData: TypeAlias = dict[str, Any]
+JitData: TypeAlias = dict[str, int]
 Rows: TypeAlias = list[tuple]
 Columns: TypeAlias = tuple[str, ...]
 RowCalculator: TypeAlias = Callable[["Stats"], Rows]
@@ -122,6 +123,23 @@ def load_raw_data(input: Path) -> RawData:
 
 def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
+
+def load_jit_data(jit_path: Path | str) -> JitData:
+    with open(jit_path, "r") as f:
+        lines = f.readlines()
+        r = re.compile(r"static const StencilGroup stencil_groups.*")
+        start_line = list(filter(r.search, lines))
+        static_group_start = lines.index(start_line[0])
+        static_group_end = lines.index("};\n", static_group_start)
+        lines = (l.strip() for l in lines[static_group_start+1: static_group_end])
+        
+    code_lengths = {}
+    for l in lines:
+        name = l[l.index("[")+1 : l.index("]")]
+        code_size = int(l[l.index("{")+1 : l.index("}")].split(",")[1].strip())
+        code_lengths[name] = code_size
+
+    return code_lengths
 
 @functools.cache
 def _get_uop_flags_from_file(
@@ -379,8 +397,9 @@ class OpcodeStats:
 
 
 class Stats:
-    def __init__(self, data: RawData):
+    def __init__(self, data: RawData, jit_data = None):
         self._data = data
+        self._jit_data = jit_data
 
     def get(self, key: str) -> int:
         return self._data.get(key, 0)
@@ -711,7 +730,7 @@ class Section:
         self.comparative = comparative
 
 
-def calc_execution_count_table(prefix: str) -> RowCalculator:
+def calc_execution_count_table(prefix: str, jit_data = None) -> RowCalculator:
     def calc(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats(prefix)
         counts = opcode_stats.get_execution_counts()
@@ -726,15 +745,16 @@ def calc_execution_count_table(prefix: str) -> RowCalculator:
                 miss_val = Ratio(miss, count)
             else:
                 miss_val = None
-            rows.append(
-                (
+            new_row = [
                     opcode,
                     Count(count),
                     Ratio(count, total),
                     Ratio(cumulative, total),
                     miss_val,
-                )
-            )
+                ]
+            if jit_data: new_row.insert(1, str(jit_data[opcode] * count))
+            rows.append(new_row)
+        if jit_data: rows.sort(key=itemgetter(1))
         return rows
 
     return calc
@@ -1278,13 +1298,15 @@ def optimization_section() -> Section:
                     )
                 ],
             )
+        exec_stat_headers = ["Name", "Count:", "Self:", "Cumulative:", "Miss ratio:"]
+        if base_stats._jit_data: exec_stat_headers.insert(1, "Exec Count * Code Length")
         yield Section(
             "Uop execution stats",
             "",
             [
                 Table(
-                    ("Name", "Count:", "Self:", "Cumulative:", "Miss ratio:"),
-                    calc_execution_count_table("uops"),
+                    exec_stat_headers,
+                    calc_execution_count_table("uops", jit_data = base_stats._jit_data),
                     JoinMode.CHANGE_ONE_COLUMN,
                 )
             ],
@@ -1446,14 +1468,19 @@ def output_markdown(
             print("Stats gathered on:", date.today(), file=out)
 
 
-def output_stats(inputs: list[Path], json_output=str | None):
+def output_stats(inputs: list[Path], json_output=str | None, jit_path = None):
+    if jit_path is None: jit_path = SOURCE_DIR / "jit_stencils.h"
+    if not jit_path.exists(): jit_path = None
+
     match len(inputs):
         case 1:
             data = load_raw_data(Path(inputs[0]))
+            if jit_path: jit_data = load_jit_data(jit_path)
+            else: jit_data = None
             if json_output is not None:
                 with open(json_output, "w", encoding="utf-8") as f:
                     save_raw_data(data, f)  # type: ignore
-            stats = Stats(data)
+            stats = Stats(data, jit_data = jit_data)
             output_markdown(sys.stdout, LAYOUT, stats)
         case 2:
             if json_output is not None:
@@ -1499,5 +1526,5 @@ def main():
     output_stats(args.inputs, json_output=args.json_output)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  
     main()
