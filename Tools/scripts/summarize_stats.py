@@ -765,7 +765,9 @@ def calc_execution_cost_table(prefix: str, jit_data: JitData) -> RowCalculator:
         for opcode, (count, miss) in counts.items():
             rows.append(
                     (opcode,
-                    jit_data[opcode] * count)
+                    jit_data[opcode] * count,
+                    count,
+                    jit_data[opcode])
             )
         rows.sort(key=itemgetter(1), reverse=True)
         return rows
@@ -1328,7 +1330,7 @@ def optimization_section() -> Section:
             "",
             [
                 Table(
-                    ("Name", "Exec Count * Uop Code Length"),
+                    ("Name", "Product", "Exec Count", "Uop Code Length"),
                     calc_execution_cost_table("uops", jit_data = base_stats._jit_data),
                     JoinMode.CHANGE_ONE_COLUMN,
                 ),
