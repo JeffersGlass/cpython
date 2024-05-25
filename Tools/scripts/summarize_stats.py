@@ -124,6 +124,7 @@ def load_raw_data(input: Path) -> RawData:
 def save_raw_data(data: RawData, json_output: TextIO):
     json.dump(data, json_output)
 
+
 def load_jit_data(jit_path: Path | str) -> JitData:
     with open(jit_path, "r") as f:
         lines = f.readlines()
@@ -131,15 +132,16 @@ def load_jit_data(jit_path: Path | str) -> JitData:
         start_line = list(filter(r.search, lines))
         static_group_start = lines.index(start_line[0])
         static_group_end = lines.index("};\n", static_group_start)
-        lines = (l.strip() for l in lines[static_group_start+1: static_group_end])
-        
+        lines = (l.strip() for l in lines[static_group_start + 1 : static_group_end])
+
     code_lengths = {}
     for l in lines:
-        name = l[l.index("[")+1 : l.index("]")]
-        code_size = int(l[l.index("{")+1 : l.index("}")].split(",")[1].strip())
+        name = l[l.index("[") + 1 : l.index("]")]
+        code_size = int(l[l.index("{") + 1 : l.index("}")].split(",")[1].strip())
         code_lengths[name] = code_size
 
     return code_lengths
+
 
 @functools.cache
 def _get_uop_flags_from_file(
@@ -150,13 +152,16 @@ def _get_uop_flags_from_file(
     with open(SOURCE_DIR / filepath) as spec_src:
         for line in spec_src:
             if line.startswith("    [_"):
-                if name :=  re.search(r"\[[_A-Z0-9]+\]", line):
+                if name := re.search(r"\[[_A-Z0-9]+\]", line):
                     uop = name.group().strip("[]")
-                    possible_flags = [f.strip() for f in line.strip().split("=")[1].strip(", ").split("|")]
-                    if all(f.removeprefix("HAS_") in flag_names for f in possible_flags):
-                        flags[uop] = [
-                            f.strip() for f in possible_flags
-                        ]
+                    possible_flags = [
+                        f.strip()
+                        for f in line.strip().split("=")[1].strip(", ").split("|")
+                    ]
+                    if all(
+                        f.removeprefix("HAS_") in flag_names for f in possible_flags
+                    ):
+                        flags[uop] = [f.strip() for f in possible_flags]
                     elif possible_flags[0] == "0":
                         flags[uop] = []
     return flags
@@ -397,9 +402,9 @@ class OpcodeStats:
 
 
 class Stats:
-    def __init__(self, data: RawData, jit_data = None):
+    def __init__(self, data: RawData, jit_stencils_data=None):
         self._data = data
-        self._jit_data = jit_data
+        self._jit_stencils_data = jit_stencils_data
 
     def get(self, key: str) -> int:
         return self._data.get(key, 0)
@@ -746,29 +751,35 @@ def calc_execution_count_table(prefix: str) -> RowCalculator:
             else:
                 miss_val = None
             new_row = [
-                    opcode,
-                    Count(count),
-                    Ratio(count, total),
-                    Ratio(cumulative, total),
-                    miss_val,
-                ]
+                opcode,
+                Count(count),
+                Ratio(count, total),
+                Ratio(cumulative, total),
+                miss_val,
+            ]
             rows.append(new_row)
         return rows
 
     return calc
 
+
 def calc_execution_cost_table(prefix: str, jit_data: JitData) -> RowCalculator:
+    """Calculate the product of the number of times each uop is executed and the
+    number of machine instructions for that uop, as a rough measure of the time
+    spent in each uop
+    """
+
     def calc(stats: Stats) -> Rows:
         opcode_stats = stats.get_opcode_stats(prefix)
         counts = opcode_stats.get_execution_counts()
+        uop_costs = {opcode: jit_data[opcode] * counts[opcode][0] for opcode in counts.keys()}
+        total = sum(cost for cost in uop_costs.values())
+        cumulative = 0
         rows: Rows = []
-        for opcode, (count, miss) in counts.items():
-            rows.append(
-                    (opcode,
-                    jit_data[opcode] * count,
-                    count,
-                    jit_data[opcode])
-            )
+        for opcode, cost in sorted(uop_costs.items(), key=itemgetter(1), reverse=True):
+            count = counts[opcode][0]
+            cumulative += cost
+            rows.append((opcode, cost, Ratio(cost, total), Ratio(cumulative, total), count, jit_data[opcode]))
         rows.sort(key=itemgetter(1), reverse=True)
         return rows
 
@@ -792,6 +803,7 @@ def execution_count_section() -> Section:
         instruction is not counted.
         """,
     )
+
 
 def opcode_input_overlap(
     uop_flags: dict[str, list[str]], opcode_i: str, opcode_j: str
@@ -848,7 +860,8 @@ def pair_count_section(prefix: str, title=None, compat_data=False) -> Section:
         return rows
 
     table_headers = ["Pair", "Count:", "Self:", "Cumulative:"]
-    if compat_data: table_headers.append("Compatibility")
+    if compat_data:
+        table_headers.append("Compatibility")
 
     return Section(
         "Pair counts",
@@ -1322,19 +1335,19 @@ def optimization_section() -> Section:
                     calc_execution_count_table("uops"),
                     JoinMode.CHANGE_ONE_COLUMN,
                 ),
-                
             ],
         )
         yield Section(
-            "Uop Cost stats",
+            "Total Machine Instruction Counts per UOp",
             "",
             [
                 Table(
-                    ("Name", "Product", "Exec Count", "Uop Code Length"),
-                    calc_execution_cost_table("uops", jit_data = base_stats._jit_data),
+                    ("Name", "Product", "Self", "Cumulative", "Count", "Length (Machine Instructions)"),
+                    calc_execution_cost_table(
+                        "uops", jit_data=base_stats._jit_stencils_data
+                    ),
                     JoinMode.CHANGE_ONE_COLUMN,
                 ),
-                
             ],
         )
         yield pair_count_section(prefix="uop", title="Non-JIT uop", compat_data=True)
@@ -1496,19 +1509,23 @@ def output_markdown(
             print("Stats gathered on:", date.today(), file=out)
 
 
-def output_stats(inputs: list[Path], json_output=str | None, jit_path = None):
-    if jit_path is None: jit_path = SOURCE_DIR / "jit_stencils.h"
-    if not jit_path.exists(): jit_path = None
+def output_stats(inputs: list[Path], json_output=str | None, jit_stencils_path=None):
+    if jit_stencils_path is None:
+        jit_stencils_path = SOURCE_DIR / "jit_stencils.h"
+    if not jit_stencils_path.exists():
+        jit_stencils_path = None
 
     match len(inputs):
         case 1:
             data = load_raw_data(Path(inputs[0]))
-            if jit_path: jit_data = load_jit_data(jit_path)
-            else: jit_data = None
+            if jit_stencils_path:
+                jit_data = load_jit_data(jit_stencils_path)
+            else:
+                jit_data = None
             if json_output is not None:
                 with open(json_output, "w", encoding="utf-8") as f:
                     save_raw_data(data, f)  # type: ignore
-            stats = Stats(data, jit_data = jit_data)
+            stats = Stats(data, jit_stencils_data=jit_data)
             output_markdown(sys.stdout, LAYOUT, stats)
         case 2:
             if json_output is not None:
@@ -1554,5 +1571,5 @@ def main():
     output_stats(args.inputs, json_output=args.json_output)
 
 
-if __name__ == "__main__":  
+if __name__ == "__main__":
     main()
