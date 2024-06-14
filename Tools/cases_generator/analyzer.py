@@ -12,6 +12,7 @@ class Properties:
     error_without_pop: bool
     deopts: bool
     oparg: bool
+    operand: bool
     jumps: bool
     eval_breaker: bool
     ends_with_eval_breaker: bool
@@ -41,6 +42,7 @@ class Properties:
             error_without_pop=any(p.error_without_pop for p in properties),
             deopts=any(p.deopts for p in properties),
             oparg=any(p.oparg for p in properties),
+            operand=any(p.operand for p in properties),
             jumps=any(p.jumps for p in properties),
             eval_breaker=any(p.eval_breaker for p in properties),
             ends_with_eval_breaker=any(p.ends_with_eval_breaker for p in properties),
@@ -67,6 +69,7 @@ SKIP_PROPERTIES = Properties(
     error_without_pop=False,
     deopts=False,
     oparg=False,
+    operand=False,
     jumps=False,
     eval_breaker=False,
     ends_with_eval_breaker=False,
@@ -360,6 +363,53 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
         or variable_used(op, "resume_with_error")
     )
 
+def uses_operand(op: parser.InstDef) -> bool:
+    return any(isinstance(cache, parser.CacheEffect) and cache.name != "unused" for cache in op.inputs)
+
+def target_compatible(uops: list[Uop]) -> bool:
+    targets = sum(1 for uop in uops if uop.name == "_DEOPT")
+    exit_indexes = sum(1 for uop in uops if uop.name == "_EXIT_TRACE")
+    jump_targets = sum(1 for uop in uops if uop.properties.deopts) + sum(1 for uop in uops if uop.properties.side_exit)
+    error_targets = sum(1 for uop in uops if not uop.properties.infallible) + sum(1 for uop in uops if uop.properties.error_without_pop)
+    pass
+    return not (
+        # UOP_FORMAT_TARGET:
+        (
+            targets <= 1
+            and exit_indexes == 0
+            and jump_targets == 0
+            and error_targets == 0
+        )
+        or
+        # UOP_FORMAT_EXIT:
+        (
+            targets == 0
+            and exit_indexes <= 1
+            and jump_targets == 0
+            and error_targets <= 1
+        )
+        or
+        # UOP_FORMAT_JUMP:
+        (
+            targets == 0
+            and exit_indexes == 0
+            and jump_targets <= 1
+            and error_targets <= 1
+        )
+    )
+
+def uop_input_conflict(uops: list[Uop]) -> str | None:
+    if len(uops) < 2: return None
+    oparg_conflict = sum(1 for uop in uops if uop.properties.oparg) > 1
+    operand_conflict = sum(1 for uop in uops if uop.properties.operand) > 1
+    compatible = {
+        "Oparg": oparg_conflict,
+        "Operand": operand_conflict,
+        "Target": target_compatible(uops),
+    }
+    if not any(compatible.values()): return None
+    return f"{','.join(k for k, v in compatible.items() if not v)}"
+
 
 NON_ESCAPING_FUNCTIONS = (
     "Py_INCREF",
@@ -559,6 +609,7 @@ def compute_properties(op: parser.InstDef) -> Properties:
         deopts=deopts_if,
         side_exit=exits_if,
         oparg=variable_used(op, "oparg"),
+        operand=uses_operand(op),
         jumps=variable_used(op, "JUMPBY"),
         eval_breaker=variable_used(op, "CHECK_EVAL_BREAKER"),
         ends_with_eval_breaker=eval_breaker_at_end(op),
@@ -645,7 +696,7 @@ def add_instruction(
 ) -> None:
     instructions[name] = Instruction(name, parts, None)
 
-def list_supernode(
+def append_supernode(
         name: str, parts: list[Uop], supernodes: dict[str, SuperNode]
 ) -> None:
     supernodes[name] = SuperNode(name, parts)
@@ -707,7 +758,10 @@ def add_supernode(node: parser.SuperNode, uops: dict[str, Uop], supernodes: dict
             case _:
                 assert False
     assert parts
-    list_supernode(node.name, parts, supernodes)
+    if conflict:= uop_input_conflict(parts):
+        analysis_error(f"SuperNode with UOps {', '.join(uop.name for uop in node.uops)} has conflicting {conflict}", node.tokens[0])
+    else:
+        append_supernode(node.name, parts, supernodes)
     
 
 def add_family(
