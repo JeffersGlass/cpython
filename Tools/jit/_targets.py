@@ -107,17 +107,17 @@ class _Target(typing.Generic[_S, _R]):
         raise NotImplementedError(type(self))
 
     async def _compile(
-        self, opname: str, c: pathlib.Path, tempdir: pathlib.Path
+        self, opnames: list[str], c: pathlib.Path, tempdir: pathlib.Path
     ) -> _stencils.StencilGroup:
         # "Compile" the trampoline to an empty stencil group if it's not needed:
-        if opname == "trampoline" and not self.ghccc:
+        if any(op == "trampoline" for op in opnames) and not self.ghccc:
             return _stencils.StencilGroup()
-        o = tempdir / f"{opname}.o"
+        o = tempdir / f"{'plus'.join(opnames)}.o"
         args = [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
-            f"-D_JIT_OPCODES={{{opname}}}",
+            f"-D_JIT_OPCODES={{{', '.join(opnames)}}}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
             "-I.",
@@ -142,7 +142,6 @@ class _Target(typing.Generic[_S, _R]):
             "-std=c11",
             *self.args,
         ]
-        print(args)
         if self.ghccc:
             # This is a bit of an ugly workaround, but it makes the code much
             # smaller and faster, so it's worth it. We want to use the GHC
@@ -151,7 +150,7 @@ class _Target(typing.Generic[_S, _R]):
             # IR to change the calling convention(!), and then compile *that*.
             # Once we have access to Clang 19, we can get rid of this and use
             # __attribute__((preserve_none)) directly in the C code instead:
-            ll = tempdir / f"{opname}.ll"
+            ll = tempdir / f"{'plus'.join(opnames)}.ll"
             args_ll = args + [
                 # -fomit-frame-pointer is necessary because the GHC calling
                 # convention uses RBP to pass arguments:
@@ -188,10 +187,10 @@ class _Target(typing.Generic[_S, _R]):
         with tempfile.TemporaryDirectory() as tempdir:
             work = pathlib.Path(tempdir).resolve()
             async with asyncio.TaskGroup() as group:
-                coro = self._compile("trampoline", TOOLS_JIT / "trampoline.c", work)
+                coro = self._compile(["trampoline"], TOOLS_JIT / "trampoline.c", work)
                 tasks.append(group.create_task(coro, name="trampoline"))
                 for opname in opnames:
-                    coro = self._compile(opname, TOOLS_JIT_TEMPLATE_C, work)
+                    coro = self._compile([opname], TOOLS_JIT_TEMPLATE_C, work)
                     tasks.append(group.create_task(coro, name=opname))
         return {task.get_name(): task.result() for task in tasks}
 
