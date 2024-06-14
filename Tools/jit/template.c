@@ -104,7 +104,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     OPT_STAT_INC(uops_executed);
     UOP_STAT_INC(uopcode, execution_count);
 
-    for (int i = 0; i < 1; i++) { //} < sizeof(uopcode_array) / sizeof(size_t); i++){ // Only use one op for now
+    for (int i = 0; i < (sizeof(uopcode_array) / sizeof(int)); i++){
         // The actual instruction definitions (only one will be used):
         int uopcode = uopcode_array[i];
         if (uopcode == _JUMP_TO_TOP) {
@@ -118,22 +118,21 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
 
         PATCH_JUMP(_JIT_CONTINUE);
             // Labels that the instruction implementations expect to exist:
-
-        error_tier_two:
-            tstate->previous_executor = (PyObject *)current_executor;
-            GOTO_TIER_ONE(NULL);
-        exit_to_tier1:
-            tstate->previous_executor = (PyObject *)current_executor;
-            GOTO_TIER_ONE(_PyCode_CODE(_PyFrame_GetCode(frame)) + _target);
-        exit_to_tier1_dynamic:
-            tstate->previous_executor = (PyObject *)current_executor;
-            GOTO_TIER_ONE(frame->instr_ptr);
-        exit_to_trace:
-            {
-                _PyExitData *exit = &current_executor->exits[_exit_index];
-                Py_INCREF(exit->executor);
-                tstate->previous_executor = (PyObject *)current_executor;
-                GOTO_TIER_TWO(exit->executor);
-            }
     }
+    error_tier_two:
+        tstate->previous_executor = (PyObject *)current_executor;
+        GOTO_TIER_ONE(NULL);
+    exit_to_tier1:
+        tstate->previous_executor = (PyObject *)current_executor;
+        GOTO_TIER_ONE(_PyCode_CODE(_PyFrame_GetCode(frame)) + _target);
+    exit_to_tier1_dynamic:
+        tstate->previous_executor = (PyObject *)current_executor;
+        GOTO_TIER_ONE(frame->instr_ptr);
+    exit_to_trace:
+        {
+            _PyExitData *exit = &current_executor->exits[_exit_index];
+            Py_INCREF(exit->executor);
+            tstate->previous_executor = (PyObject *)current_executor;
+            GOTO_TIER_TWO(exit->executor);
+        }
 }

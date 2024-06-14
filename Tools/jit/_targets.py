@@ -26,6 +26,7 @@ CPYTHON = TOOLS.parent
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
+SUPEROP_SEP = "_PLUS_"
 
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
 _R = typing.TypeVar(
@@ -112,7 +113,7 @@ class _Target(typing.Generic[_S, _R]):
         # "Compile" the trampoline to an empty stencil group if it's not needed:
         if any(op == "trampoline" for op in opnames) and not self.ghccc:
             return _stencils.StencilGroup()
-        o = tempdir / f"{'plus'.join(opnames)}.o"
+        o = tempdir / f"{SUPEROP_SEP.join(opnames)}.o"
         args = [
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
@@ -150,7 +151,7 @@ class _Target(typing.Generic[_S, _R]):
             # IR to change the calling convention(!), and then compile *that*.
             # Once we have access to Clang 19, we can get rid of this and use
             # __attribute__((preserve_none)) directly in the C code instead:
-            ll = tempdir / f"{'plus'.join(opnames)}.ll"
+            ll = tempdir / f"{SUPEROP_SEP.join(opnames)}.ll"
             args_ll = args + [
                 # -fomit-frame-pointer is necessary because the GHC calling
                 # convention uses RBP to pass arguments:
@@ -190,8 +191,12 @@ class _Target(typing.Generic[_S, _R]):
                 coro = self._compile(["trampoline"], TOOLS_JIT / "trampoline.c", work)
                 tasks.append(group.create_task(coro, name="trampoline"))
                 for opname in opnames:
-                    coro = self._compile([opname], TOOLS_JIT_TEMPLATE_C, work)
-                    tasks.append(group.create_task(coro, name=opname))
+                    if "PLUS" in opname:    
+                        coro = self._compile(opname.split(SUPEROP_SEP), TOOLS_JIT_TEMPLATE_C, work)
+                        tasks.append(group.create_task(coro, name=opname))
+                    else:
+                        coro = self._compile([opname,], TOOLS_JIT_TEMPLATE_C, work)
+                        tasks.append(group.create_task(coro, name=opname))
         return {task.get_name(): task.result() for task in tasks}
 
     def build(
