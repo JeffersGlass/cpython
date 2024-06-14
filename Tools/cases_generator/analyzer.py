@@ -62,7 +62,6 @@ class Properties:
         return not self.error_with_pop and not self.error_without_pop
 
 
-
 SKIP_PROPERTIES = Properties(
     escapes=False,
     error_with_pop=False,
@@ -214,15 +213,15 @@ class SuperNode:
         return len(self.uops)
 
     # Useful in creating _JIT_INDEX
-    def pop_front(self): 
-        return self.replace(uops=self.uops[1:], parent = self)
-    
+    def pop_front(self):
+        return self.replace(uops=self.uops[1:], parent=self)
+
     def top_parent(self):
         node = self
         while node.parent:
             node = node.parent
         return node
-    
+
 
 @dataclass
 class Instruction:
@@ -380,14 +379,23 @@ def has_error_without_pop(op: parser.InstDef) -> bool:
         or variable_used(op, "resume_with_error")
     )
 
+
 def uses_operand(op: parser.InstDef) -> bool:
-    return any(isinstance(cache, parser.CacheEffect) and cache.name != "unused" for cache in op.inputs)
+    return any(
+        isinstance(cache, parser.CacheEffect) and cache.name != "unused"
+        for cache in op.inputs
+    )
+
 
 def target_compatible(uops: list[Uop]) -> bool:
     targets = sum(1 for uop in uops if uop.name == "_DEOPT")
     exit_indexes = sum(1 for uop in uops if uop.name == "_EXIT_TRACE")
-    jump_targets = sum(1 for uop in uops if uop.properties.deopts) + sum(1 for uop in uops if uop.properties.side_exit)
-    error_targets = sum(1 for uop in uops if not uop.properties.infallible) + sum(1 for uop in uops if uop.properties.error_without_pop)
+    jump_targets = sum(1 for uop in uops if uop.properties.deopts) + sum(
+        1 for uop in uops if uop.properties.side_exit
+    )
+    error_targets = sum(1 for uop in uops if not uop.properties.infallible) + sum(
+        1 for uop in uops if uop.properties.error_without_pop
+    )
     pass
     return not (
         # UOP_FORMAT_TARGET:
@@ -415,8 +423,10 @@ def target_compatible(uops: list[Uop]) -> bool:
         )
     )
 
+
 def uop_input_conflict(uops: list[Uop]) -> str | None:
-    if len(uops) < 2: return None
+    if len(uops) < 2:
+        return None
     oparg_conflict = sum(1 for uop in uops if uop.properties.oparg) > 1
     operand_conflict = sum(1 for uop in uops if uop.properties.operand) > 1
     compatible = {
@@ -424,7 +434,8 @@ def uop_input_conflict(uops: list[Uop]) -> str | None:
         "Operand": operand_conflict,
         "Target": target_compatible(uops),
     }
-    if not any(compatible.values()): return None
+    if not any(compatible.values()):
+        return None
     return f"{','.join(k for k, v in compatible.items() if not v)}"
 
 
@@ -713,10 +724,12 @@ def add_instruction(
 ) -> None:
     instructions[name] = Instruction(name, parts, None)
 
+
 def append_supernode(
-        name: str, parts: list[Uop], supernodes: dict[str, SuperNode]
+    name: str, parts: list[Uop], supernodes: dict[str, SuperNode]
 ) -> None:
     supernodes[name] = SuperNode(name, parts)
+
 
 def desugar_inst(
     inst: parser.InstDef, instructions: dict[str, Instruction], uops: dict[str, Uop]
@@ -764,9 +777,12 @@ def add_macro(
     add_instruction(macro.name, parts, instructions)
 
 
-def add_supernode(node: parser.SuperNode, uops: dict[str, Uop], supernodes: dict[str, SuperNode]):
+def add_supernode(
+    node: parser.SuperNode, uops: dict[str, Uop], supernodes: dict[str, SuperNode]
+):
     parts: list[Uop | Skip] = []
-    if len(node.uops) < 2: return
+    if len(node.uops) < 2:
+        return
     for part in node.uops:
         match part:
             case parser.OpName():
@@ -776,11 +792,16 @@ def add_supernode(node: parser.SuperNode, uops: dict[str, Uop], supernodes: dict
             case _:
                 assert False
     assert parts
-    if conflict:= uop_input_conflict(parts):
-        analysis_error(f"SuperNode with UOps {', '.join(uop.name for uop in node.uops)} has conflicting {conflict}", node.tokens[0])
+    if conflict := uop_input_conflict(parts):
+        analysis_error(
+            f"SuperNode with UOps {', '.join(uop.name for uop in node.uops)} has conflicting {conflict}",
+            node.tokens[0],
+        )
     else:
-        append_supernode(SuperNode.SEP.join(part.name for part in parts), parts, supernodes)
-    
+        append_supernode(
+            SuperNode.SEP.join(part.name for part in parts), parts, supernodes
+        )
+
 
 def add_family(
     pfamily: parser.Family,
@@ -960,7 +981,14 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         families["BINARY_OP"].members.append(inst)
     opmap, first_arg, min_instrumented = assign_opcodes(instructions, families, pseudos)
     return Analysis(
-        instructions, uops, families, pseudos, supernodes, opmap, first_arg, min_instrumented
+        instructions,
+        uops,
+        families,
+        pseudos,
+        supernodes,
+        opmap,
+        first_arg,
+        min_instrumented,
     )
 
 
