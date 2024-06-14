@@ -202,6 +202,7 @@ Part = Uop | Skip
 class SuperNode:
     name: str
     uops: list[Uop]
+    SEP: str = "_PLUS_"
 
     def dump(self, indent: str) -> None:
         print(indent, self.name, "= ", " + ".join([uop.name for uop in self.uops]))
@@ -761,7 +762,7 @@ def add_supernode(node: parser.SuperNode, uops: dict[str, Uop], supernodes: dict
     if conflict:= uop_input_conflict(parts):
         analysis_error(f"SuperNode with UOps {', '.join(uop.name for uop in node.uops)} has conflicting {conflict}", node.tokens[0])
     else:
-        append_supernode(node.name, parts, supernodes)
+        append_supernode(SuperNode.SEP.join(part.name for part in parts), parts, supernodes)
     
 
 def add_family(
