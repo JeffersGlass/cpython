@@ -1,8 +1,8 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import lexer
 import parser
 import re
-from typing import Optional
+from typing import Optional, Self
 
 
 @dataclass
@@ -202,11 +202,27 @@ Part = Uop | Skip
 class SuperNode:
     name: str
     uops: list[Uop]
+    parent: Self = None
     SEP: str = "_PLUS_"
+    replace = replace
 
     def dump(self, indent: str) -> None:
         print(indent, self.name, "= ", " + ".join([uop.name for uop in self.uops]))
 
+    @property
+    def length(self):
+        return len(self.uops)
+
+    # Useful in creating _JIT_INDEX
+    def pop_front(self): 
+        return self.replace(uops=self.uops[1:], parent = self)
+    
+    def top_parent(self):
+        node = self
+        while node.parent:
+            node = node.parent
+        return node
+    
 
 @dataclass
 class Instruction:
