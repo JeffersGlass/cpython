@@ -86,7 +86,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     // Locals that the instruction implementations expect to exist:
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
-    int uopcode = _JIT_OPCODE;
+    int uopcode_array[] = _JIT_OPCODES;
     _Py_CODEUNIT *next_instr;
     // Other stuff we need handy:
     PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
@@ -104,32 +104,36 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     OPT_STAT_INC(uops_executed);
     UOP_STAT_INC(uopcode, execution_count);
 
-    // The actual instruction definitions (only one will be used):
-    if (uopcode == _JUMP_TO_TOP) {
-        PATCH_JUMP(_JIT_TOP);
-    }
-    switch (uopcode) {
+    for (int i = 0; i < 1; i++) { //} < sizeof(uopcode_array) / sizeof(size_t); i++){ // Only use one op for now
+        // The actual instruction definitions (only one will be used):
+        int uopcode = uopcode_array[i];
+        if (uopcode == _JUMP_TO_TOP) {
+            PATCH_JUMP(_JIT_TOP);
+        }
+        switch (uopcode) {
 #include "executor_cases.c.h"
-        default:
-            Py_UNREACHABLE();
-    }
-    PATCH_JUMP(_JIT_CONTINUE);
-    // Labels that the instruction implementations expect to exist:
+            default:
+                Py_UNREACHABLE();
+        }
 
-error_tier_two:
-    tstate->previous_executor = (PyObject *)current_executor;
-    GOTO_TIER_ONE(NULL);
-exit_to_tier1:
-    tstate->previous_executor = (PyObject *)current_executor;
-    GOTO_TIER_ONE(_PyCode_CODE(_PyFrame_GetCode(frame)) + _target);
-exit_to_tier1_dynamic:
-    tstate->previous_executor = (PyObject *)current_executor;
-    GOTO_TIER_ONE(frame->instr_ptr);
-exit_to_trace:
-    {
-        _PyExitData *exit = &current_executor->exits[_exit_index];
-        Py_INCREF(exit->executor);
-        tstate->previous_executor = (PyObject *)current_executor;
-        GOTO_TIER_TWO(exit->executor);
+        PATCH_JUMP(_JIT_CONTINUE);
+            // Labels that the instruction implementations expect to exist:
+
+        error_tier_two:
+            tstate->previous_executor = (PyObject *)current_executor;
+            GOTO_TIER_ONE(NULL);
+        exit_to_tier1:
+            tstate->previous_executor = (PyObject *)current_executor;
+            GOTO_TIER_ONE(_PyCode_CODE(_PyFrame_GetCode(frame)) + _target);
+        exit_to_tier1_dynamic:
+            tstate->previous_executor = (PyObject *)current_executor;
+            GOTO_TIER_ONE(frame->instr_ptr);
+        exit_to_trace:
+            {
+                _PyExitData *exit = &current_executor->exits[_exit_index];
+                Py_INCREF(exit->executor);
+                tstate->previous_executor = (PyObject *)current_executor;
+                GOTO_TIER_TWO(exit->executor);
+            }
     }
 }

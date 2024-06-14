@@ -117,7 +117,7 @@ class _Target(typing.Generic[_S, _R]):
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
-            f"-D_JIT_OPCODE={opname}",
+            f"-D_JIT_OPCODES={{{opname}}}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
             "-I.",
@@ -142,6 +142,7 @@ class _Target(typing.Generic[_S, _R]):
             "-std=c11",
             *self.args,
         ]
+        print(args)
         if self.ghccc:
             # This is a bit of an ugly workaround, but it makes the code much
             # smaller and faster, so it's worth it. We want to use the GHC
