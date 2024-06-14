@@ -25,7 +25,7 @@ DEFAULT_OUTPUT = ROOT / "Include/internal/pycore_uop_ids.h"
 
 
 def generate_uop_ids(
-    filenames: list[str], analysis: Analysis, outfile: TextIO, distinct_namespace: bool
+    filenames: list[str], analysis: Analysis, outfile: TextIO, distinct_namespace: bool, with_supernodes: bool = False
 ) -> None:
     write_header(__file__, filenames, outfile)
     out = CWriter(outfile, 0, False)
@@ -52,6 +52,13 @@ def generate_uop_ids(
                 next_id += 1
 
         out.emit(f"#define MAX_UOP_ID {next_id-1}\n")
+
+        supernodes = [node for node in analysis.supernodes.values()]
+        for node in sorted(supernodes, key=lambda u: u.name):
+            out.emit(f"#define {node.name} {next_id}\n")
+            next_id += 1
+
+        out.emit(f"#define MAX_SUPERNODE_ID {next_id-1}\n")
 
 
 arg_parser = argparse.ArgumentParser(

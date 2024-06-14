@@ -750,6 +750,7 @@ def add_macro(
 
 def add_supernode(node: parser.SuperNode, uops: dict[str, Uop], supernodes: dict[str, SuperNode]):
     parts: list[Uop | Skip] = []
+    if len(node.uops) < 2: return
     for part in node.uops:
         match part:
             case parser.OpName():
