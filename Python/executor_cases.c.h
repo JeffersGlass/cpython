@@ -12,11 +12,6 @@
             break;
         }
 
-        # define _LOAD_FAST_0_PLUS__GUARD_TYPE_VERSION 600
-        case _LOAD_FAST_0_PLUS__GUARD_TYPE_VERSION: {
-            break;
-        }
-
         case _RESUME_CHECK: {
             #if defined(__EMSCRIPTEN__)
             if (_Py_emscripten_signal_clock == 0) {

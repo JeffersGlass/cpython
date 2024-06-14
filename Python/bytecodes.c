@@ -4306,6 +4306,9 @@ dummy_func(
             GOTO_TIER_TWO(executor);
         }
 
+        super(foo) = _LOAD_CONST_INLINE_BORROW_WITH_NULL;
+        super(BAR) = _LOAD_FAST_0 + _LOAD_FAST_1;
+
         tier2 op(_DYNAMIC_EXIT, (--)) {
             tstate->previous_executor = (PyObject *)current_executor;
             _PyExitData *exit = (_PyExitData *)&current_executor->exits[oparg];

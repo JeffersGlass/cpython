@@ -127,6 +127,10 @@ class Macro(Node):
     name: str
     uops: list[UOp]
 
+@dataclass
+class SuperNode(Node):
+    name: str
+    uops: list[UOp]
 
 @dataclass
 class Family(Node):
@@ -158,6 +162,8 @@ class Parser(PLexer):
             return pseudo
         if inst := self.inst_def():
             return inst
+        if super := self.super_def():
+            return super
         return None
 
     @contextual
@@ -333,7 +339,20 @@ class Parser(PLexer):
                                 res = Macro(tkn.text, uops)
                                 return res
         return None
-
+        
+    @contextual
+    def super_def(self) -> SuperNode | None:
+        if tkn := self.expect(lx.SUPER):
+            if self.expect(lx.LPAREN):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    if self.expect(lx.RPAREN):
+                        if self.expect(lx.EQUALS):
+                            if uops := self.uops():
+                                self.require(lx.SEMI)
+                                res = SuperNode(tkn.text, uops)
+                                return res
+        return None
+   
     def uops(self) -> list[UOp] | None:
         if uop := self.uop():
             uop = cast(UOp, uop)

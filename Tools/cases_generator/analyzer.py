@@ -195,6 +195,14 @@ class Uop:
 
 Part = Uop | Skip
 
+@dataclass
+class SuperNode:
+    name: str
+    uops: list[Uop]
+
+    def dump(self, indent: str) -> None:
+        print(indent, self.name, "= ", " + ".join([uop.name for uop in self.uops]))
+
 
 @dataclass
 class Instruction:
@@ -264,6 +272,7 @@ class Analysis:
     uops: dict[str, Uop]
     families: dict[str, Family]
     pseudos: dict[str, PseudoInstruction]
+    supernodes: dict[str, SuperNode]
     opmap: dict[str, int]
     have_arg: int
     min_instrumented: int
@@ -636,6 +645,10 @@ def add_instruction(
 ) -> None:
     instructions[name] = Instruction(name, parts, None)
 
+def list_supernode(
+        name: str, parts: list[Uop], supernodes: dict[str, SuperNode]
+) -> None:
+    supernodes[name] = SuperNode(name, parts)
 
 def desugar_inst(
     inst: parser.InstDef, instructions: dict[str, Instruction], uops: dict[str, Uop]
@@ -682,6 +695,20 @@ def add_macro(
     assert parts
     add_instruction(macro.name, parts, instructions)
 
+
+def add_supernode(node: parser.SuperNode, uops: dict[str, Uop], supernodes: dict[str, SuperNode]):
+    parts: list[Uop | Skip] = []
+    for part in node.uops:
+        match part:
+            case parser.OpName():
+                if part.name not in uops:
+                    analysis_error(f"No Uop named {part.name}", node.tokens[0])
+                parts.append(uops[part.name])
+            case _:
+                assert False
+    assert parts
+    list_supernode(node.name, parts, supernodes)
+    
 
 def add_family(
     pfamily: parser.Family,
@@ -805,6 +832,7 @@ def assign_opcodes(
 def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
     instructions: dict[str, Instruction] = {}
     uops: dict[str, Uop] = {}
+    supernodes: dict[str, SuperNode] = {}
     families: dict[str, Family] = {}
     pseudos: dict[str, PseudoInstruction] = {}
     for node in forest:
@@ -821,11 +849,16 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 pass
             case parser.Pseudo():
                 pass
+            case parser.SuperNode():
+                pass
             case _:
                 assert False
     for node in forest:
         if isinstance(node, parser.Macro):
             add_macro(node, instructions, uops)
+    for node in forest:
+        if isinstance(node, parser.SuperNode):
+            add_supernode(node, uops, supernodes)
     for node in forest:
         match node:
             case parser.Family():
@@ -855,7 +888,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         families["BINARY_OP"].members.append(inst)
     opmap, first_arg, min_instrumented = assign_opcodes(instructions, families, pseudos)
     return Analysis(
-        instructions, uops, families, pseudos, opmap, first_arg, min_instrumented
+        instructions, uops, families, pseudos, supernodes, opmap, first_arg, min_instrumented
     )
 
 
@@ -876,6 +909,9 @@ def dump_analysis(analysis: Analysis) -> None:
     print("Pseudos:")
     for p in analysis.pseudos.values():
         p.dump("    ")
+    print("SuperNodes:")
+    for s in analysis.supernodes.values():
+        s.dump("    ")
 
 
 if __name__ == "__main__":

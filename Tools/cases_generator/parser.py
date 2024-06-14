@@ -3,6 +3,7 @@ from parsing import (
     Macro,
     Pseudo,
     Family,
+    SuperNode,
     Parser,
     Context,
     CacheEffect,
