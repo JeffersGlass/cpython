@@ -65,11 +65,9 @@ def _generate_jit_switch_function(
 ) -> Generator[str, None, None]:
 
     depth = max(len(node.uops) for node in supernodes.values())
-    yield "SuperNode"
-    param_names = list(_parameter_names(depth))
-
     yield f"// This function always needs to be fed {depth} uops"
-    yield "_JIT_INDEX(uint16_t *uops, uint16_t start_index) {"
+    yield "SuperNode"
+    yield "_JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {"
     yield from _recurse_jit(supernodes.values(), level=0, indent_level=1)
     yield "}"  # _JIT_INDEX
 
@@ -135,6 +133,7 @@ def generate_jit_header_file(
     write_header(__file__, filenames, outfile)
     outfile.write(textwrap.dedent("""
         #include "Python.h"
+        #include "cpython/optimizer.h"
 
         typedef struct {
             const uint64_t index;
@@ -144,9 +143,10 @@ def generate_jit_header_file(
         ))
 
     depth = _supernode_max_depth(analysis.supernodes)
-    outfile.writelines([f"#define SUPERNODE_MAX_DEPTH {depth}\n\n"])
-    params = _parameter_names(depth)
-    outfile.write(f"SuperNode _JIT_INDEX({', '.join("uint16_t " + var for var in params)});")
+    outfile.writelines([f"#define SUPERNODE_MAX_DEPTH {depth}\n\n",
+                        f"//This function must always be fed {depth} uops\n"
+                        "SuperNode\n",
+                        "_JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index);\n"])
 
 def _supernode_max_depth(supernodes: dict[str: SuperNode]):
     return max(len(node.uops) for node in supernodes.values())

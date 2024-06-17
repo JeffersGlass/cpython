@@ -402,10 +402,20 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
     size_t code_size = 0;
     size_t data_size = 0;
+    size_t final_index = 0;
     group = &trampoline;
     code_size += group->code_size;
     data_size += group->data_size;
-    for (size_t i = 0; i < length; i++) {
+    for (size_t i = 0; i < length - SUPERNODE_MAX_DEPTH; ) {
+        const SuperNode node = _JIT_INDEX(trace, i);
+        group = &stencil_groups[node.index];
+        instruction_starts[i] = code_size;
+        code_size += group->code_size;
+        data_size += group->data_size;
+        i += node.length;
+        final_index = i;
+    }
+    for (size_t i = final_index; i < length; i++ ) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
         instruction_starts[i] = code_size;
@@ -438,16 +448,28 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // nothing is emitted here:
     group = &trampoline;
     group->emit(code, data, executor, NULL, instruction_starts);
+    final_index = 0;
     code += group->code_size;
     data += group->data_size;
     assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
-    for (size_t i = 0; i < length; i++) {
+
+    for (size_t i = 0; i < length - SUPERNODE_MAX_DEPTH; ) {
+        const SuperNode node = _JIT_INDEX(trace, i);
+        group = &stencil_groups[node.index];
+        group->emit(code, data, executor, node, instruction_starts);
+        code += group->code_size;
+        data += group->data_size;
+        i += node.length;
+        final_index = i;
+    }
+    for (size_t i = final_index; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
         group->emit(code, data, executor, instruction, instruction_starts);
         code += group->code_size;
         data += group->data_size;
     }
+
     // Protect against accidental buffer overrun into data:
     group = &stencil_groups[_FATAL_ERROR];
     group->emit(code, data, executor, NULL, instruction_starts);
