@@ -126,6 +126,8 @@ PCbuild/arm32/
 PCbuild/arm64/
 PCbuild/obj/
 PCbuild/win32/
+Python/jit_switch.*
+Python/supernodes_cases.c.h
 Tools/unicode/data/
 /autom4te.cache
 /build/
@@ -138,7 +140,6 @@ Tools/unicode/data/
 /.ccache
 /cross-build/
 /jit_stencils.h
-/jit_switch.*
 /platform
 /profile-clean-stamp
 /profile-run-stamp

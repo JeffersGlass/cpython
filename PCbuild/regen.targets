@@ -100,7 +100,7 @@
           WorkingDirectory="$(PySourcePath)" />
     <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\tier1_generator.py $(PySourcePath)Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\tier2_generator.py $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\tier2_generator.py $(PySourcePath)Python\bytecodes.c $(PySourcePath)Python\supernodes.c"
           WorkingDirectory="$(PySourcePath)" />
     <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\optimizer_generator.py $(PySourcePath)Python\optimizer_bytecodes.c $(PySourcePath)Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />

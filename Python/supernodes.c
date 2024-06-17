@@ -144,6 +144,7 @@ dummy_func(
 // A few dummy supernodes for testing purposes
 super(pass1) = _LOAD_FAST_0 + _GUARD_TYPE_VERSION;
 super(pass2) = COPY + TO_BOOL_BOOL;
+super(pass3) = COPY + _LOAD_FAST_0 + TO_BOOL_BOOL;
 super(uniary1) = _LOAD_CONST_INLINE_BORROW_WITH_NULL;
 
 //These two have conflicts and should fail

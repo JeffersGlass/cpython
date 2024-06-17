@@ -24,6 +24,7 @@ TOOLS_JIT = TOOLS_JIT_BUILD.parent
 TOOLS = TOOLS_JIT.parent
 CPYTHON = TOOLS.parent
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
+SUPERNODES_C_H = CPYTHON / "Python/supernode_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
 SUPEROP_SEP = "_PLUS_"
@@ -118,7 +119,7 @@ class _Target(typing.Generic[_S, _R]):
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
-            f"-D_JIT_OPCODES={{{', '.join(opnames)}}}",
+            f"-D_JIT_OPCODES={{{','.join(opnames)}}}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
             "-I.",
@@ -183,6 +184,8 @@ class _Target(typing.Generic[_S, _R]):
 
     async def _build_stencils(self) -> dict[str, _stencils.StencilGroup]:
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
+        if SUPERNODES_C_H.exists():
+            generated_cases += "\n" + SUPERNODES_C_H.read_text()
         opnames = sorted(re.findall(r"\n {8}case (\w+): \{\n", generated_cases))
         tasks = []
         with tempfile.TemporaryDirectory() as tempdir:
@@ -191,11 +194,19 @@ class _Target(typing.Generic[_S, _R]):
                 coro = self._compile(["trampoline"], TOOLS_JIT / "trampoline.c", work)
                 tasks.append(group.create_task(coro, name="trampoline"))
                 for opname in opnames:
-                    if "PLUS" in opname:    
-                        coro = self._compile(opname.split(SUPEROP_SEP), TOOLS_JIT_TEMPLATE_C, work)
+                    if "PLUS" in opname:
+                        coro = self._compile(
+                            opname.split(SUPEROP_SEP), TOOLS_JIT_TEMPLATE_C, work
+                        )
                         tasks.append(group.create_task(coro, name=opname))
                     else:
-                        coro = self._compile([opname,], TOOLS_JIT_TEMPLATE_C, work)
+                        coro = self._compile(
+                            [
+                                opname,
+                            ],
+                            TOOLS_JIT_TEMPLATE_C,
+                            work,
+                        )
                         tasks.append(group.create_task(coro, name=opname))
         return {task.get_name(): task.result() for task in tasks}
 

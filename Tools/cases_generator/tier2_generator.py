@@ -31,6 +31,7 @@ from lexer import Token
 from stack import StackOffset, Stack, SizeMismatch
 
 DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
+DEFAULT_SUPERNODES = ROOT / "Python/supernodes_cases.c.h"
 
 
 def declare_variable(
@@ -227,6 +228,23 @@ def generate_tier2(
         out.emit("\n\n")
     outfile.write("#undef TIER_TWO\n")
 
+def generate_supernodes(
+    filenames: list[str], analysis: Analysis, outfile: TextIO,
+) -> None:
+        write_header(__file__, filenames, outfile)
+        outfile.write(
+        """
+        #ifdef TIER_ONE
+            #error "This file is for Tier 2 only"
+        #endif
+        #define TIER_TWO 2\n"""
+        )
+        out = CWriter(outfile, 2, False)
+        for name, supernode in analysis.supernodes.items():
+            out.emit(f"case {supernode.name}: {{\n")
+            out.emit("}\n")
+
+        outfile.write("#undef TIER_TWO\n")
 
 arg_parser = argparse.ArgumentParser(
     description="Generate the code for the tier 2 interpreter.",
@@ -235,6 +253,10 @@ arg_parser = argparse.ArgumentParser(
 
 arg_parser.add_argument(
     "-o", "--output", type=str, help="Generated code", default=DEFAULT_OUTPUT
+)
+
+arg_parser.add_argument(
+    "-s", "--superfile", type=str, help="Generated supernode cases", default=DEFAULT_SUPERNODES
 )
 
 arg_parser.add_argument(
@@ -252,3 +274,7 @@ if __name__ == "__main__":
     data = analyze_files(args.input)
     with open(args.output, "w") as outfile:
         generate_tier2(args.input, data, outfile, args.emit_line_directives)
+
+    if data.supernodes:
+        with open(args.superfile, "w") as outfile:
+            generate_supernodes(args.input, data, outfile)
