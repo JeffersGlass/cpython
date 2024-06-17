@@ -68,14 +68,14 @@ def _generate_jit_switch_function(
     yield "SuperNode"
     param_names = list(_parameter_names(depth))
 
-    yield f"_JIT_INDEX({', '.join(f'uint16_t {name}' for name in param_names)}) {{"
-    yield from _recurse_jit(supernodes.values(), param_names, level=0, indent_level=1)
-
+    yield f"// This function always needs to be fed {depth} uops"
+    yield "_JIT_INDEX(uint16_t *uops, uint16_t start_index) {"
+    yield from _recurse_jit(supernodes.values(), level=0, indent_level=1)
     yield "}"  # _JIT_INDEX
 
 
 def _recurse_jit(
-    nodes: list[SuperNode], var_names: list[str], level: int, indent_level: int
+    nodes: list[SuperNode], level: int, indent_level: int
 ):
     """Recursively generate lower levels of the switch statement"""
 
@@ -84,7 +84,7 @@ def _recurse_jit(
         if node.uops[0].name not in initial_opcodes:
             initial_opcodes.append(node.uops[0].name)
 
-    yield f"{INDENT_UNIT * indent_level}switch ({var_names[level]}) {{"
+    yield f"{INDENT_UNIT * indent_level}switch (uops[start_index + {level}]) {{"
 
     for initial_op in initial_opcodes:
         yield f"{INDENT_UNIT * (indent_level + 1)}case {initial_op}:"
@@ -94,7 +94,7 @@ def _recurse_jit(
             if len(node.uops) > 1 and node.uops[0].name == initial_op
         ]
         if next_nodes:
-            yield from _recurse_jit(next_nodes, var_names, level + 1, indent_level + 2)
+            yield from _recurse_jit(next_nodes, level + 1, indent_level + 2)
         else:
             first_nodes = [node for node in nodes if node.uops[0].name == initial_op]
             if len(first_nodes) != 1:
@@ -104,7 +104,7 @@ def _recurse_jit(
         yield f"{INDENT_UNIT * (indent_level + 2)}break;"
 
     yield f"{INDENT_UNIT * (indent_level + 1)}default:"
-    yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = {var_names[0]}, .length = 1}};"
+    yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = uops[0], .length = 1}};"
     yield f"{INDENT_UNIT * indent_level}}}"  # end of switch
 
 
