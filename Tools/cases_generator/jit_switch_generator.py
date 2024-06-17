@@ -11,6 +11,7 @@ import string
 from analyzer import Analysis, analyze_files, SuperNode
 from generators_common import (
     DEFAULT_INPUT,
+    DEFAULT_SUPERNODES_INPUT,
     ROOT,
     write_header,
 )
@@ -138,11 +139,12 @@ def generate_jit_header_file(
         typedef struct {
             const uint64_t index;
             const uint16_t length;
-        } SuperNode;
+        } SuperNode;\n
         """
         ))
 
     depth = _supernode_max_depth(analysis.supernodes)
+    outfile.writelines([f"#define SUPERNODE_MAX_DEPTH {depth}\n\n"])
     params = _parameter_names(depth)
     outfile.write(f"SuperNode _JIT_INDEX({', '.join("uint16_t " + var for var in params)});")
 
@@ -170,6 +172,7 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
     if len(args.input) == 0:
         args.input.append(DEFAULT_INPUT)
+        args.input.append(DEFAULT_SUPERNODES_INPUT)
     data = analyze_files(args.input)
 
     with open(args.output, "w") as outfile:

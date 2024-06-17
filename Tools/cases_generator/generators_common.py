@@ -16,6 +16,7 @@ from stack import StackOffset, Stack
 
 ROOT = Path(__file__).parent.parent.parent
 DEFAULT_INPUT = (ROOT / "Python/bytecodes.c").absolute().as_posix()
+DEFAULT_SUPERNODES_INPUT = (ROOT / "Python/supernodes.c").absolute().as_posix()
 
 
 def root_relative_path(filename: str) -> str:
