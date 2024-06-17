@@ -15,6 +15,7 @@ typedef _Py_CODEUNIT *(*jit_func)(_PyInterpreterFrame *frame, PyObject **stack_p
 
 int _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction *trace, size_t length);
 void _PyJIT_Free(_PyExecutorObject *executor);
+_PyUOpInstruction _PyJIT_Combine(_PyUOpInstruction *uops, uint16_t start_index, uint16_t count);
 
 #endif  // _Py_JIT
 

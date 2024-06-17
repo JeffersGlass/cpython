@@ -66,7 +66,7 @@ def _generate_jit_switch_function(
 
     depth = max(len(node.uops) for node in supernodes.values())
     yield f"// This function always needs to be fed {depth} uops"
-    yield "SuperNode"
+    yield "_PyUOpInstruction"
     yield "_JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {"
     yield from _recurse_jit(supernodes.values(), level=0, indent_level=1)
     yield "}"  # _JIT_INDEX
@@ -102,7 +102,7 @@ def _recurse_jit(
         yield f"{INDENT_UNIT * (indent_level + 2)}break;"
 
     yield f"{INDENT_UNIT * (indent_level + 1)}default:"
-    yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = uops[0], .length = 1}};"
+    yield f"{INDENT_UNIT * (indent_level + 2)}return index = uops[start_index];"
     yield f"{INDENT_UNIT * indent_level}}}"  # end of switch
 
 

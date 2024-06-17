@@ -501,5 +501,40 @@ _PyJIT_Free(_PyExecutorObject *executor)
         }
     }
 }
+/*
+typedef struct {
+    uint16_t opcode:14;
+    uint16_t format:2;
+    uint16_t oparg;
+    union {
+        uint32_t target;
+        struct {
+            union {
+                uint16_t exit_index;
+                uint16_t jump_target;
+            };
+            uint16_t error_target;
+        };
+    };
+    uint64_t operand;  // A cache entry
+} _PyUOpInstruction;
+*/
+
+_PyUOpInstruction _PyJIT_Combine(_PyUOpInstruction *uops, uint16_t start_index, uint16_t count){
+    uint16_t opcode = 0;
+    uint16_t format = 0;
+    uint16_t oparg = 0;
+    uint64_t operand = 0;
+    for (int i = start_index; i < start_index + count; i++){
+        opcode |= uops[i].opcode;
+    }
+    return (_PyUOpInstruction) {
+        .opcode = opcode,
+        .format = format,
+        .oparg = oparg,
+        .target = 0,
+        .operand = operand
+    };
+}
 
 #endif  // _Py_JIT
