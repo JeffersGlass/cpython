@@ -16,6 +16,7 @@
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
 #include "pycore_jit.h"
+#include "jit_switch.h"
 
 // Memory management stuff: ////////////////////////////////////////////////////
 
