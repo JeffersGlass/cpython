@@ -212,6 +212,21 @@ class SuperNode:
     def length(self):
         return len(self.uops)
 
+    @property
+    def properties(self) -> Properties:
+        return Properties.from_list(uop.properties for uop in self.uops)
+
+    # TODO: Calculate stack properties for SuperNodes
+    @property
+    def stack(self) -> StackEffect:
+        return StackEffect([],[]) #TODO
+
+    def why_not_viable(self) -> str | None:
+        return ', '.join(uop.why_not_viable() for uop in self.uops if uop.why_not_viable() is not None)
+
+    def is_viable(self) -> str | None:
+        return all(uop.is_viable() for uop in self.uops)
+
     # Useful in creating _JIT_INDEX
     def pop_front(self):
         return self.replace(uops=self.uops[1:], parent=self)

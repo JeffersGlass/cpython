@@ -94,7 +94,7 @@
           WorkingDirectory="$(PySourcePath)" />
     <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\target_generator.py $(PySourcePath)Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\uop_id_generator.py $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\uop_id_generator.py $(PySourcePath)Python\bytecodes.c $(PySourcePath)Python\supernodes.c"
           WorkingDirectory="$(PySourcePath)" />
     <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\py_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
@@ -106,7 +106,7 @@
           WorkingDirectory="$(PySourcePath)" />
     <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\opcode_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
           WorkingDirectory="$(PySourcePath)" />
-    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\uop_metadata_generator.py $(PySourcePath)Python\bytecodes.c"
+    <Exec Command="$(PythonForBuild) $(PySourcePath)Tools\cases_generator\uop_metadata_generator.py $(PySourcePath)Python\bytecodes.c $(PySourcePath)Python\supernodes.c"
           WorkingDirectory="$(PySourcePath)" />
   </Target>
 

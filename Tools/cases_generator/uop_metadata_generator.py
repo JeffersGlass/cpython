@@ -4,6 +4,7 @@ Writes the metadata to pycore_uop_metadata.h by default.
 """
 
 import argparse
+import itertools
 
 from analyzer import (
     Analysis,
@@ -29,9 +30,9 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("extern int _PyUop_num_popped(int opcode, int oparg);\n\n")
     out.emit("#ifdef NEED_OPCODE_METADATA\n")
     out.emit("const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {\n")
-    for uop in analysis.uops.values():
-        if uop.is_viable() and uop.properties.tier != 1:
-            out.emit(f"[{uop.name}] = {cflags(uop.properties)},\n")
+    for op in itertools.chain(analysis.uops.values(), analysis.supernodes.values()):
+        if op.is_viable() and op.properties.tier != 1:
+            out.emit(f"[{op.name}] = {cflags(op.properties)},\n")
 
     out.emit("};\n\n")
     out.emit("const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {\n")
@@ -41,13 +42,14 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
 
     out.emit("};\n\n")
     out.emit("const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {\n")
-    for uop in sorted(analysis.uops.values(), key=lambda t: t.name):
-        if uop.is_viable() and uop.properties.tier != 1:
-            out.emit(f'[{uop.name}] = "{uop.name}",\n')
+    for op in sorted(itertools.chain(analysis.uops.values(), analysis.supernodes.values()) , key=lambda t: t.name):
+        if op.is_viable() and op.properties.tier != 1:
+            out.emit(f'[{op.name}] = "{op.name}",\n')
+
     out.emit("};\n")
     out.emit("int _PyUop_num_popped(int opcode, int oparg)\n{\n")
     out.emit("switch(opcode) {\n")
-    for uop in analysis.uops.values():
+    for uop in analysis.uops.values(): # TODO: Calculate stack properties for SuperNodes
         if uop.is_viable() and uop.properties.tier != 1:
             stack = Stack()
             for var in reversed(uop.stack.inputs):
