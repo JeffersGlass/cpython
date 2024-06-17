@@ -2864,12 +2864,17 @@ JIT_DEPS = \
 		$(srcdir)/Tools/jit/*.c \
 		$(srcdir)/Tools/jit/*.py \
 		$(srcdir)/Python/executor_cases.c.h \
+
 		pyconfig.h
+
+jit_switch.?:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/jit_switch_generator.py
+
 
 jit_stencils.h: $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
-Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
+Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@ $(srcdir)/Python/jit_switch.c $(srcdir)/Python/jit_switch.h 
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit

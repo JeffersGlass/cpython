@@ -22,13 +22,29 @@ DEFAULT_OUTPUT = ROOT / "Python/jit_switch.c"
 INDENT_UNIT = "    "
 
 PREAMBLE = """
+#ifndef Py_SWITCH_JIT_H
+#define Py_SWITCH_JIT_H
 #include "Python.h"
 #include "pycore_uop_ids.h"
 #include "opcode_ids.h"
 #include "jit_switch.h"
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifdef _Py_JIT
 """
 
-POST = """"""
+POST = """
+#endif  // _Py_JIT
+
+#ifdef __cplusplus
+}
+#endif"""
 
 
 def generate_jit_switch_file(
@@ -72,9 +88,7 @@ def _generate_jit_switch_function(
     yield "}"  # _JIT_INDEX
 
 
-def _recurse_jit(
-    nodes: list[SuperNode], level: int, indent_level: int
-):
+def _recurse_jit(nodes: list[SuperNode], level: int, indent_level: int):
     """Recursively generate lower levels of the switch statement"""
 
     initial_opcodes = []
@@ -82,7 +96,7 @@ def _recurse_jit(
         if node.uops[0].name not in initial_opcodes:
             initial_opcodes.append(node.uops[0].name)
 
-    yield f"{INDENT_UNIT * indent_level}switch (uops[start_index + {level}]) {{"
+    yield f"{INDENT_UNIT * indent_level}switch (uops[start_index + {level}].opcode) {{"
 
     for initial_op in initial_opcodes:
         yield f"{INDENT_UNIT * (indent_level + 1)}case {initial_op}:"
@@ -102,7 +116,7 @@ def _recurse_jit(
         yield f"{INDENT_UNIT * (indent_level + 2)}break;"
 
     yield f"{INDENT_UNIT * (indent_level + 1)}default:"
-    yield f"{INDENT_UNIT * (indent_level + 2)}return index = uops[start_index];"
+    yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = uops[start_index].opcode, .length = 1}};"
     yield f"{INDENT_UNIT * indent_level}}}"  # end of switch
 
 
@@ -124,6 +138,7 @@ def _parameter_names(num):
     for i in range(num**2):
         yield from itertools.combinations_with_replacement(string.ascii_lowercase)
 
+
 def generate_jit_header_file(
     filenames: list[str],
     analysis: Analysis,
@@ -131,7 +146,9 @@ def generate_jit_header_file(
 ) -> Generator[str, None, None]:
 
     write_header(__file__, filenames, outfile)
-    outfile.write(textwrap.dedent("""
+    outfile.write(
+        textwrap.dedent(
+            """
         #include "Python.h"
         #include "cpython/optimizer.h"
 
@@ -140,16 +157,22 @@ def generate_jit_header_file(
             const uint16_t length;
         } SuperNode;\n
         """
-        ))
+        )
+    )
 
     depth = _supernode_max_depth(analysis.supernodes)
-    outfile.writelines([f"#define SUPERNODE_MAX_DEPTH {depth}\n\n",
-                        f"//This function must always be fed {depth} uops\n"
-                        "SuperNode\n",
-                        "_JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index);\n"])
+    outfile.writelines(
+        [
+            f"#define SUPERNODE_MAX_DEPTH {depth}\n\n",
+            f"//This function must always be fed {depth} uops\n" "SuperNode\n",
+            "_JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index);\n",
+        ]
+    )
 
-def _supernode_max_depth(supernodes: dict[str: SuperNode]):
+
+def _supernode_max_depth(supernodes: dict[str:SuperNode]):
     return max(len(node.uops) for node in supernodes.values())
+
 
 arg_parser = argparse.ArgumentParser(
     description="Generate the switch statement to select superinstructions at runtime",
@@ -161,7 +184,10 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    "--header", type=str, help="Generated header file", default=DEFAULT_OUTPUT.with_suffix(".h")
+    "--header",
+    type=str,
+    help="Generated header file",
+    default=DEFAULT_OUTPUT.with_suffix(".h"),
 )
 
 arg_parser.add_argument(
@@ -177,7 +203,6 @@ if __name__ == "__main__":
 
     with open(args.output, "w") as outfile:
         generate_jit_switch_file(args.input, data, outfile)
-
 
     with open(args.header, "w") as outfile:
         generate_jit_header_file(args.input, data, outfile)
