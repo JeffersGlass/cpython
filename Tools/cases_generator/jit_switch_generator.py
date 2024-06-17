@@ -159,6 +159,10 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
+    "--header", type=str, help="Generated header file", default=DEFAULT_OUTPUT.with_suffix(".h")
+)
+
+arg_parser.add_argument(
     "input", nargs=argparse.REMAINDER, help="Instruction definition file(s)"
 )
 
@@ -172,5 +176,5 @@ if __name__ == "__main__":
         generate_jit_switch_file(args.input, data, outfile)
 
 
-    with open(args.output.with_suffix(".h"), "w") as outfile:
+    with open(args.header, "w") as outfile:
         generate_jit_header_file(args.input, data, outfile)
