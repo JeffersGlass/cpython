@@ -102,12 +102,12 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     PATCH_VALUE(uint16_t, _exit_index, _JIT_EXIT_INDEX)
 
     OPT_STAT_INC(uops_executed);
-    UOP_STAT_INC(uopcode, execution_count);
 
     //#include <stdio.h>
     for (int i = 0; i < (sizeof(uopcode_array) / sizeof(uopcode_array[0])); i++){
         // The actual instruction definitions (only one will be used):
         int uopcode = uopcode_array[i];
+        UOP_STAT_INC(uopcode, execution_count);
         if (uopcode == _JUMP_TO_TOP) {
             PATCH_JUMP(_JIT_TOP);
         }
