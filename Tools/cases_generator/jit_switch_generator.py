@@ -5,6 +5,7 @@ Writes the switch statement to jit_switch.c by default.
 
 import argparse
 import itertools
+import textwrap
 import string
 
 from analyzer import Analysis, analyze_files, SuperNode
@@ -124,6 +125,29 @@ def _parameter_names(num):
     for i in range(num**2):
         yield from itertools.combinations_with_replacement(string.ascii_lowercase)
 
+def generate_jit_header_file(
+    filenames: list[str],
+    analysis: Analysis,
+    outfile: TextIO,
+) -> Generator[str, None, None]:
+
+    write_header(__file__, filenames, outfile)
+    outfile.write(textwrap.dedent("""
+        #include "Python.h"
+
+        typedef struct {
+            const uint64_t index;
+            const uint16_t length;
+        } SuperNode;
+        """
+        ))
+
+    depth = _supernode_max_depth(analysis.supernodes)
+    params = _parameter_names(depth)
+    outfile.write(f"SuperNode _JIT_INDEX({', '.join("uint16_t " + var for var in params)});")
+
+def _supernode_max_depth(supernodes: dict[str: SuperNode]):
+    return max(len(node.uops) for node in supernodes.values())
 
 arg_parser = argparse.ArgumentParser(
     description="Generate the switch statement to select superinstructions at runtime",
@@ -146,3 +170,7 @@ if __name__ == "__main__":
 
     with open(args.output, "w") as outfile:
         generate_jit_switch_file(args.input, data, outfile)
+
+
+    with open(args.output.with_suffix(".h"), "w") as outfile:
+        generate_jit_header_file(args.input, data, outfile)
