@@ -2870,13 +2870,6 @@ JIT_DEPS = \
 jit_switch.o: $(srcdir)/Python/jit_switch.c $(srcdir)/Python/jit_switch.h
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
-jit_switch.c:
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/jit_switch_generator.py
-
-jit_switch.h:
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/jit_switch_generator.py
-
-
 jit_stencils.h: $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
@@ -2886,6 +2879,7 @@ Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
 .PHONY: regen-jit
 regen-jit:
 	@REGEN_JIT_COMMAND@
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/jit_switch_generator.py
 
 # Some make's put the object file in the current directory
 .c.o:
