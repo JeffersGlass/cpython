@@ -24,6 +24,7 @@ INDENT_UNIT = "    "
 PREAMBLE = """
 #ifndef Py_SWITCH_JIT_H
 #define Py_SWITCH_JIT_H
+
 #include "Python.h"
 #include "pycore_uop_ids.h"
 #include "opcode_ids.h"
@@ -44,7 +45,10 @@ POST = """
 
 #ifdef __cplusplus
 }
-#endif"""
+#endif
+
+#endif // Py_SWITCH_JIT_H
+# """
 
 
 def generate_jit_switch_file(
@@ -56,15 +60,7 @@ def generate_jit_switch_file(
     based on the superinstructions present in the input files. The final result
     (minus preable) looks like:
 
-    SuperNode
-    _JIT_INDEX(uint16_t a, uint16_t b) {
-        switch (a) {
-            case _LOAD_FAST_0:
-                switch (b) {
-                    case _GUARD_TYPE_VERSION:
-                        return (SuperNode) {.index = _LOAD_FAST_0_PLUS__GUARD_TYPE_VERSION, .length = 2};
-                        break;
-                    ...
+    TODO
     """
     write_header(__file__, filenames, outfile)
     outfile.write(PREAMBLE)
@@ -82,7 +78,7 @@ def _generate_jit_switch_function(
 
     depth = max(len(node.uops) for node in supernodes.values())
     yield f"// This function always needs to be fed {depth} uops"
-    yield "_PyUOpInstruction"
+    yield "SuperNode"
     yield "_JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {"
     yield from _recurse_jit(supernodes.values(), level=0, indent_level=1)
     yield "}"  # _JIT_INDEX
