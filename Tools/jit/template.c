@@ -104,10 +104,14 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     OPT_STAT_INC(uops_executed);
 
     //#include <stdio.h>
-    for (int i = 0; i < (sizeof(uopcode_array) / sizeof(uopcode_array[0])); i++){
+    for (int i = 0; i < _JIT_LENGTH; i++){
         // The actual instruction definitions (only one will be used):
         int uopcode = uopcode_array[i];
         UOP_STAT_INC(uopcode, execution_count);
+        printf("%d", i);
+        printf("%d", i);
+        printf("%d", i);
+        printf("%d", i);
         if (uopcode == _JUMP_TO_TOP) {
             PATCH_JUMP(_JIT_TOP);
         }
@@ -119,8 +123,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
 
         PATCH_JUMP(_JIT_CONTINUE);
             // Labels that the instruction implementations expect to exist:
-    }
-    error_tier_two:
+                error_tier_two:
         tstate->previous_executor = (PyObject *)current_executor;
         GOTO_TIER_ONE(NULL);
     exit_to_tier1:
@@ -136,4 +139,5 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
             tstate->previous_executor = (PyObject *)current_executor;
             GOTO_TIER_TWO(exit->executor);
         }
+    }
 }
