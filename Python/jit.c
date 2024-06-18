@@ -409,22 +409,29 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     group = &trampoline;
     code_size += group->code_size;
     data_size += group->data_size;
-    for (size_t i = 0; i < length - SUPERNODE_MAX_DEPTH; ) {
-        const _PyUOpInstruction *instruction;
-        const SuperNode jit_index = _JIT_INDEX(trace, i);
-        if (jit_index.index > MAX_VANILLA_UOP_ID){
-            _PyUOpInstruction p = _PyJIT_Combine(trace, i, jit_index.length);
-            instruction = &p;
+    printf("----- New trace of length %ld ----\n", length);
+    for (size_t i = 0; i < length; i++) {
+        printf("%ld: %d\n", i, trace[i].opcode);
+    }
+    if (length > SUPERNODE_MAX_DEPTH ) {
+        for (size_t i = 0; i < length - SUPERNODE_MAX_DEPTH; ) {
+            printf("Examining UOp %ld at position %ld in size loop (length %ld) (end %ld) \n", trace[i].opcode, i, length, length - SUPERNODE_MAX_DEPTH);
+            const _PyUOpInstruction *instruction;
+            const SuperNode jit_index = _JIT_INDEX(trace, i);
+            if (jit_index.index > MAX_VANILLA_UOP_ID){
+                _PyUOpInstruction p = _PyJIT_Combine(trace, i, jit_index.length);
+                instruction = &p;
+            }
+            else{
+                instruction = &trace[i];
+            }
+            group = &stencil_groups[instruction->opcode];
+            instruction_starts[i] = code_size;
+            code_size += group->code_size;
+            data_size += group->data_size;
+            i += jit_index.length;
+            final_index = i;
         }
-        else{
-            instruction = &trace[i];
-        }
-        group = &stencil_groups[instruction->opcode];
-        instruction_starts[i] = code_size;
-        code_size += group->code_size;
-        data_size += group->data_size;
-        i += jit_index.length;
-        final_index = i;
     }
     for (size_t i = final_index; i < length; i++ ) {
         const _PyUOpInstruction *instruction = &trace[i];
@@ -464,30 +471,39 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     data += group->data_size;
     assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
 
-    for (size_t i = 0; i < length - SUPERNODE_MAX_DEPTH; ) {
-        const _PyUOpInstruction *instruction;
-        const SuperNode jit_index = _JIT_INDEX(trace, i);
-        if (jit_index.index > MAX_VANILLA_UOP_ID){
-            _PyUOpInstruction p = _PyJIT_Combine(trace, i, jit_index.length);
-            instruction = &p;
+    if (length > SUPERNODE_MAX_DEPTH ) {
+        for (size_t i = 0; i < length - SUPERNODE_MAX_DEPTH; ) {
+            printf("UOp @ pos %ld in patch loop (length %ld) (end %ld); ", i, length, length - SUPERNODE_MAX_DEPTH);
+            const _PyUOpInstruction *instruction;
+            const SuperNode jit_index = _JIT_INDEX(trace, i);
+            printf("Index: %ld\n", jit_index.index);
+            if (jit_index.index > MAX_VANILLA_UOP_ID){
+                printf("Before PyJIT_Combine /\n");
+                _PyUOpInstruction p = _PyJIT_Combine(trace, i, jit_index.length);
+                printf("After PyJIT_Combine /\n");
+                instruction = &p;
+            }
+            else{
+                instruction = &trace[i];
+            }
+            printf("Inst: opcode %ld, format %d, oparg %ld, target %ld, operand %ld\n", instruction->opcode, instruction->format, instruction->oparg, instruction->target, instruction->operand);
+            group = &stencil_groups[jit_index.index];
+            group->emit(code, data, executor, instruction, instruction_starts);
+            code += group->code_size;
+            data += group->data_size;
+            i += jit_index.length;
+            final_index = i;
         }
-        else{
-            instruction = &trace[i];
-        }
-        group = &stencil_groups[jit_index.index];
-        group->emit(code, data, executor, instruction, instruction_starts);
-        code += group->code_size;
-        data += group->data_size;
-        i += jit_index.length;
-        final_index = i;
     }
     for (size_t i = final_index; i < length; i++) {
+        printf("Index: %ld wrapping up\n", i);
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
         group->emit(code, data, executor, instruction, instruction_starts);
         code += group->code_size;
         data += group->data_size;
     }
+    printf("-----\n");
 
     // Protect against accidental buffer overrun into data:
     group = &stencil_groups[_FATAL_ERROR];
@@ -540,22 +556,25 @@ typedef struct {
 */
 
 _PyUOpInstruction _PyJIT_Combine(const _PyUOpInstruction *uops, uint16_t start_index, uint16_t count){
+    printf("Starting PyJIT_Combine\n");
     uint16_t opcode = 0;
     uint16_t format = 0;
     uint16_t oparg = 0;
     uint64_t operand = 0;
     for (int i = start_index; i < start_index + count; i++){
+        printf("uops[%d] attrs:, opcode: %ld, format: %ld, oparg: %ld, operand: %ld\n", uops[i].opcode, uops[i].format, uops[i].oparg, uops[i].operand);
         opcode |= uops[i].opcode;
         format |= uops[i].format;
         oparg |= uops[i].oparg;
         operand |= uops[i].operand;
+        printf("After index %d, opcode: %ld, format: %ld, oparg: %ld, operand: %ld\n", opcode, format, oparg, operand);
         // TODO figure out how to handle targets...
     }
     _PyUOpInstruction result = {
         .opcode = opcode,
         .format = format,
         .oparg = oparg,
-        .target = 0,
+        .target = uops[start_index].target,
         .operand = operand
     };
     return result;
