@@ -397,6 +397,13 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
 
 #include "jit_stencils.h"
 
+#ifdef Py_DEBUG
+extern void _PyUOpPrint(const _PyUOpInstruction *uop);
+#define DPRINT_UOP(uop) do { _PyUOpPrint(uop); printf("\n"); } while (0)
+#else
+#define DPRINT_UOP(uop) ((void)0)
+#endif
+
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
 _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], size_t length)
@@ -411,12 +418,9 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     code_size += group->code_size;
     data_size += group->data_size;
     printf("----- New trace of length %ld ----\n", length);
-    for (size_t i = 0; i < length; i++) {
-        printf("%ld: %d\n", i, trace[i].opcode);
-    }
     if (length > SUPERNODE_MAX_DEPTH ) {
         for (size_t i = 0; i < length - SUPERNODE_MAX_DEPTH; ) {
-            printf("Examining UOp %d at position %ld in size loop (length %ld) (end %ld) \n", trace[i].opcode, i, length, length - SUPERNODE_MAX_DEPTH);
+            //printf("Examining UOp %d at position %ld in size loop (length %ld) (end %ld) \n", trace[i].opcode, i, length, length - SUPERNODE_MAX_DEPTH);
             const SuperNode jit_index = _JIT_INDEX(trace, i);
             group = &stencil_groups[jit_index.index];
             instruction_starts[i] = code_size;
@@ -467,25 +471,33 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     if (length > SUPERNODE_MAX_DEPTH ) {
         for (size_t i = 0; i < length - SUPERNODE_MAX_DEPTH; ) {
             printf("UOp @ pos %ld in patch loop (length %ld) (end %ld); ", i, length, length - SUPERNODE_MAX_DEPTH);
-            const _PyUOpInstruction *instruction;
+            _PyUOpInstruction *instruction;
             const SuperNode jit_index = _JIT_INDEX(trace, i);
             printf("Index: %ld\n", jit_index.index);
             if (jit_index.index > MAX_VANILLA_UOP_ID){
                 printf("Before PyJIT_Combine /\n");
-                _PyUOpInstruction p = _PyJIT_Combine(trace, i, jit_index.length, jit_index.index);
-                printf("After PyJIT_Combine /\n");
-                instruction = &p;
+                _PyJIT_Combine(instruction, trace, i, jit_index.length, jit_index.index);
+                printf("After instuction capture?");
+                printf("After PyJIT_Combine \n");
             }
-            else{
+            else {
                 instruction = &trace[i];
             }
-            printf("Inst: opcode %d, format %d, oparg %d, target %d, operand %ld\n", instruction->opcode, instruction->format, instruction->oparg, instruction->target, instruction->operand);
+            printf("One");
+            DPRINT_UOP(instruction);
+            printf("Two");
             group = &stencil_groups[jit_index.index];
+            printf("Three");
             group->emit(code, data, executor, instruction, instruction_starts);
+            printf("Four");
             code += group->code_size;
+            printf("Five");
             data += group->data_size;
+            printf("Six");
             i += jit_index.length;
+            printf("Seven");
             final_index = i;
+            printf("Eight");
         }
     }
     for (size_t i = final_index; i < length; i++) {
@@ -548,14 +560,16 @@ typedef struct {
 } _PyUOpInstruction;
 */
 
-_PyUOpInstruction _PyJIT_Combine(const _PyUOpInstruction *uops, uint16_t start_index, uint16_t count, uint16_t supernode_index){
+int
+_PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_t start_index, uint16_t count, uint16_t supernode_index){
     printf("Starting PyJIT_Combine\n");
     uint16_t format = UOP_FORMAT_UNUSED;
     uint32_t temp_target = 0;
     uint16_t oparg = 0;
     uint64_t operand = 0;
     for (int i = start_index; i < start_index + count; i++){
-        printf("uops[%d] attrs:, opcode: %d, format: %d, oparg: %d, operand: %ld\n", i, uops[i].opcode, uops[i].format, uops[i].oparg, uops[i].operand);
+        DPRINT_UOP(&uops[i]);
+        //printf("uops[%d] attrs:, opcode: %d, format: %d, oparg: %d, operand: %ld\n", i, uops[i].opcode, uops[i].format, uops[i].oparg, uops[i].operand);
         oparg |= uops[i].oparg;
         operand |= uops[i].operand;
         //assert(format == UOP_FORMAT_UNUSED || uops[i].format == UOP_FORMAT_UNUSED);
@@ -573,57 +587,38 @@ _PyUOpInstruction _PyJIT_Combine(const _PyUOpInstruction *uops, uint16_t start_i
             default:
                 break;
         }
-        printf("After index %d, format: %d, oparg: %d, operand: %ld\n", i, format, oparg, operand);
+        printf("After index %d, format: %d, oparg: %d, operand: %ld, target: %ld\n", i, format, oparg, operand, temp_target);
     }
 
-    return _PyJIT_Format_Inst(supernode_index, format, temp_target, oparg, operand);
-}
+    holder->opcode = supernode_index;
+    holder->format = format;
+    holder->oparg = oparg;
+    holder->operand = operand;
 
-_PyUOpInstruction
-_PyJIT_Format_Inst(uint16_t opcode, uint16_t format, uint32_t temp_target, uint16_t oparg, uint64_t operand){
     switch (format){
         case UOP_FORMAT_TARGET:
-            return (_PyUOpInstruction) {
-                .opcode = opcode,
-                .format = format,
-                .oparg = oparg,
-                .target = temp_target,
-                .operand = operand
-            };
+            holder->target = temp_target;
+            return 0;
             break;
         case UOP_FORMAT_EXIT:
-            return (_PyUOpInstruction) {
-                .opcode = opcode,
-                .format = format,
-                .oparg = oparg,
-                .exit_index = (uint16_t) temp_target >> 16,
-                .error_target = (uint16_t) temp_target & 0x0000FFFF,
-                .operand = operand
-            };
+                holder->exit_index = (uint16_t) temp_target >> 16;
+                holder->error_target = (uint16_t) temp_target & 0x0000FFFF;
+            return 0;
             break;
         case UOP_FORMAT_JUMP:
-            return (_PyUOpInstruction) {
-                .opcode = opcode,
-                .format = format,
-                .oparg = oparg,
-                .jump_target = (uint16_t) temp_target >> 16,
-                .error_target = (uint16_t) temp_target & 0x0000FFFF,
-                .operand = operand
-            };
+            holder->jump_target = (uint16_t) temp_target >> 16;
+            holder->error_target = (uint16_t) temp_target & 0x0000FFFF;
+            return 0;
             break;
         case UOP_FORMAT_UNUSED:
-            return (_PyUOpInstruction) {
-                .opcode = opcode,
-                .format = format,
-                .oparg = oparg,
-                .target = 0,
-                .operand = operand
-            };
+            holder->target = 0;
+            return 0;
             break;
         default:
-            assert(1/0);
+            return -1;
             break;
         }
-};
+}
+
 
 #endif  // _Py_JIT

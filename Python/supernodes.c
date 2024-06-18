@@ -148,10 +148,10 @@ dummy_func(
 //super(uniary1) = _LOAD_CONST_INLINE_BORROW_WITH_NULL;
 
 //These two have conflicts and should fail
-//super(operand1) = _START_EXECUTOR + _SET_IP;
 //super(target) = _GUARD_TYPE_VERSION + _CHECK_MANAGED_OBJECT_HAS_VALUES;
 
 super(pass2) = COPY + TO_BOOL_BOOL;
+super(operand1) = _START_EXECUTOR + _SET_IP;
 
 // END BYTECODES //
 
