@@ -76,7 +76,10 @@ def _generate_jit_switch_function(
     supernodes: dict[str, SuperNode]
 ) -> Generator[str, None, None]:
 
-    depth = max(len(node.uops) for node in supernodes.values())
+    if supernodes.values():
+        depth = max((len(node.uops)) for node in supernodes.values())
+    else:
+        depth = 1
     yield f"// This function always needs to be fed {depth} uops"
     yield "SuperNode"
     yield "_JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {"
@@ -108,12 +111,12 @@ def _recurse_jit(nodes: list[SuperNode], level: int, indent_level: int):
             if len(first_nodes) != 1:
                 raise ValueError(f"Wrong number of first_nodes")
             only_node = first_nodes[0]
-            yield f'{INDENT_UNIT * (indent_level + 2)}printf("Returning SuperNode of length {only_node.top_parent().length}\\n");'
+            yield f'{INDENT_UNIT * (indent_level + 2)}//printf("Returning SuperNode of length {only_node.top_parent().length}\\n");'
             yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = {only_node.top_parent().name}, .length = {only_node.top_parent().length}}};"
         yield f"{INDENT_UNIT * (indent_level + 2)}break;"
 
     yield f"{INDENT_UNIT * (indent_level + 1)}default:"
-    yield f'{INDENT_UNIT * (indent_level + 2)}printf("Returning SuperNode of length 1\\n");'
+    yield f'{INDENT_UNIT * (indent_level + 2)}//printf("Returning SuperNode of length 1\\n");'
     yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = uops[start_index].opcode, .length = 1}};"
     yield f"{INDENT_UNIT * indent_level}}}"  # end of switch
 

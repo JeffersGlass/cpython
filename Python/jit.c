@@ -404,6 +404,42 @@ extern void _PyUOpPrint(const _PyUOpInstruction *uop);
 #define DPRINT_UOP(uop) ((void)0)
 #endif
 
+void
+_PyUOpPrintTemp(const _PyUOpInstruction *uop)
+{
+    printf("<uop %d>", uop->opcode);
+    switch(uop->format) {
+        case UOP_FORMAT_TARGET:
+            printf(" (oparg: %d, format=%d target=0x%x, operand=%#" PRIx64,
+                uop->oparg,
+                uop->format,
+                uop->target,
+                (uint64_t)uop->operand);
+            break;
+        case UOP_FORMAT_JUMP:
+            printf(" (oparg: %d, format=%d jump_target=0x%x, operand=%#" PRIx64,
+                uop->oparg,
+                uop->format,
+                uop->jump_target,
+                (uint64_t)uop->operand);
+            break;
+        case UOP_FORMAT_EXIT:
+            printf(" (oparg: %d, format=%d exit_index=0x%x, operand=%#" PRIx64,
+                uop->oparg,
+                uop->format,
+                uop->exit_index,
+                (uint64_t)uop->operand);
+            break;
+        default:
+            printf(" (oparg: %d, format=%d Unknown format)", uop->oparg);
+    }
+    if (_PyUop_Flags[uop->opcode] & HAS_ERROR_FLAG) {
+        printf(", error_target=%d", uop->error_target);
+    }
+
+    printf(")");
+}
+
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
 _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], size_t length)
@@ -555,33 +591,38 @@ typedef struct {
 
 int
 _PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_t start_index, uint16_t count, uint16_t supernode_index){
-    printf("Starting PyJIT_Combine\n");
+    //printf("Starting PyJIT_Combine\n");
     uint16_t format = UOP_FORMAT_UNUSED;
     uint32_t temp_target = 0;
     uint16_t oparg = 0;
     uint64_t operand = 0;
     for (int i = start_index; i < start_index + count; i++){
         //DPRINT_UOP(&uops[i]);
+        //printf("Index %d: ", i) ;_PyUOpPrintTemp(&uops[i]); printf(" format: %d \n", uops[i].format);
         //printf("uops[%d] attrs:, opcode: %d, format: %d, oparg: %d, operand: %ld\n", i, uops[i].opcode, uops[i].format, uops[i].oparg, uops[i].operand);
-        oparg |= uops[i].oparg;
+        if (_PyUop_Flags[uops[i].opcode] | HAS_ARG_FLAG) oparg = uops[i].oparg;
+        if (_PyUop_Flags[uops[i].opcode] | HAS_OPERAND_FLAG) operand = uops[i].oparg;
         operand |= uops[i].operand;
         //assert(format == UOP_FORMAT_UNUSED || uops[i].format == UOP_FORMAT_UNUSED);
-        format &= uops[i].format;
         switch(uops[i].format){
             case UOP_FORMAT_TARGET:
-                temp_target = uop_get_target(&uops[i]);
+                //temp_target = uop_get_target(&uops[i]);
                 break;
             case UOP_FORMAT_EXIT:
+            format = UOP_FORMAT_EXIT;
                 temp_target = uop_get_exit_index(&uops[i]) << 16 | uop_get_error_target(&uops[i]);
                 break;
             case UOP_FORMAT_JUMP:
+                format = UOP_FORMAT_JUMP;
                 temp_target = uop_get_jump_target(&uops[i]) << 16 | uop_get_error_target(&uops[i]);
                 break;
             default:
                 break;
         }
-        printf("After index %d, format: %d, oparg: %d, operand: %ld, target: %"PRIu32"\n", i, format, oparg, operand, temp_target);
+        //printf("  After index %d, format: %d, oparg: %d, operand: 0x%x, temp_target: 0x%x\n", i, format, oparg, operand, temp_target);
     }
+
+    //printf("After Processsing: opcode: %d, format: %d, oparg: %d, operand: 0x%x, temp_target: 0x%x\n", supernode_index, format, oparg, operand, temp_target);
 
     holder->opcode = supernode_index;
     holder->format = format;
@@ -590,27 +631,25 @@ _PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_
 
     switch (format){
         case UOP_FORMAT_TARGET:
-            holder->target = temp_target;
-            return 0;
+            //holder->target = temp_target;
             break;
         case UOP_FORMAT_EXIT:
-                holder->exit_index = (uint16_t) temp_target >> 16;
-                holder->error_target = (uint16_t) temp_target & 0x0000FFFF;
-            return 0;
+            holder->exit_index = (uint16_t) (temp_target & 0xFFFF0000) >> 16;
+            holder->error_target = (uint16_t) temp_target & 0x0000FFFF;
             break;
         case UOP_FORMAT_JUMP:
-            holder->jump_target = (uint16_t) temp_target >> 16;
+            holder->jump_target = (uint16_t) (temp_target & 0xFFFF0000) >> 16;
             holder->error_target = (uint16_t) temp_target & 0x0000FFFF;
-            return 0;
             break;
         case UOP_FORMAT_UNUSED:
-            holder->target = 0;
-            return 0;
+            //holder->target = 0;
             break;
         default:
             return -1;
             break;
         }
+        //printf("Finally:"); _PyUOpPrintTemp(holder); printf("\n\n");
+        return 0;
 }
 
 

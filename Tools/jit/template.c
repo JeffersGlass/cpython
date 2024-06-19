@@ -123,7 +123,9 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
 
         PATCH_JUMP(_JIT_CONTINUE);
             // Labels that the instruction implementations expect to exist:
-                error_tier_two:
+    }
+
+    error_tier_two:
         tstate->previous_executor = (PyObject *)current_executor;
         GOTO_TIER_ONE(NULL);
     exit_to_tier1:
@@ -139,5 +141,4 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
             tstate->previous_executor = (PyObject *)current_executor;
             GOTO_TIER_TWO(exit->executor);
         }
-    }
 }
