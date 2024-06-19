@@ -426,7 +426,7 @@ _PyUOpPrintTemp(const _PyUOpInstruction *uop)
                 (uint64_t)uop->operand);
             break;
         default:
-            printf(" (oparg: %d, format=%d Unknown format)", uop->oparg);
+            printf(" (oparg: %d, format=%d Unknown format)", uop->oparg, uop->format);
     }
     if (_PyUop_Flags[uop->opcode] & HAS_ERROR_FLAG) {
         printf(", error_target=%d", uop->error_target);
@@ -587,11 +587,11 @@ _PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_
     uint64_t operand = 0;
     for (int i = start_index; i < start_index + count; i++){
         printf("    Index %d: ", i) ;_PyUOpPrintTemp(&uops[i]); printf(" format: %d \n", uops[i].format);
-        if (_PyUop_Flags[uops[i].opcode] & HAS_ARG_FLAG > 0) {
+        if ((_PyUop_Flags[uops[i].opcode] & HAS_ARG_FLAG) > 0) {
             printf("    replacing 0x%x's oparg \n", _PyUop_Flags[uops[i].opcode]);
             oparg = uops[i].oparg;
         }
-        if (_PyUop_Flags[uops[i].opcode] & HAS_OPERAND_FLAG > 0) {
+        if ((_PyUop_Flags[uops[i].opcode] & HAS_OPERAND_FLAG) > 0) {
             printf("    replacing 0x%x's operand\n", _PyUop_Flags[uops[i].opcode]);
              operand = uops[i].operand;
         }
