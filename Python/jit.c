@@ -397,15 +397,10 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
 
 #include "jit_stencils.h"
 
-#ifdef Py_DEBUG
-extern void _PyUOpPrint(const _PyUOpInstruction *uop);
-#define DPRINT_UOP(uop) do { _PyUOpPrint(uop); printf("\n"); } while (0)
-#else
-#define DPRINT_UOP(uop) ((void)0)
-#endif
+#define jprintf(...) do {if (true) printf(__VA_ARGS__)} while (0);
 
 void
-_PyUOpPrintTemp(const _PyUOpInstruction *uop)
+PyUOpPrintTemp(const _PyUOpInstruction *uop)
 {
     printf("<uop %d>", uop->opcode);
     switch(uop->format) {
@@ -515,13 +510,14 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
                 _PyJIT_Combine(instruction, trace, i, jit_index.length, jit_index.index);
                 //printf("After instuction capture?");
                 //printf("After PyJIT_Combine \n");
-                DPRINT_UOP(instruction);
+                //DPRINT_UOP(instruction);
             }
             else {
                 instruction = &trace[i];
             }
             //DPRINT_UOP(instruction);
             group = &stencil_groups[jit_index.index];
+            if (jit_index.index > MAX_VANILLA_UOP_ID) printf("Emitting superop %d into trace", instruction->opcode);
             group->emit(code, data, executor, instruction, instruction_starts);
             code += group->code_size;
             data += group->data_size;
@@ -598,7 +594,7 @@ _PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_
     uint64_t operand = 0;
     for (int i = start_index; i < start_index + count; i++){
         //DPRINT_UOP(&uops[i]);
-        //printf("Index %d: ", i) ;_PyUOpPrintTemp(&uops[i]); printf(" format: %d \n", uops[i].format);
+        //printf("    Index %d: ", i) ;_PyUOpPrintTemp(&uops[i]); printf(" format: %d \n", uops[i].format);
         //printf("uops[%d] attrs:, opcode: %d, format: %d, oparg: %d, operand: %ld\n", i, uops[i].opcode, uops[i].format, uops[i].oparg, uops[i].operand);
         if (_PyUop_Flags[uops[i].opcode] | HAS_ARG_FLAG) oparg = uops[i].oparg;
         if (_PyUop_Flags[uops[i].opcode] | HAS_OPERAND_FLAG) operand = uops[i].oparg;
@@ -619,10 +615,10 @@ _PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_
             default:
                 break;
         }
-        //printf("  After index %d, format: %d, oparg: %d, operand: 0x%x, temp_target: 0x%x\n", i, format, oparg, operand, temp_target);
+        //printf("      After index %d, format: %d, oparg: %d, operand: 0x%x, temp_target: 0x%x\n", i, format, oparg, operand, temp_target);
     }
 
-    //printf("After Processsing: opcode: %d, format: %d, oparg: %d, operand: 0x%x, temp_target: 0x%x\n", supernode_index, format, oparg, operand, temp_target);
+    //printf("  After Processsing: opcode: %d, format: %d, oparg: %d, operand: 0x%x, temp_target: 0x%x\n", supernode_index, format, oparg, operand, temp_target);
 
     holder->opcode = supernode_index;
     holder->format = format;

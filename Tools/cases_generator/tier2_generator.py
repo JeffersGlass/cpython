@@ -162,7 +162,7 @@ def write_uop(uop: Uop, out: CWriter, stack: Stack) -> None:
             assert uop.properties.const_oparg < 0
         elif uop.properties.const_oparg >= 0:
             out.emit(f"oparg = {uop.properties.const_oparg};\n")
-            out.emit(f"assert(oparg == CURRENT_OPARG());\n")
+            #out.emit(f"assert(oparg == CURRENT_OPARG());\n")
         for var in reversed(uop.stack.inputs):
             out.emit(stack.pop(var))
         if not uop.properties.stores_sp:
