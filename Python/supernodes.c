@@ -142,7 +142,7 @@ dummy_func(
 
 
 // A few dummy supernodes for testing purposes
-super(pass1) = _LOAD_FAST_0 + _GUARD_TYPE_VERSION;
+
 
 //super(pass3) = COPY + _LOAD_FAST_0 + TO_BOOL_BOOL;
 //super(uniary1) = _LOAD_CONST_INLINE_BORROW_WITH_NULL;
@@ -151,7 +151,12 @@ super(pass1) = _LOAD_FAST_0 + _GUARD_TYPE_VERSION;
 //super(target) = _GUARD_TYPE_VERSION + _CHECK_MANAGED_OBJECT_HAS_VALUES;
 
 //super(pass2) = _LOAD_FAST_0 + TO_BOOL_BOOL;
-super(operand1) = _START_EXECUTOR + _SET_IP;
+//super(operand1) = _START_EXECUTOR + _SET_IP;
+
+
+//super(q) = _SAVE_RETURN_OFFSET + _PUSH_FRAME;
+//super(s) = COPY + TO_BOOL_BOOL;
+super(pass1) = _LOAD_FAST_0 + _GUARD_TYPE_VERSION;
 
 // END BYTECODES //
 

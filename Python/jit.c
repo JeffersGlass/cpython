@@ -517,7 +517,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
             }
             //DPRINT_UOP(instruction);
             group = &stencil_groups[jit_index.index];
-            if (jit_index.index > MAX_VANILLA_UOP_ID) printf("Emitting superop %d into trace", instruction->opcode);
+            if (jit_index.index > MAX_VANILLA_UOP_ID) printf("Emitting superop %d into trace\n", instruction->opcode);
             group->emit(code, data, executor, instruction, instruction_starts);
             code += group->code_size;
             data += group->data_size;

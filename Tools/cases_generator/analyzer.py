@@ -813,7 +813,7 @@ def add_supernode(
                 assert False
     assert parts
     if conflict := uop_input_conflict(parts):
-        analysis_error(
+        raise analysis_error(
             f"SuperNode with UOps {', '.join(uop.name for uop in node.uops)} has conflicting {conflict}",
             node.tokens[0],
         )
