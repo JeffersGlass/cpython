@@ -155,7 +155,7 @@ dummy_func(
 
 
 //super(q) = _SAVE_RETURN_OFFSET + _PUSH_FRAME;
-//super(s) = COPY + TO_BOOL_BOOL;
+super(s) = COPY + TO_BOOL_BOOL;
 super(pass1) = _LOAD_FAST_0 + _GUARD_TYPE_VERSION;
 
 // END BYTECODES //

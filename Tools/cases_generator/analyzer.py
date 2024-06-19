@@ -197,6 +197,7 @@ class Uop:
 
 Part = Uop | Skip
 
+
 @dataclass
 class SuperNode:
     name: str
@@ -214,15 +215,19 @@ class SuperNode:
 
     @property
     def properties(self) -> Properties:
-        return Properties.from_list(uop.properties for uop in self.uops)
+        return Properties.from_list([uop.properties for uop in self.uops])
 
     # TODO: Calculate stack properties for SuperNodes
     @property
     def stack(self) -> StackEffect:
-        return StackEffect([],[]) #TODO
+        return StackEffect([], [])  # TODO
 
     def why_not_viable(self) -> str | None:
-        return ', '.join(uop.why_not_viable() for uop in self.uops if uop.why_not_viable() is not None)
+        return ", ".join(
+            uop.why_not_viable()
+            for uop in self.uops
+            if uop.why_not_viable() is not None
+        )
 
     def is_viable(self) -> str | None:
         return all(uop.is_viable() for uop in self.uops)
@@ -411,11 +416,6 @@ def target_conflict(uops: list[Uop]) -> bool:
     error_targets = sum(1 for uop in uops if not uop.properties.infallible) + sum(
         1 for uop in uops if uop.properties.error_without_pop
     )
-    print(','.join(u.name for u in uops))
-    print(f"{targets=}")
-    print(f"{exit_indexes=}")
-    print(f"{jump_targets=}")
-    print(f"{error_targets=}")
     valid = (
         # UOP_FORMAT_TARGET:
         (
@@ -613,7 +613,9 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
         for s, other in zip(stack_inputs, instr.outputs)
     )
 
+
 OPARG_AND_1 = re.compile("\\(*oparg *& *1")
+
 
 def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
     for effect in op.inputs:
@@ -629,6 +631,7 @@ def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
         if OPARG_AND_1.match(effect.cond):
             return True
     return False
+
 
 def compute_properties(op: parser.InstDef) -> Properties:
     has_free = (
