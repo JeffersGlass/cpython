@@ -402,7 +402,7 @@ def uses_operand(op: parser.InstDef) -> bool:
     )
 
 
-def target_compatible(uops: list[Uop]) -> bool:
+def target_conflict(uops: list[Uop]) -> bool:
     targets = sum(1 for uop in uops if uop.name == "_DEOPT")
     exit_indexes = sum(1 for uop in uops if uop.name == "_EXIT_TRACE")
     jump_targets = sum(1 for uop in uops if uop.properties.deopts) + sum(
@@ -411,8 +411,12 @@ def target_compatible(uops: list[Uop]) -> bool:
     error_targets = sum(1 for uop in uops if not uop.properties.infallible) + sum(
         1 for uop in uops if uop.properties.error_without_pop
     )
-    pass
-    return not (
+    print(','.join(u.name for u in uops))
+    print(f"{targets=}")
+    print(f"{exit_indexes=}")
+    print(f"{jump_targets=}")
+    print(f"{error_targets=}")
+    valid = (
         # UOP_FORMAT_TARGET:
         (
             targets <= 1
@@ -437,6 +441,7 @@ def target_compatible(uops: list[Uop]) -> bool:
             and error_targets <= 1
         )
     )
+    return not valid
 
 
 def uop_input_conflict(uops: list[Uop]) -> str | None:
@@ -444,14 +449,14 @@ def uop_input_conflict(uops: list[Uop]) -> str | None:
         return None
     oparg_conflict = sum(1 for uop in uops if uop.properties.oparg) > 1
     operand_conflict = sum(1 for uop in uops if uop.properties.operand) > 1
-    compatible = {
+    conflicts = {
         "Oparg": oparg_conflict,
         "Operand": operand_conflict,
-        "Target": target_compatible(uops),
+        "Target": target_conflict(uops),
     }
-    if not any(compatible.values()):
+    if not any(conflicts.values()):
         return None
-    return f"{','.join(k for k, v in compatible.items() if not v)}"
+    return f"{','.join(k for k, v in conflicts.items() if not v)}"
 
 
 NON_ESCAPING_FUNCTIONS = (
