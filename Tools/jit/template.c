@@ -103,8 +103,8 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
 
     OPT_STAT_INC(uops_executed);
 
-    //#include <stdio.h>
-    for (int i = 0; i < _JIT_LENGTH; i++){
+    #include <stdio.h>
+    for (int i = 0; i < (sizeof(uopcode_array) / sizeof(uopcode_array[0])); i++){
         // The actual instruction definitions (only one will be used):
         int uopcode = uopcode_array[i];
         UOP_STAT_INC(uopcode, execution_count);
@@ -117,24 +117,25 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
                 Py_UNREACHABLE();
         }
 
-        PATCH_JUMP(_JIT_CONTINUE);
-            // Labels that the instruction implementations expect to exist:
     }
 
-    error_tier_two:
+    PATCH_JUMP(_JIT_CONTINUE);
+            // Labels that the instruction implementations expect to exist:
+
+error_tier_two:
+    tstate->previous_executor = (PyObject *)current_executor;
+    GOTO_TIER_ONE(NULL);
+exit_to_tier1:
+    tstate->previous_executor = (PyObject *)current_executor;
+    GOTO_TIER_ONE(_PyCode_CODE(_PyFrame_GetCode(frame)) + _target);
+exit_to_tier1_dynamic:
+    tstate->previous_executor = (PyObject *)current_executor;
+    GOTO_TIER_ONE(frame->instr_ptr);
+exit_to_trace:
+    {
+        _PyExitData *exit = &current_executor->exits[_exit_index];
+        Py_INCREF(exit->executor);
         tstate->previous_executor = (PyObject *)current_executor;
-        GOTO_TIER_ONE(NULL);
-    exit_to_tier1:
-        tstate->previous_executor = (PyObject *)current_executor;
-        GOTO_TIER_ONE(_PyCode_CODE(_PyFrame_GetCode(frame)) + _target);
-    exit_to_tier1_dynamic:
-        tstate->previous_executor = (PyObject *)current_executor;
-        GOTO_TIER_ONE(frame->instr_ptr);
-    exit_to_trace:
-        {
-            _PyExitData *exit = &current_executor->exits[_exit_index];
-            Py_INCREF(exit->executor);
-            tstate->previous_executor = (PyObject *)current_executor;
-            GOTO_TIER_TWO(exit->executor);
-        }
+        GOTO_TIER_TWO(exit->executor);
+    }
 }
