@@ -86,7 +86,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     // Locals that the instruction implementations expect to exist:
     PATCH_VALUE(_PyExecutorObject *, current_executor, _JIT_EXECUTOR)
     int oparg;
-    int uopcode_array[] = _JIT_OPCODES;
+    static const int uopcode_array[] = _JIT_OPCODES;
     _Py_CODEUNIT *next_instr;
     // Other stuff we need handy:
     PATCH_VALUE(uint16_t, _oparg, _JIT_OPARG)
@@ -103,20 +103,32 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
 
     OPT_STAT_INC(uops_executed);
 
-    for (int i = 0; i < _JIT_LENGTH; i++){
-        // The actual instruction definitions (only one will be used):
-        int uopcode = uopcode_array[i];
+    int uopcode = uopcode_array[0];
+    UOP_STAT_INC(uopcode, execution_count);
+    if (uopcode == _JUMP_TO_TOP) {
+        PATCH_JUMP(_JIT_TOP);
+    }
+    switch (uopcode_array[0]) {
+#include "executor_cases.c.h"
+        default:
+            Py_UNREACHABLE();
+    }
+
+    if (_JIT_LENGTH > 1){
+        int uopcode = uopcode_array[1];
         UOP_STAT_INC(uopcode, execution_count);
         if (uopcode == _JUMP_TO_TOP) {
             PATCH_JUMP(_JIT_TOP);
         }
-        switch (uopcode) {
+        switch (uopcode_array[1]) {
 #include "executor_cases.c.h"
             default:
                 Py_UNREACHABLE();
-        }
+    }
 
-    } // end loop over opcodes
+    }
+
+    // end loop over opcodes
 
     PATCH_JUMP(_JIT_CONTINUE);
     // Labels that the instruction implementations expect to exist:
