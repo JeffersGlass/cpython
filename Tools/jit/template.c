@@ -103,7 +103,7 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
 
     OPT_STAT_INC(uops_executed);
 
-    for (int i = 0; i < (sizeof(uopcode_array) / sizeof(uopcode_array[0])); i++){
+    for (int i = 0; i < _JIT_LENGTH; i++){
         // The actual instruction definitions (only one will be used):
         int uopcode = uopcode_array[i];
         UOP_STAT_INC(uopcode, execution_count);
@@ -116,10 +116,10 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
                 Py_UNREACHABLE();
         }
 
-    }
+    } // end loop over opcodes
 
     PATCH_JUMP(_JIT_CONTINUE);
-            // Labels that the instruction implementations expect to exist:
+    // Labels that the instruction implementations expect to exist:
 
 error_tier_two:
     tstate->previous_executor = (PyObject *)current_executor;

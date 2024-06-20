@@ -120,6 +120,7 @@ class _Target(typing.Generic[_S, _R]):
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
+            f"-D_JIT_LENGTH={len(opnames)}",
             f"-D_JIT_OPCODES={{{','.join(opnames)}}}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",
