@@ -103,7 +103,6 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
 
     OPT_STAT_INC(uops_executed);
 
-    #include <stdio.h>
     for (int i = 0; i < (sizeof(uopcode_array) / sizeof(uopcode_array[0])); i++){
         // The actual instruction definitions (only one will be used):
         int uopcode = uopcode_array[i];
