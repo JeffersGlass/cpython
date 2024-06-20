@@ -38,24 +38,26 @@
         DPRINTF(level, "<uop %d>", uop->opcode);
         switch(uop->format) {
             case UOP_FORMAT_TARGET:
-                DPRINTF(level, " (oparg: %d, format=%d target=0x%x, operand=%#" PRIx64,
+                DPRINTF(level, " (oparg: %d, format=%d, target=0x%x, operand=%#" PRIx64,
                     uop->oparg,
                     uop->format,
                     uop->target,
                     (uint64_t)uop->operand);
                 break;
             case UOP_FORMAT_JUMP:
-                DPRINTF(level, " (oparg: %d, format=%d jump_target=0x%x, operand=%#" PRIx64,
+                DPRINTF(level, " (oparg: %d, format=%d, jump_target=0x%x, error_target=0x%x, operand=%#" PRIx64,
                     uop->oparg,
                     uop->format,
                     uop->jump_target,
+                    uop->error_target,
                     (uint64_t)uop->operand);
                 break;
             case UOP_FORMAT_EXIT:
-                DPRINTF(level, " (oparg: %d, format=%d exit_index=0x%x, operand=%#" PRIx64,
+                DPRINTF(level, " (oparg: %d, format=%d, exit_index=0x%x, error_target=0x%x, operand=%#" PRIx64,
                     uop->oparg,
                     uop->format,
                     uop->exit_index,
+                    uop->error_target,
                     (uint64_t)uop->operand);
                 break;
             default:
@@ -598,16 +600,15 @@ _PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_
     for (int i = start_index; i < start_index + count; i++){
         DPRINTF(2, "    Index %d: ", i);
         _DPrintUop(2, &uops[i]);
-        DPRINTF(2, " format: %d \n", uops[i].format);
+        DPRINTF(2, "\n");
         if ((_PyUop_Flags[uops[i].opcode] & HAS_ARG_FLAG) > 0) {
-            DPRINTF(4, "    replacing 0x%x's oparg \n due to flags", _PyUop_Flags[uops[i].opcode]);
+            DPRINTF(4, "      replacing oparg due to flags 0x%x\n", _PyUop_Flags[uops[i].opcode]);
             oparg = uops[i].oparg;
         }
         if ((_PyUop_Flags[uops[i].opcode] & HAS_OPERAND_FLAG) > 0) {
-            DPRINTF(4, "    replacing 0x%x's operand\n due to flags", _PyUop_Flags[uops[i].opcode]);
+            DPRINTF(4, "      replacing operand due to flags 0x%x\n", _PyUop_Flags[uops[i].opcode]);
              operand = uops[i].operand;
         }
-        operand |= uops[i].operand;
         //assert(format == UOP_FORMAT_UNUSED || uops[i].format == UOP_FORMAT_UNUSED);
         switch(uops[i].format){
             case UOP_FORMAT_TARGET:
@@ -615,6 +616,7 @@ _PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_
             case UOP_FORMAT_EXIT:
             format = UOP_FORMAT_EXIT;
                 temp_target = uop_get_exit_index(&uops[i]) << 16 | uop_get_error_target(&uops[i]);
+                format = UOP_FORMAT_EXIT;
                 break;
             case UOP_FORMAT_JUMP:
                 format = UOP_FORMAT_JUMP;
@@ -633,20 +635,20 @@ _PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_
     holder->oparg = oparg;
     holder->operand = operand;
 
+
     switch (format){
         case UOP_FORMAT_TARGET:
             //holder->target = temp_target;
             break;
         case UOP_FORMAT_EXIT:
-            holder->exit_index = (uint16_t) (temp_target & 0xFFFF0000) >> 16;
-            holder->error_target = (uint16_t) temp_target & 0x0000FFFF;
+            holder->exit_index = (uint16_t) ((temp_target & 0xFFFF0000) >> 16);
+            holder->error_target = (uint16_t) (temp_target & 0x0000FFFF);
             break;
         case UOP_FORMAT_JUMP:
-            holder->jump_target = (uint16_t) (temp_target & 0xFFFF0000) >> 16;
-            holder->error_target = (uint16_t) temp_target & 0x0000FFFF;
+            holder->jump_target = (uint16_t) ((temp_target & 0xFFFF0000) >> 16);
+            holder->error_target = (uint16_t) (temp_target & 0x0000FFFF);
             break;
         case UOP_FORMAT_UNUSED:
-            //holder->target = 0;
             break;
         default:
             return -1;
