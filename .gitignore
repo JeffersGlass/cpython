@@ -126,7 +126,6 @@ PCbuild/arm32/
 PCbuild/arm64/
 PCbuild/obj/
 PCbuild/win32/
-Python/jit_switch.*
 Tools/unicode/data/
 /autom4te.cache
 /build/
