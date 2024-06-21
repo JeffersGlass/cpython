@@ -10,12 +10,70 @@
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"
 #include "pycore_opcode_metadata.h"
+#include "pycore_uop_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_optimizer.h"
+#include "cpython/optimizer.h"
 #include "pycore_pyerrors.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
+#include "jit_switch.h"
 #include "pycore_jit.h"
+#include "pycore_uop_ids.h"
+
+
+#ifdef Py_DEBUG
+    int lltrace = 0;
+    char *python_lltrace;
+    #define DPRINTF(level, ...) \
+        python_lltrace = Py_GETENV("PYTHON_LLTRACE"); \
+        if (python_lltrace != NULL && *python_lltrace >= '0') { \
+            lltrace = *python_lltrace - '0';  \
+        } \
+        if (lltrace >= (level)) { printf(__VA_ARGS__); }
+
+    static void
+    _DPrintUop(int level, const _PyUOpInstruction *uop)
+    {
+        DPRINTF(level, "<uop %d>", uop->opcode);
+        switch(uop->format) {
+            case UOP_FORMAT_TARGET:
+                DPRINTF(level, " (oparg: %d, format=%d, target=0x%x, operand=%#" PRIx64,
+                    uop->oparg,
+                    uop->format,
+                    uop->target,
+                    (uint64_t)uop->operand);
+                break;
+            case UOP_FORMAT_JUMP:
+                DPRINTF(level, " (oparg: %d, format=%d, jump_target=0x%x, error_target=0x%x, operand=%#" PRIx64,
+                    uop->oparg,
+                    uop->format,
+                    uop->jump_target,
+                    uop->error_target,
+                    (uint64_t)uop->operand);
+                break;
+            case UOP_FORMAT_EXIT:
+                DPRINTF(level, " (oparg: %d, format=%d, exit_index=0x%x, error_target=0x%x, operand=%#" PRIx64,
+                    uop->oparg,
+                    uop->format,
+                    uop->exit_index,
+                    uop->error_target,
+                    (uint64_t)uop->operand);
+                break;
+            default:
+                DPRINTF(level, " (oparg: %d, format=%d Unknown format)", uop->oparg, uop->format);
+        }
+        if (_PyUop_Flags[uop->opcode] & HAS_ERROR_FLAG) {
+            DPRINTF(level, ", error_target=%d", uop->error_target);
+        }
+
+        DPRINTF(level, ")");
+    }
+#else
+    #define DPRINTF(level, ...)
+    static void
+    _DPrintUop(int level, const _PyUOpInstruction *uop) {}
+#endif
 
 // Memory management stuff: ////////////////////////////////////////////////////
 
@@ -401,10 +459,22 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     uintptr_t instruction_starts[UOP_MAX_TRACE_LENGTH];
     size_t code_size = 0;
     size_t data_size = 0;
+    size_t final_index = 0;
     group = &trampoline;
     code_size += group->code_size;
     data_size += group->data_size;
-    for (size_t i = 0; i < length; i++) {
+    if (length > SUPERNODE_MAX_DEPTH ) {
+        for (size_t i = 0; i < length - SUPERNODE_MAX_DEPTH; ) {
+            const SuperNode jit_index = _JIT_INDEX(trace, i);
+            group = &stencil_groups[jit_index.index];
+            instruction_starts[i] = code_size;
+            code_size += group->code_size;
+            data_size += group->data_size;
+            i += jit_index.length;
+            final_index = i;
+        }
+    }
+    for (size_t i = final_index; i < length; i++ ) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
         instruction_starts[i] = code_size;
@@ -437,16 +507,37 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     // nothing is emitted here:
     group = &trampoline;
     group->emit(code, data, executor, NULL, instruction_starts);
+    final_index = 0;
     code += group->code_size;
     data += group->data_size;
     assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
-    for (size_t i = 0; i < length; i++) {
+
+    if (length > SUPERNODE_MAX_DEPTH ) {
+        for (size_t i = 0; i < length - SUPERNODE_MAX_DEPTH; ) {
+            _PyUOpInstruction *instruction;
+            const SuperNode jit_index = _JIT_INDEX(trace, i);
+            if (jit_index.index > MAX_VANILLA_UOP_ID){
+                _PyJIT_Combine(instruction, trace, i, jit_index.length, jit_index.index);
+            }
+            else {
+                instruction = &trace[i];
+            }
+            group = &stencil_groups[jit_index.index];
+            group->emit(code, data, executor, instruction, instruction_starts);
+            code += group->code_size;
+            data += group->data_size;
+            i += jit_index.length;
+            final_index = i;
+        }
+    }
+    for (size_t i = final_index; i < length; i++) {
         const _PyUOpInstruction *instruction = &trace[i];
         group = &stencil_groups[instruction->opcode];
         group->emit(code, data, executor, instruction, instruction_starts);
         code += group->code_size;
         data += group->data_size;
     }
+
     // Protect against accidental buffer overrun into data:
     group = &stencil_groups[_FATAL_ERROR];
     group->emit(code, data, executor, NULL, instruction_starts);
@@ -478,5 +569,76 @@ _PyJIT_Free(_PyExecutorObject *executor)
         }
     }
 }
+
+int
+_PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_t start_index, uint16_t count, uint16_t supernode_index){
+    DPRINTF(2, "Starting PyJIT_Combine\n");
+    uint16_t format = UOP_FORMAT_UNUSED;
+    uint32_t temp_target = 0;
+    uint16_t oparg = 0;
+    uint64_t operand = 0;
+    for (int i = start_index; i < start_index + count; i++){
+        DPRINTF(2, "    Index %d: ", i);
+        _DPrintUop(2, &uops[i]);
+        DPRINTF(2, "\n");
+        if ((_PyUop_Flags[uops[i].opcode] & HAS_ARG_FLAG) > 0) {
+            DPRINTF(4, "      replacing oparg due to flags 0x%x\n", _PyUop_Flags[uops[i].opcode]);
+            oparg = uops[i].oparg;
+        }
+        if ((_PyUop_Flags[uops[i].opcode] & HAS_OPERAND_FLAG) > 0) {
+            DPRINTF(4, "      replacing operand due to flags 0x%x\n", _PyUop_Flags[uops[i].opcode]);
+             operand = uops[i].operand;
+        }
+        //assert(format == UOP_FORMAT_UNUSED || uops[i].format == UOP_FORMAT_UNUSED);
+        switch(uops[i].format){
+            case UOP_FORMAT_TARGET:
+                break;
+            case UOP_FORMAT_EXIT:
+            format = UOP_FORMAT_EXIT;
+                temp_target = uop_get_exit_index(&uops[i]) << 16 | uop_get_error_target(&uops[i]);
+                format = UOP_FORMAT_EXIT;
+                break;
+            case UOP_FORMAT_JUMP:
+                format = UOP_FORMAT_JUMP;
+                temp_target = uop_get_jump_target(&uops[i]) << 16 | uop_get_error_target(&uops[i]);
+                break;
+            default:
+                break;
+        }
+        DPRINTF(4, "      After index %d, format: %d, oparg: %d, operand: 0x%x, temp_target: 0x%x\n", i, format, oparg, operand, temp_target);
+    }
+
+    DPRINTF(4, "  After Processsing: opcode: %d, format: %d, oparg: %d, operand: 0x%x, temp_target: 0x%x\n", supernode_index, format, oparg, operand, temp_target);
+
+    holder->opcode = supernode_index;
+    holder->format = format;
+    holder->oparg = oparg;
+    holder->operand = operand;
+
+
+    switch (format){
+        case UOP_FORMAT_TARGET:
+            //holder->target = temp_target;
+            break;
+        case UOP_FORMAT_EXIT:
+            holder->exit_index = (uint16_t) ((temp_target & 0xFFFF0000) >> 16);
+            holder->error_target = (uint16_t) (temp_target & 0x0000FFFF);
+            break;
+        case UOP_FORMAT_JUMP:
+            holder->jump_target = (uint16_t) ((temp_target & 0xFFFF0000) >> 16);
+            holder->error_target = (uint16_t) (temp_target & 0x0000FFFF);
+            break;
+        case UOP_FORMAT_UNUSED:
+            break;
+        default:
+            return -1;
+            break;
+        }
+        DPRINTF(2, "After _PyJIT_Combine:");
+        _DPrintUop(2, holder);
+        DPRINTF(2, "\n\n");
+        return 0;
+}
+
 
 #endif  // _Py_JIT

@@ -24,7 +24,7 @@ TOOLS_JIT = TOOLS_JIT_BUILD.parent
 TOOLS = TOOLS_JIT.parent
 CPYTHON = TOOLS.parent
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
-SUPERNODES_C_H = CPYTHON / "Python/supernode_cases.c.h"
+SUPERNODES_C_H = CPYTHON / "Python/supernodes_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 
 SUPEROP_SEP = "_PLUS_"
@@ -53,6 +53,7 @@ class _Target(typing.Generic[_S, _R]):
         hasher.update(self.debug.to_bytes())
         # These dependencies are also reflected in _JITSources in regen.targets:
         hasher.update(PYTHON_EXECUTOR_CASES_C_H.read_bytes())
+        hasher.update(SUPERNODES_C_H.read_bytes())
         hasher.update((out / "pyconfig.h").read_bytes())
         for dirpath, _, filenames in sorted(os.walk(TOOLS_JIT)):
             for filename in filenames:
@@ -119,6 +120,7 @@ class _Target(typing.Generic[_S, _R]):
             f"--target={self.triple}",
             "-DPy_BUILD_CORE_MODULE",
             "-D_DEBUG" if self.debug else "-DNDEBUG",
+            f"-D_JIT_LENGTH={len(opnames)}",
             f"-D_JIT_OPCODES={{{','.join(opnames)}}}",
             "-D_PyJIT_ACTIVE",
             "-D_Py_JIT",

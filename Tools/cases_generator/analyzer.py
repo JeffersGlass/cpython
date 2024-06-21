@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 import lexer
 import parser
 import re
@@ -214,15 +214,19 @@ class SuperNode:
 
     @property
     def properties(self) -> Properties:
-        return Properties.from_list(uop.properties for uop in self.uops)
+        return Properties.from_list([uop.properties for uop in self.uops])
 
     # TODO: Calculate stack properties for SuperNodes
     @property
     def stack(self) -> StackEffect:
-        return StackEffect([],[]) #TODO
+        return StackEffect([], [])  # TODO
 
     def why_not_viable(self) -> str | None:
-        return ', '.join(uop.why_not_viable() for uop in self.uops if uop.why_not_viable() is not None)
+        return ", ".join(
+            uop.why_not_viable()
+            for uop in self.uops
+            if uop.why_not_viable() is not None
+        )
 
     def is_viable(self) -> str | None:
         return all(uop.is_viable() for uop in self.uops)
@@ -402,7 +406,7 @@ def uses_operand(op: parser.InstDef) -> bool:
     )
 
 
-def target_compatible(uops: list[Uop]) -> bool:
+def target_conflict(uops: list[Uop]) -> bool:
     targets = sum(1 for uop in uops if uop.name == "_DEOPT")
     exit_indexes = sum(1 for uop in uops if uop.name == "_EXIT_TRACE")
     jump_targets = sum(1 for uop in uops if uop.properties.deopts) + sum(
@@ -411,8 +415,7 @@ def target_compatible(uops: list[Uop]) -> bool:
     error_targets = sum(1 for uop in uops if not uop.properties.infallible) + sum(
         1 for uop in uops if uop.properties.error_without_pop
     )
-    pass
-    return not (
+    valid = (
         # UOP_FORMAT_TARGET:
         (
             targets <= 1
@@ -437,6 +440,7 @@ def target_compatible(uops: list[Uop]) -> bool:
             and error_targets <= 1
         )
     )
+    return not valid
 
 
 def uop_input_conflict(uops: list[Uop]) -> str | None:
@@ -444,14 +448,14 @@ def uop_input_conflict(uops: list[Uop]) -> str | None:
         return None
     oparg_conflict = sum(1 for uop in uops if uop.properties.oparg) > 1
     operand_conflict = sum(1 for uop in uops if uop.properties.operand) > 1
-    compatible = {
+    conflicts = {
         "Oparg": oparg_conflict,
         "Operand": operand_conflict,
-        "Target": target_compatible(uops),
+        "Target": target_conflict(uops),
     }
-    if not any(compatible.values()):
+    if not any(conflicts.values()):
         return None
-    return f"{','.join(k for k, v in compatible.items() if not v)}"
+    return f"{','.join(k for k, v in conflicts.items() if not v)}"
 
 
 NON_ESCAPING_FUNCTIONS = (
@@ -808,7 +812,7 @@ def add_supernode(
                 assert False
     assert parts
     if conflict := uop_input_conflict(parts):
-        analysis_error(
+        raise analysis_error(
             f"SuperNode with UOps {', '.join(uop.name for uop in node.uops)} has conflicting {conflict}",
             node.tokens[0],
         )

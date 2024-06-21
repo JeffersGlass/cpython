@@ -52,7 +52,6 @@
         case _LOAD_FAST_0: {
             PyObject *value;
             oparg = 0;
-            assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -64,7 +63,6 @@
         case _LOAD_FAST_1: {
             PyObject *value;
             oparg = 1;
-            assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -76,7 +74,6 @@
         case _LOAD_FAST_2: {
             PyObject *value;
             oparg = 2;
-            assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -88,7 +85,6 @@
         case _LOAD_FAST_3: {
             PyObject *value;
             oparg = 3;
-            assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -100,7 +96,6 @@
         case _LOAD_FAST_4: {
             PyObject *value;
             oparg = 4;
-            assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -112,7 +107,6 @@
         case _LOAD_FAST_5: {
             PyObject *value;
             oparg = 5;
-            assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -124,7 +118,6 @@
         case _LOAD_FAST_6: {
             PyObject *value;
             oparg = 6;
-            assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -136,7 +129,6 @@
         case _LOAD_FAST_7: {
             PyObject *value;
             oparg = 7;
-            assert(oparg == CURRENT_OPARG());
             value = GETLOCAL(oparg);
             assert(value != NULL);
             Py_INCREF(value);
@@ -180,7 +172,6 @@
         case _STORE_FAST_0: {
             PyObject *value;
             oparg = 0;
-            assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
             SETLOCAL(oparg, value);
             stack_pointer += -1;
@@ -190,7 +181,6 @@
         case _STORE_FAST_1: {
             PyObject *value;
             oparg = 1;
-            assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
             SETLOCAL(oparg, value);
             stack_pointer += -1;
@@ -200,7 +190,6 @@
         case _STORE_FAST_2: {
             PyObject *value;
             oparg = 2;
-            assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
             SETLOCAL(oparg, value);
             stack_pointer += -1;
@@ -210,7 +199,6 @@
         case _STORE_FAST_3: {
             PyObject *value;
             oparg = 3;
-            assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
             SETLOCAL(oparg, value);
             stack_pointer += -1;
@@ -220,7 +208,6 @@
         case _STORE_FAST_4: {
             PyObject *value;
             oparg = 4;
-            assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
             SETLOCAL(oparg, value);
             stack_pointer += -1;
@@ -230,7 +217,6 @@
         case _STORE_FAST_5: {
             PyObject *value;
             oparg = 5;
-            assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
             SETLOCAL(oparg, value);
             stack_pointer += -1;
@@ -240,7 +226,6 @@
         case _STORE_FAST_6: {
             PyObject *value;
             oparg = 6;
-            assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
             SETLOCAL(oparg, value);
             stack_pointer += -1;
@@ -250,7 +235,6 @@
         case _STORE_FAST_7: {
             PyObject *value;
             oparg = 7;
-            assert(oparg == CURRENT_OPARG());
             value = stack_pointer[-1];
             SETLOCAL(oparg, value);
             stack_pointer += -1;
@@ -3305,7 +3289,6 @@
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
             oparg = 0;
-            assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -3329,7 +3312,6 @@
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
             oparg = 1;
-            assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -3353,7 +3335,6 @@
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
             oparg = 2;
-            assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -3377,7 +3358,6 @@
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
             oparg = 3;
-            assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
@@ -3401,7 +3381,6 @@
             PyObject *callable;
             _PyInterpreterFrame *new_frame;
             oparg = 4;
-            assert(oparg == CURRENT_OPARG());
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];

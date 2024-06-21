@@ -11,6 +11,7 @@ import string
 from analyzer import Analysis, analyze_files, SuperNode
 from generators_common import (
     DEFAULT_INPUT,
+    DEFAULT_SUPERNODES_INPUT,
     ROOT,
     write_header,
 )
@@ -21,13 +22,33 @@ DEFAULT_OUTPUT = ROOT / "Python/jit_switch.c"
 INDENT_UNIT = "    "
 
 PREAMBLE = """
+#ifndef Py_SWITCH_JIT_H
+#define Py_SWITCH_JIT_H
+
 #include "Python.h"
 #include "pycore_uop_ids.h"
 #include "opcode_ids.h"
 #include "jit_switch.h"
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#ifdef _Py_JIT
 """
 
-POST = """"""
+POST = """
+#endif  // _Py_JIT
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // Py_SWITCH_JIT_H
+# """
 
 
 def generate_jit_switch_file(
@@ -40,14 +61,19 @@ def generate_jit_switch_file(
     (minus preable) looks like:
 
     SuperNode
-    _JIT_INDEX(uint16_t a, uint16_t b) {
-        switch (a) {
-            case _LOAD_FAST_0:
-                switch (b) {
-                    case _GUARD_TYPE_VERSION:
-                        return (SuperNode) {.index = _LOAD_FAST_0_PLUS__GUARD_TYPE_VERSION, .length = 2};
+    _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
+        switch (uops[start_index + 0].opcode) {
+            case _COPY:
+                switch (uops[start_index + 1].opcode) {
+                    case _TO_BOOL_BOOL:
+                        return (SuperNode) {.index = _COPY_PLUS__TO_BOOL_BOOL, .length = 2};
                         break;
-                    ...
+                    default:
+                        return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                }
+                break;
+            case _LOAD_FAST_0:
+                ...
     """
     write_header(__file__, filenames, outfile)
     outfile.write(PREAMBLE)
@@ -63,19 +89,18 @@ def _generate_jit_switch_function(
     supernodes: dict[str, SuperNode]
 ) -> Generator[str, None, None]:
 
-    depth = max(len(node.uops) for node in supernodes.values())
+    if supernodes.values():
+        depth = max((len(node.uops)) for node in supernodes.values())
+    else:
+        depth = 1
+    yield f"// This function always needs to be fed {depth} uops"
     yield "SuperNode"
-    param_names = list(_parameter_names(depth))
-
-    yield f"_JIT_INDEX({', '.join(f'uint16_t {name}' for name in param_names)}) {{"
-    yield from _recurse_jit(supernodes.values(), param_names, level=0, indent_level=1)
-
+    yield "_JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {"
+    yield from _recurse_jit(supernodes.values(), level=0, indent_level=1)
     yield "}"  # _JIT_INDEX
 
 
-def _recurse_jit(
-    nodes: list[SuperNode], var_names: list[str], level: int, indent_level: int
-):
+def _recurse_jit(nodes: list[SuperNode], level: int, indent_level: int):
     """Recursively generate lower levels of the switch statement"""
 
     initial_opcodes = []
@@ -83,7 +108,7 @@ def _recurse_jit(
         if node.uops[0].name not in initial_opcodes:
             initial_opcodes.append(node.uops[0].name)
 
-    yield f"{INDENT_UNIT * indent_level}switch ({var_names[level]}) {{"
+    yield f"{INDENT_UNIT * indent_level}switch (uops[start_index + {level}].opcode) {{"
 
     for initial_op in initial_opcodes:
         yield f"{INDENT_UNIT * (indent_level + 1)}case {initial_op}:"
@@ -93,7 +118,7 @@ def _recurse_jit(
             if len(node.uops) > 1 and node.uops[0].name == initial_op
         ]
         if next_nodes:
-            yield from _recurse_jit(next_nodes, var_names, level + 1, indent_level + 2)
+            yield from _recurse_jit(next_nodes, level + 1, indent_level + 2)
         else:
             first_nodes = [node for node in nodes if node.uops[0].name == initial_op]
             if len(first_nodes) != 1:
@@ -103,27 +128,8 @@ def _recurse_jit(
         yield f"{INDENT_UNIT * (indent_level + 2)}break;"
 
     yield f"{INDENT_UNIT * (indent_level + 1)}default:"
-    yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = {var_names[0]}, .length = 1}};"
+    yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = uops[start_index].opcode, .length = 1}};"
     yield f"{INDENT_UNIT * indent_level}}}"  # end of switch
-
-
-def _parameter_names(num):
-    """Generate single-letter arg names, following by two-letter arg names if
-    necessary. (a, b, c, ..., z, aa, ab, ...)
-
-    Args:
-        num (_type_): How many argument names to create
-
-    Yields:
-        Generator[str]: The returned argument names
-    """
-    for i in range(min(num, 26)):
-        yield string.ascii_lowercase[i]
-    if num <= 26:
-        return
-
-    for i in range(num**2):
-        yield from itertools.combinations_with_replacement(string.ascii_lowercase)
 
 def generate_jit_header_file(
     filenames: list[str],
@@ -132,22 +138,33 @@ def generate_jit_header_file(
 ) -> Generator[str, None, None]:
 
     write_header(__file__, filenames, outfile)
-    outfile.write(textwrap.dedent("""
+    outfile.write(
+        textwrap.dedent(
+            """
         #include "Python.h"
+        #include "cpython/optimizer.h"
 
         typedef struct {
             const uint64_t index;
             const uint16_t length;
-        } SuperNode;
+        } SuperNode;\n
         """
-        ))
+        )
+    )
 
     depth = _supernode_max_depth(analysis.supernodes)
-    params = _parameter_names(depth)
-    outfile.write(f"SuperNode _JIT_INDEX({', '.join("uint16_t " + var for var in params)});")
+    outfile.writelines(
+        [
+            f"#define SUPERNODE_MAX_DEPTH {depth}\n\n",
+            f"//This function must always be fed {depth} uops\n" "SuperNode\n",
+            "_JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index);\n",
+        ]
+    )
 
-def _supernode_max_depth(supernodes: dict[str: SuperNode]):
+
+def _supernode_max_depth(supernodes: dict[str:SuperNode]):
     return max(len(node.uops) for node in supernodes.values())
+
 
 arg_parser = argparse.ArgumentParser(
     description="Generate the switch statement to select superinstructions at runtime",
@@ -159,7 +176,10 @@ arg_parser.add_argument(
 )
 
 arg_parser.add_argument(
-    "--header", type=str, help="Generated header file", default=DEFAULT_OUTPUT.with_suffix(".h")
+    "--header",
+    type=str,
+    help="Generated header file",
+    default=DEFAULT_OUTPUT.with_suffix(".h"),
 )
 
 arg_parser.add_argument(
@@ -170,11 +190,11 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
     if len(args.input) == 0:
         args.input.append(DEFAULT_INPUT)
+        args.input.append(DEFAULT_SUPERNODES_INPUT)
     data = analyze_files(args.input)
 
     with open(args.output, "w") as outfile:
         generate_jit_switch_file(args.input, data, outfile)
-
 
     with open(args.header, "w") as outfile:
         generate_jit_header_file(args.input, data, outfile)

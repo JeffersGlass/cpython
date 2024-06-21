@@ -16,6 +16,7 @@ from stack import StackOffset, Stack
 
 ROOT = Path(__file__).parent.parent.parent
 DEFAULT_INPUT = (ROOT / "Python/bytecodes.c").absolute().as_posix()
+DEFAULT_SUPERNODES_INPUT = (ROOT / "Python/supernodes.c").absolute().as_posix()
 
 
 def root_relative_path(filename: str) -> str:
@@ -234,6 +235,8 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_ESCAPES_FLAG")
     if p.pure:
         flags.append("HAS_PURE_FLAG")
+    if p.operand:
+        flags.append("HAS_OPERAND_FLAG")
     if p.oparg_and_1:
         flags.append("HAS_OPARG_AND_1_FLAG")
     if flags:

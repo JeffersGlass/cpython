@@ -448,6 +448,7 @@ PYTHON_OBJS=	\
 		Python/instruction_sequence.o \
 		Python/intrinsics.o \
 		Python/jit.o \
+		Python/jit_switch.o \
 		Python/legacy_tracing.o \
 		Python/lock.o \
 		Python/marshal.o \
@@ -2866,6 +2867,9 @@ JIT_DEPS = \
 		$(srcdir)/Python/executor_cases.c.h \
 		pyconfig.h
 
+jit_switch.o: $(srcdir)/Python/jit_switch.c $(srcdir)/Python/jit_switch.h
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+
 jit_stencils.h: $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
@@ -2875,6 +2879,7 @@ Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
 .PHONY: regen-jit
 regen-jit:
 	@REGEN_JIT_COMMAND@
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/jit_switch_generator.py
 
 # Some make's put the object file in the current directory
 .c.o:
