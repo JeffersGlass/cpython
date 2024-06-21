@@ -450,8 +450,6 @@ patch_x86_64_32rx(unsigned char *location, uint64_t value)
 
 #include "jit_stencils.h"
 
-#define jprintf(...) do {if (true) printf(__VA_ARGS__)} while (0);
-
 // Compiles executor in-place. Don't forget to call _PyJIT_Free later!
 int
 _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], size_t length)
@@ -571,24 +569,6 @@ _PyJIT_Free(_PyExecutorObject *executor)
         }
     }
 }
-/*
-typedef struct {
-    uint16_t opcode:14;
-    uint16_t format:2;
-    uint16_t oparg;
-    union {
-        uint32_t target;
-        struct {
-            union {
-                uint16_t exit_index;
-                uint16_t jump_target;
-            };
-            uint16_t error_target;
-        };
-    };
-    uint64_t operand;  // A cache entry
-} _PyUOpInstruction;
-*/
 
 int
 _PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_t start_index, uint16_t count, uint16_t supernode_index){

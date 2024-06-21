@@ -120,26 +120,6 @@ def _recurse_jit(nodes: list[SuperNode], level: int, indent_level: int):
     yield f"{INDENT_UNIT * (indent_level + 2)}return (SuperNode) {{.index = uops[start_index].opcode, .length = 1}};"
     yield f"{INDENT_UNIT * indent_level}}}"  # end of switch
 
-
-def _parameter_names(num):
-    """Generate single-letter arg names, following by two-letter arg names if
-    necessary. (a, b, c, ..., z, aa, ab, ...)
-
-    Args:
-        num (_type_): How many argument names to create
-
-    Yields:
-        Generator[str]: The returned argument names
-    """
-    for i in range(min(num, 26)):
-        yield string.ascii_lowercase[i]
-    if num <= 26:
-        return
-
-    for i in range(num**2):
-        yield from itertools.combinations_with_replacement(string.ascii_lowercase)
-
-
 def generate_jit_header_file(
     filenames: list[str],
     analysis: Analysis,

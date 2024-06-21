@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 import lexer
 import parser
 import re
@@ -613,9 +613,7 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
         for s, other in zip(stack_inputs, instr.outputs)
     )
 
-
 OPARG_AND_1 = re.compile("\\(*oparg *& *1")
-
 
 def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
     for effect in op.inputs:
@@ -631,7 +629,6 @@ def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
         if OPARG_AND_1.match(effect.cond):
             return True
     return False
-
 
 def compute_properties(op: parser.InstDef) -> Properties:
     has_free = (

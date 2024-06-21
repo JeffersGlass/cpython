@@ -114,6 +114,8 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
             Py_UNREACHABLE();
     }
 
+    // TODO Figure out if there's any way clang will
+    // see a passed-in defined array as a compile-time constant expression
     if (_JIT_LENGTH > 1){
         int uopcode = uopcode_array[1];
         UOP_STAT_INC(uopcode, execution_count);
