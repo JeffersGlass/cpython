@@ -60,6 +60,7 @@ PRE = """
 #define super(name) static int SUPER_##name
 #define family(name, ...) static int family_##name
 #define pseudo(name) static int pseudo_##name
+#define macro(name) static int SUPER_##name
 
 /* Annotations */
 #define guard
