@@ -339,12 +339,11 @@ class Parser(PLexer):
                                 res = Macro(tkn.text, uops)
                                 return res
         return None
-        
+
     @contextual
     def super_def(self) -> SuperNode | None:
         if tkn := self.expect(lx.SUPER):
             if self.expect(lx.LPAREN):
-                if tkn := self.expect(lx.IDENTIFIER):
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if uops := self.uops():
@@ -352,7 +351,7 @@ class Parser(PLexer):
                                 res = SuperNode(tkn.text, uops)
                                 return res
         return None
-   
+
     def uops(self) -> list[UOp] | None:
         if uop := self.uop():
             uop = cast(UOp, uop)
