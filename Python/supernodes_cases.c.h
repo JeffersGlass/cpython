@@ -7,10 +7,64 @@
             #error "This file is for Tier 2 only"
         #endif
         #define TIER_TWO 2
-        case _COPY_PLUS__TO_BOOL_BOOL: {
+        case _RETURN_VALUE_PLUS__LOAD_FAST_5: {
         }
-        case _LOAD_FAST_0_PLUS__GUARD_TYPE_VERSION: {
+        case _RESUME_CHECK_PLUS__LOAD_CONST_INLINE: {
         }
-        case _GUARD_NOS_INT_PLUS__BINARY_OP_ADD_INT: {
+        case _UNPACK_SEQUENCE_TWO_TUPLE_PLUS__STORE_FAST_4: {
+        }
+        case _SET_IP_PLUS__BINARY_OP: {
+        }
+        case _BINARY_OP_PLUS__CHECK_VALIDITY: {
+        }
+        case _BINARY_OP_ADD_FLOAT_PLUS__STORE_FAST_3: {
+        }
+        case _BINARY_OP_ADD_INT_PLUS__SET_IP: {
+        }
+        case _BINARY_OP_ADD_INT_PLUS__LOAD_CONST_INLINE_BORROW: {
+        }
+        case _BINARY_OP_ADD_INT_PLUS__LOAD_FAST_0: {
+        }
+        case _BINARY_OP_MULTIPLY_INT_PLUS__LOAD_CONST_INLINE_BORROW: {
+        }
+        case _CHECK_STACK_SPACE_OPERAND_PLUS__INIT_CALL_PY_EXACT_ARGS_2: {
+        }
+        case _CHECK_VALIDITY_PLUS__RETURN_VALUE: {
+        }
+        case _CHECK_VALIDITY_PLUS__LOAD_FAST_0: {
+        }
+        case _GUARD_BOTH_INT_PLUS__BINARY_OP_ADD_INT: {
+        }
+        case _GUARD_NOS_INT_PLUS__LOAD_CONST_INLINE_BORROW: {
+        }
+        case _INIT_CALL_PY_EXACT_ARGS_2_PLUS__SAVE_RETURN_OFFSET: {
+        }
+        case _JUMP_TO_TOP_PLUS__TIER2_RESUME_CHECK: {
+        }
+        case _LOAD_CONST_INLINE_PLUS__LOAD_FAST_0: {
+        }
+        case _LOAD_CONST_INLINE_BORROW_PLUS__BINARY_OP_ADD_INT: {
+        }
+        case _LOAD_FAST_0_PLUS__GUARD_NOS_INT: {
+        }
+        case _LOAD_FAST_0_PLUS__LOAD_FAST_1: {
+        }
+        case _LOAD_FAST_1_PLUS__BINARY_OP_ADD_INT: {
+        }
+        case _LOAD_FAST_1_PLUS__GUARD_BOTH_INT: {
+        }
+        case _LOAD_FAST_3_PLUS__CHECK_FUNCTION: {
+        }
+        case _PUSH_FRAME_PLUS__RESUME_CHECK: {
+        }
+        case _SAVE_RETURN_OFFSET_PLUS__PUSH_FRAME: {
+        }
+        case _STORE_FAST_3_PLUS__JUMP_TO_TOP: {
+        }
+        case _STORE_FAST_4_PLUS__STORE_FAST_5: {
+        }
+        case _STORE_FAST_5_PLUS__LOAD_FAST_3: {
+        }
+        case _TIER2_RESUME_CHECK_PLUS__SET_IP: {
         }
 #undef TIER_TWO

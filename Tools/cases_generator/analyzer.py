@@ -3,6 +3,7 @@ import lexer
 import parser
 import re
 from typing import Optional, Self
+from warnings import warn
 
 
 @dataclass
@@ -815,10 +816,10 @@ def add_supernode(
                 assert False
     assert parts
     if conflict := uop_input_conflict(parts):
-        raise analysis_error(
-            f"SuperNode with UOps {', '.join(uop.name for uop in node.uops)} has conflicting {conflict}",
+        warn(analysis_error(
+            f"SuperNode with UOps {', '.join(uop.name for uop in node.uops)} was not added due to conflict {conflict}",
             node.tokens[0],
-        )
+        ))
     else:
         append_supernode(
             SuperNode.SEP.join(part.name for part in parts), parts, supernodes

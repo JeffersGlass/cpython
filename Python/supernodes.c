@@ -1,3 +1,4 @@
+
 // This file contains instruction definitions.
 // It is read by generators stored in Tools/cases_generator/
 // to generate Python/generated_cases.c.h and others.
@@ -51,6 +52,7 @@
 #define super(name) static int SUPER_##name
 #define family(name, ...) static int family_##name
 #define pseudo(name) static int pseudo_##name
+#define macro(name) static int SUPER_##name
 
 /* Annotations */
 #define guard
@@ -139,10 +141,45 @@ dummy_func(
     switch (opcode) {
 
 // BEGIN BYTECODES //
-
-super(one) = COPY + TO_BOOL_BOOL;
-super(two) = _LOAD_FAST_0 + _GUARD_TYPE_VERSION;
-super(three) = _GUARD_NOS_INT + _BINARY_OP_ADD_INT;
+	super() = _RETURN_VALUE + _LOAD_FAST_5;
+	super() = _RESUME_CHECK + _LOAD_CONST_INLINE;
+	super() = _UNPACK_SEQUENCE_TWO_TUPLE + _STORE_FAST_4;
+	super() = _SET_IP + _BINARY_OP;
+	super() = _SET_IP + _CHECK_FUNCTION_VERSION;
+	super() = _SET_IP + _FOR_ITER_TIER_TWO;
+	super() = _BINARY_OP + _CHECK_VALIDITY;
+	super() = _BINARY_OP_ADD_FLOAT + _STORE_FAST_3;
+	super() = _BINARY_OP_ADD_INT + _SET_IP;
+	super() = _BINARY_OP_ADD_INT + _BINARY_OP_MULTIPLY_INT;
+	super() = _BINARY_OP_ADD_INT + _LOAD_CONST_INLINE_BORROW;
+	super() = _BINARY_OP_ADD_INT + _LOAD_FAST_0;
+	super() = _BINARY_OP_MULTIPLY_INT + _LOAD_CONST_INLINE_BORROW;
+	super() = _CHECK_FUNCTION + _LOAD_CONST_INLINE_WITH_NULL;
+	super() = _CHECK_FUNCTION_EXACT_ARGS + _CHECK_STACK_SPACE_OPERAND;
+	super() = _CHECK_FUNCTION_VERSION + _CHECK_FUNCTION_EXACT_ARGS;
+	super() = _CHECK_STACK_SPACE_OPERAND + _INIT_CALL_PY_EXACT_ARGS_2;
+	super() = _CHECK_VALIDITY + _RETURN_VALUE;
+	super() = _CHECK_VALIDITY + _UNPACK_SEQUENCE_TWO_TUPLE;
+	super() = _CHECK_VALIDITY + _LOAD_FAST_0;
+	super() = _FOR_ITER_TIER_TWO + _CHECK_VALIDITY;
+	super() = _GUARD_BOTH_INT + _BINARY_OP_ADD_INT;
+	super() = _GUARD_NOS_INT + _LOAD_CONST_INLINE_BORROW;
+	super() = _INIT_CALL_PY_EXACT_ARGS_2 + _SAVE_RETURN_OFFSET;
+	super() = _JUMP_TO_TOP + _TIER2_RESUME_CHECK;
+	super() = _LOAD_CONST_INLINE + _LOAD_FAST_0;
+	super() = _LOAD_CONST_INLINE_BORROW + _SET_IP;
+	super() = _LOAD_CONST_INLINE_BORROW + _BINARY_OP_ADD_INT;
+	super() = _LOAD_FAST_0 + _GUARD_NOS_INT;
+	super() = _LOAD_FAST_0 + _LOAD_FAST_1;
+	super() = _LOAD_FAST_1 + _BINARY_OP_ADD_INT;
+	super() = _LOAD_FAST_1 + _GUARD_BOTH_INT;
+	super() = _LOAD_FAST_3 + _CHECK_FUNCTION;
+	super() = _PUSH_FRAME + _RESUME_CHECK;
+	super() = _SAVE_RETURN_OFFSET + _PUSH_FRAME;
+	super() = _STORE_FAST_3 + _JUMP_TO_TOP;
+	super() = _STORE_FAST_4 + _STORE_FAST_5;
+	super() = _STORE_FAST_5 + _LOAD_FAST_3;
+	super() = _TIER2_RESUME_CHECK + _SET_IP;
 
 // END BYTECODES //
 
@@ -158,3 +195,5 @@ super(three) = _GUARD_NOS_INT + _BINARY_OP_ADD_INT;
  unbound_local_error:
     ;
 }
+
+// Future families go below this point //
