@@ -223,7 +223,7 @@ class SuperNode:
 
     def why_not_viable(self) -> str | None:
         return ", ".join(
-            uop.why_not_viable()
+            uop.name + ":" + uop.why_not_viable()
             for uop in self.uops
             if uop.why_not_viable() is not None
         )
@@ -805,9 +805,12 @@ def add_supernode(
     for part in node.uops:
         match part:
             case parser.OpName():
-                if part.name not in uops:
-                    analysis_error(f"No Uop named {part.name}", node.tokens[0])
-                parts.append(uops[part.name])
+                if part.name in uops:
+                    parts.append(uops[part.name])
+                elif part.name.strip("_") in uops:
+                    parts.append(uops[part.name.strip("_")])
+                else:
+                    raise analysis_error(f"No Uop named {part.name}", node.tokens[0])
             case _:
                 assert False
     assert parts
