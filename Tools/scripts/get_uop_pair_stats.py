@@ -206,7 +206,7 @@ def calculate_supernodes(stats: Stats, verbose: bool = False):
     #print(to_add)
 
 def update_supernodes_c(supernodes: list[tuple[str]], verbose: bool = False) -> None:
-    new_supers = (f"super() = ({" + ".join(uop for uop in node)});" for node in supernodes)
+    new_supers = (f"super() = {" + ".join(uop for uop in node)};" for node in supernodes)
 
     with open(DEFAULT_SUPERNODES_INPUT, "w") as f:
         f.writelines(PRE)
