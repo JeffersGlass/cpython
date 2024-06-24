@@ -324,7 +324,7 @@ class Parser(PLexer):
     @contextual
     def op(self) -> OpName | None:
         if tkn := self.expect(lx.IDENTIFIER):
-            return OpName(tkn.text)
+            return OpName(f"{"_" if not tkn.text.startswith("_") else ""}{tkn.text}")
         return None
 
     @contextual
@@ -339,12 +339,11 @@ class Parser(PLexer):
                                 res = Macro(tkn.text, uops)
                                 return res
         return None
-        
+
     @contextual
     def super_def(self) -> SuperNode | None:
         if tkn := self.expect(lx.SUPER):
             if self.expect(lx.LPAREN):
-                if tkn := self.expect(lx.IDENTIFIER):
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if uops := self.uops():
@@ -352,7 +351,7 @@ class Parser(PLexer):
                                 res = SuperNode(tkn.text, uops)
                                 return res
         return None
-   
+
     def uops(self) -> list[UOp] | None:
         if uop := self.uop():
             uop = cast(UOp, uop)
