@@ -48,7 +48,7 @@ POST = """
 #endif
 
 #endif // Py_SWITCH_JIT_H
-# """
+#"""
 
 
 def generate_jit_switch_file(
