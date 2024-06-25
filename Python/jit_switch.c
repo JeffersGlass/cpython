@@ -43,15 +43,6 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
             }
             break;
-        case _UNPACK_SEQUENCE_TWO_TUPLE:
-            switch (uops[start_index + 1].opcode) {
-                case _STORE_FAST_4:
-                    return (SuperNode) {.index = _UNPACK_SEQUENCE_TWO_TUPLE_PLUS__STORE_FAST_4, .length = 2};
-                    break;
-                default:
-                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
-            }
-            break;
         case _SET_IP:
             switch (uops[start_index + 1].opcode) {
                 case _BINARY_OP:
@@ -119,15 +110,6 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
                     break;
                 case _LOAD_FAST_0:
                     return (SuperNode) {.index = _CHECK_VALIDITY_PLUS__LOAD_FAST_0, .length = 2};
-                    break;
-                default:
-                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
-            }
-            break;
-        case _GUARD_BOTH_INT:
-            switch (uops[start_index + 1].opcode) {
-                case _BINARY_OP_ADD_INT:
-                    return (SuperNode) {.index = _GUARD_BOTH_INT_PLUS__BINARY_OP_ADD_INT, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};

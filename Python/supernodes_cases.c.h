@@ -11,8 +11,6 @@
         }
         case _RESUME_CHECK_PLUS__LOAD_CONST_INLINE: {
         }
-        case _UNPACK_SEQUENCE_TWO_TUPLE_PLUS__STORE_FAST_4: {
-        }
         case _SET_IP_PLUS__BINARY_OP: {
         }
         case _BINARY_OP_PLUS__CHECK_VALIDITY: {
@@ -32,8 +30,6 @@
         case _CHECK_VALIDITY_PLUS__RETURN_VALUE: {
         }
         case _CHECK_VALIDITY_PLUS__LOAD_FAST_0: {
-        }
-        case _GUARD_BOTH_INT_PLUS__BINARY_OP_ADD_INT: {
         }
         case _GUARD_NOS_INT_PLUS__LOAD_CONST_INLINE_BORROW: {
         }
