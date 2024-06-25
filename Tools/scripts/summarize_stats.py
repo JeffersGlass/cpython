@@ -750,7 +750,7 @@ def pair_count_section(prefix: str, title=None) -> Section:
             cumulative += count
             rows.append(
                 (
-                    f"{opcode_i} {opcode_j}",
+                    f"{opcode_i} / {opcode_j}",
                     Count(count),
                     Ratio(count, total),
                     Ratio(cumulative, total),

@@ -150,6 +150,8 @@ class _Target(typing.Generic[_S, _R]):
         ]
         if self.pystats:
             args.append("-DPy_STATS=1")
+        if len(opnames) > 1:
+            args.append(f"-D_JIT_SUPERNODE_ID={SUPEROP_SEP.join(opnames)}")
         if self.ghccc:
             # This is a bit of an ugly workaround, but it makes the code much
             # smaller and faster, so it's worth it. We want to use the GHC

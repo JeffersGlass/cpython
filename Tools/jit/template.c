@@ -103,13 +103,21 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
     PATCH_VALUE(uint16_t, _exit_index, _JIT_EXIT_INDEX)
 
     OPT_STAT_INC(uops_executed);
-
     int uopcode = uopcode_array[0];
+
+#if _JIT_LENGTH <= 1
     UOP_STAT_INC(uopcode, execution_count);
 
 #ifdef Py_STATS
     UOP_PAIR_INC(uopcode, current_executor->last_uop);
     current_executor->last_uop = uopcode;
+#endif
+#else
+    UOP_STAT_INC(_JIT_SUPERNODE_ID, execution_count);
+#ifdef Py_STATS
+    UOP_PAIR_INC(_JIT_SUPERNODE_ID, current_executor->last_uop);
+    current_executor->last_uop = _JIT_SUPERNODE_ID;
+#endif
 #endif
 
     // The actual instruction definitions (only one will be used):
