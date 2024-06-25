@@ -1,13 +1,13 @@
 import argparse
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TypeAlias
+
 
 from summarize_stats import Stats, DEFAULT_DIR, load_raw_data
 ROOT = Path(__file__).parent.parent.parent
 DEFAULT_SUPERNODES_INPUT = (ROOT / "Python/supernodes.c").absolute().as_posix()
 
-PRE = """
-// This file contains instruction definitions.
+PRE = """// This file contains instruction definitions.
 // It is read by generators stored in Tools/cases_generator/
 // to generate Python/generated_cases.c.h and others.
 // Note that there is some dummy C code at the top and bottom of the file
@@ -174,29 +174,32 @@ THRESHHOLD_DROP = .001
 
 type PairCount = dict[tuple[str, str], int]
 
-def output_pair_stats(inputs: list[Path], verbose: bool = False):
+def output_pair_stats(inputs: list[Path], dry_run = False, verbose: bool = False):
     match len(inputs):
         case 1:
             data = load_raw_data(Path(inputs[0]))
             stats = Stats(data)
             new_supers = calculate_supernodes(stats, verbose)
-            update_supernodes_c(new_supers, verbose)
+            if not dry_run: update_supernodes_c(new_supers, verbose)
 
 def calculate_supernodes(stats: Stats, verbose: bool = False):
     raw_pair_counts = get_pairs(stats, verbose)
     pair_counts = filter_unusable_ops(raw_pair_counts)
+    max_pair_length = max(len(str(uop)) for uop in pair_counts.keys())
     #current_supernodes_seen = set(name for name in stats.get_opcode_stats("uops").get_execution_counts().keys() if "_PLUS_" in name)
     total = sum(value for value in pair_counts.values())
     if not verbose:
         to_add = {k: v for k,v  in pair_counts.items() if (v / total) > THRESHHOLD_ADD}
     else:
         to_add = {}
+        messages = []
         for k, v in pair_counts.items():
             if (percent := (v / total)) > THRESHHOLD_ADD:
-                print(f"ADDED Pair {k} ({percent*100:.2}% of supernodes)")
+                messages.append(("   ADDED Pair {0:<{1}}    {2}%".format(str(k), max_pair_length, round(percent*100, 2)), percent))
                 to_add[k] = v
             else:
-                print(f"DECLINED Pair {k} (makes up {percent*100:.2}% of supernodes)")
+                messages.append(("DECLINED Pair {0:<{1}}    {2}%".format(str(k), max_pair_length, round(percent*100, 2)), percent))
+        print("\n".join(m[0] for m in sorted(messages, key = lambda m: m[1], reverse=True)))
         print(f"Added {len(to_add)} of {len(raw_pair_counts)} possible supernodes that make up more than {100*THRESHHOLD_ADD}% of nodes and are viable")
     return to_add
 
@@ -258,9 +261,13 @@ def main():
         "-v", "--verbose", action="store_true", help="show information on superinstructions being added"
     )
 
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Do not update supernodes.c"
+    )
+
     args = parser.parse_args()
 
-    output_pair_stats(args.inputs, verbose = args.verbose)
+    output_pair_stats(args.inputs, args.dry_run, verbose = args.verbose)
 
 
 if __name__ == "__main__":
