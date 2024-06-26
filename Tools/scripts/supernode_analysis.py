@@ -404,6 +404,12 @@ def main():
         "iterate", help="Rebuild and re-stat python builds to identify supernodes"
     )
 
+    # Args:
+    #   -v verbose
+    #   -i, --iterations: Max number of interations
+    #   -B, --biesect-segfaults: Identify segfaulting supernodes by bisecint
+    #   -b, --bisect-failures: Identify supernodes that fail tests by biesecting. Implies -B
+
     args = parser.parse_args()
 
     u = SuperNodeAnalysis(dry_run=args.dry_run, verbose=args.verbose)
