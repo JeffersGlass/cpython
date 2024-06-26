@@ -176,21 +176,25 @@ type PairCount = dict[tuple[str, str], int]
 
 class UopStatAnalysis:
 
-    def output_pair_stats(self, inputs: list[Path], dry_run = False, verbose: bool = False):
+    def __init__(self, /, dry_run = False, verbose = False):
+        self.dry_run = dry_run
+        self.verbose = verbose
+
+    def output_pair_stats(self, inputs: list[Path]):
         match len(inputs):
             case 1:
                 data = load_raw_data(Path(inputs[0]))
                 stats = Stats(data)
-                new_supers = self.calculate_supernodes(stats, verbose)
-                if not dry_run: self.update_supernodes_c(new_supers, verbose)
+                new_supers = self.calculate_supernodes(stats)
+                if not self.dry_run: self.update_supernodes_c(new_supers)
 
-    def calculate_supernodes(self, stats: Stats, verbose: bool = False):
-        raw_pair_counts = self.get_pairs(stats, verbose)
+    def calculate_supernodes(self, stats: Stats):
+        raw_pair_counts = self.get_pairs(stats)
         pair_counts = self.filter_unusable_ops(raw_pair_counts)
         max_pair_length = max(len(str(uop)) for uop in pair_counts.keys())
         #current_supernodes_seen = set(name for name in stats.get_opcode_stats("uops").get_execution_counts().keys() if "_PLUS_" in name)
         total = sum(value for value in pair_counts.values())
-        if not verbose:
+        if not self.verbose:
             to_add = {k: v for k,v  in pair_counts.items() if (v / total) > THRESHHOLD_ADD}
         else:
             to_add = {}
@@ -211,7 +215,7 @@ class UopStatAnalysis:
         #print(current_supernodes_seen)
         #print(to_add)
 
-    def update_supernodes_c(self, supernodes: list[tuple[str]], verbose: bool = False) -> None:
+    def update_supernodes_c(self, supernodes: list[tuple[str]]) -> None:
         new_supers = (f"super() = {" + ".join(uop for uop in node)};" for node in supernodes)
 
         with open(DEFAULT_SUPERNODES_INPUT, "w") as f:
@@ -270,8 +274,8 @@ def main():
 
     args = parser.parse_args()
 
-    u = UopStatAnalysis()
-    u.output_pair_stats(args.inputs, args.dry_run, verbose = args.verbose)
+    u = UopStatAnalysis(dry_run=args.dry_run, verbose=args.verbose)
+    u.output_pair_stats(args.inputs)
 
 
 if __name__ == "__main__":
