@@ -238,13 +238,15 @@ class SuperNodeAnalysis(DPrintMixin):
                             percent,
                         )
                     )
-            print(
+            self.dprint(
+                1,
                 "\n".join(
                     m[0] for m in sorted(messages, key=lambda m: m[1], reverse=True)
-                )
+                ),
             )
-            print(
-                f"Added {len(to_add)} of {len(raw_pair_counts)} possible supernodes that make up more than {100*THRESHHOLD_ADD}% of nodes and are viable"
+            self.dprint(
+                1,
+                f"Added {len(to_add)} of {len(raw_pair_counts)} possible supernodes that make up more than {100*THRESHHOLD_ADD}% of nodes and are viable",
             )
         return to_add
 
@@ -276,7 +278,9 @@ class SuperNodeAnalysis(DPrintMixin):
             result = {}
             for k, v in pairs.items():
                 if (fail := k[0]) in forbidden or (fail := k[1]) in forbidden:
-                    print(f"Rejecting pair {k} because {fail} is forbidden in superops")
+                    self.dprint(
+                        1, f"Rejecting pair {k} because {fail} is forbidden in superops"
+                    )
                 else:
                     result[k] = v
 
@@ -292,7 +296,15 @@ class SuperNodeIterator(DPrintMixin):
         "stderr": subprocess.STDOUT,
     }
 
-    def __init__(self, /, verbose=False, threads=2, pyperf_command=None, iterations=5):
+    def __init__(
+        self,
+        /,
+        verbose=False,
+        threads=2,
+        pyperf_command=None,
+        iterations=5,
+        benchmarks=None,
+    ):
         self.verbose = verbose
         if self.verbose >= 2:
             # Send build output to the terminal
@@ -301,6 +313,7 @@ class SuperNodeIterator(DPrintMixin):
         self.threads = threads
         self.pyperf_command = pyperf_command
         self.iterations = iterations
+        self.benchmarks = benchmarks
 
     def iterate_supernodes(self):
         print(
@@ -316,11 +329,26 @@ class SuperNodeIterator(DPrintMixin):
             # Generate new set of supernodes
 
             self.generate_supernodes_from_stats()
-            # Continue until ???
+
+            # TODO Run tests and gather failure types
+            # Bail on specific failure types specified by args
 
     def build_python(self) -> None:
         self.dprint(1, "Building python")
-        commands = [
+        self.run_command_list([["make", "distclean"]])
+        subprocess.call(
+            [
+                "./configure",
+                "--enable-experimental-jit",
+                "--enable-pystats",
+            ]
+        )
+
+        # self.run_command_list([["make", "regen-uop-ids"] "regen-uop-metadata", "regen-exeuctor-cases", "regen-jit"]])
+        # self.call_command_list([["./configure","--enable-experimental-jit","--enable-pystats",],])
+        self.run_command_list([["make", f"-j{self.threads}"]])
+
+        """         commands = [
             ["make", "distclean"],
             [
                 "./configure",
@@ -331,9 +359,9 @@ class SuperNodeIterator(DPrintMixin):
                 "make",
                 f"-j{self.threads}",
             ],
-        ]
+        ] """
 
-        self.run_command_list(commands)
+        # self.run_command_list(commands)
 
     def generate_stats(self) -> None:
         self.dprint(1, "Generating statistics")
@@ -347,9 +375,14 @@ class SuperNodeIterator(DPrintMixin):
                 "-m",
                 "pyperformance",
                 "run",
-                "-p",
-                "./python",
+                "--python",
+                str(CPYTHON_ROOT_DIR / "python"),
             ]
+            if self.verbose:
+                self.pyperf_command.append(f"-{'v'*self.verbose}")
+            if self.benchmarks:
+                print(f">>> Extending with benchmarks {self.benchmarks}")
+                self.pyperf_command.extend(["-b", self.benchmarks])
         else:
             if type(self.pyperf_command) == str:
                 self.pyperf_command = self.pyperf_command.split(" ")
@@ -362,6 +395,7 @@ class SuperNodeIterator(DPrintMixin):
                 os.remove(os.path.join(directory, file))
         except FileNotFoundError:
             pass
+
         self.call_command_list(
             [
                 ["python", "-m", "venv", "venv"],
@@ -374,9 +408,15 @@ class SuperNodeIterator(DPrintMixin):
         )
 
     def generate_supernodes_from_stats(self):
+        self.dprint(1, "Generating supernodes from stats")
         analysis = SuperNodeAnalysis()
-        stats = analysis.get_stats()
-        new_nodes = analysis.calculate_supernodes(stats)
+        stats = analysis.get_stats([DEFAULT_DIR])
+        new_supers = analysis.calculate_supernodes(stats)
+        analysis.update_supernodes_c(new_supers)
+        subprocess.run(["make", "regen-uop-ids"])
+        subprocess.run(["make", "regen-uop-metadata"])
+        subprocess.run(["make", "regen-executor-cases"])
+        subprocess.run(["make", "regen-jit"])
 
     def do_command_func(self, command_list: list[str], func, kwargs=None):
         for command in command_list:
@@ -400,6 +440,7 @@ def _iterate(args: argparse.Namespace) -> None:
         threads=args.jobs,
         verbose=args.verbose,
         iterations=args.iterations,
+        benchmarks=args.benchmarks,
     )
     manager.iterate_supernodes()
 
@@ -478,10 +519,16 @@ def main():
     )
 
     iterate_parser.add_argument(
-        "-b",
         "--bisect-failures",
         action="store_true",
         help="Identify supernodes that fail tests by bisecting and attempt to continue running. Implies -B",
+    )
+
+    iterate_parser.add_argument(
+        "-b",
+        "--benchmarks",
+        type=str,
+        help="Which benchmarks to run",
     )
 
     iterate_parser.set_defaults(func=_iterate)
@@ -494,4 +541,6 @@ if __name__ == "__main__":
     main()
     # I = SuperNodeIterator(verbose=True, threads=8)
     # I.iterate_supernodes()
-    # subprocess.call(["python", "-m", "venv", "venv"])
+    # subprocess.call(["./configure","--enable-experimental-jit","--enable-pystats",])
+
+    # subprocess.call(["./venv/bin/python", "-m", "pyperformance", "run", "--python", "/home/jglass/Documents/cpython/python","-b", "spectral_norm"])
