@@ -53,6 +53,9 @@ def parse_files(filenames: list[str]) -> list[AstNode]:
                 break
         del psr.tokens[psr.getpos() - 1 :]
 
+        # Skip files with no instructions present
+        if (start >= len(psr.tokens)): continue
+
         # Parse from start
         psr.setpos(start)
         thing_first_token = psr.peek()
