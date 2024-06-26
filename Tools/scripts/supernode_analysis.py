@@ -335,7 +335,7 @@ class SuperNodeIterator(DPrintMixin):
 
     def build_python(self) -> None:
         self.dprint(1, "Building python")
-        self.run_command_list([["make", "distclean"]])
+        subprocess.call(["make", "clean"])
         subprocess.call(
             [
                 "./configure",
@@ -387,7 +387,7 @@ class SuperNodeIterator(DPrintMixin):
             if type(self.pyperf_command) == str:
                 self.pyperf_command = self.pyperf_command.split(" ")
 
-        # delete
+        # delete old pystats
         try:
             directory = "/tmp/py_stats"
             stats_files = os.listdir(directory)
@@ -413,20 +413,21 @@ class SuperNodeIterator(DPrintMixin):
         stats = analysis.get_stats([DEFAULT_DIR])
         new_supers = analysis.calculate_supernodes(stats)
         analysis.update_supernodes_c(new_supers)
-        subprocess.run(["make", "regen-uop-ids"])
-        subprocess.run(["make", "regen-uop-metadata"])
-        subprocess.run(["make", "regen-executor-cases"])
-        subprocess.run(["make", "regen-jit"])
+        subprocess.check_call(["make", "regen-uop-ids"])
+        subprocess.check_call(["make", "regen-uop-metadata"])
+        subprocess.check_call(["make", "regen-executor-cases"])
+        subprocess.check_call(["make", "regen-jit"])
 
-    def do_command_func(self, command_list: list[str], func, kwargs=None):
+    def do_command_func(self, command_list: list[str], func, kwargs=None, ignore_errors = False):
         for command in command_list:
             self.dprint(1, f"Running {command=} with function {func.__name__}")
             if kwargs == None:
                 kwargs = self.default_kwargs
-            _ = func(command, **kwargs)
+            result: subprocess.CompletedProcess = func(command, **kwargs)
+            if not ignore_errors and result.returncode: raise RuntimeError(f"Command {command} exiting with error code {result.returncode}")
 
     run_command_list = functools.partialmethod(do_command_func, func=subprocess.run)
-    call_command_list = functools.partialmethod(do_command_func, func=subprocess.call)
+    call_command_list = functools.partialmethod(do_command_func, func=subprocess.call, ignore_errors=True)
 
 
 def _update(args: argparse.Namespace) -> None:
@@ -538,8 +539,9 @@ def main():
 
 
 if __name__ == "__main__":
+    #I = SuperNodeIterator(verbose=True, threads=8)
+    #I.generate_supernodes_from_stats()
     main()
-    # I = SuperNodeIterator(verbose=True, threads=8)
     # I.iterate_supernodes()
     # subprocess.call(["./configure","--enable-experimental-jit","--enable-pystats",])
 

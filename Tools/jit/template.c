@@ -154,9 +154,9 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
 #include "executor_cases.c.h"
             default:
                 Py_UNREACHABLE();
+        }
     }
 
-    }
     if (_JIT_LENGTH > 2){
         int uopcode = uopcode_array[2];
         UOP_STAT_INC(uopcode, execution_count);
@@ -167,9 +167,10 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
 #include "executor_cases.c.h"
             default:
                 Py_UNREACHABLE();
+        }
     }
 
-    }    // END SUPEROP HANDLERS //
+    // END SUPEROP HANDLERS //
 
     // end loop over opcodes
 

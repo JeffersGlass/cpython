@@ -26,9 +26,9 @@ template_section = """
 #include "executor_cases.c.h"
             default:
                 Py_UNREACHABLE();
+        }}
     }}
-
-    }}"""
+    """
 
 
 def update_jit_template(
@@ -52,10 +52,10 @@ def update_jit_template(
         templates = []
 
     with open(template_file, "w") as f:
-        write_header(__file__, filenames, f)
         f.writelines(header)
         for t in templates:
             f.writelines(t)
+        f.write("\n\n")
         f.writelines(footer)
 
 

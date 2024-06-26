@@ -803,7 +803,17 @@ def add_supernode(
     parts: list[Uop | Skip] = []
     if len(node.uops) < 2:
         return
+
+    #pre-split existing superops
+    split_uops = []
     for part in node.uops:
+        if SuperNode.SEP in part.name:
+            split_uops.extend(replace(part, name=new_name) for new_name in part.name.split(SuperNode.SEP))
+        else:
+            split_uops.append(part)
+
+
+    for part in split_uops:
         match part:
             case parser.OpName():
                 if part.name in uops:
