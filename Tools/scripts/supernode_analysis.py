@@ -185,13 +185,16 @@ class SuperNodeAnalysis:
     def output_pair_stats(self, inputs: list[Path]):
         match len(inputs):
             case 1:
-                data = load_raw_data(Path(inputs[0]))
-                stats = Stats(data)
+                stats = self.get_stats(inputs)
                 new_supers = self.calculate_supernodes(stats)
                 if not self.dry_run:
                     self.update_supernodes_c(new_supers)
 
-    def calculate_supernodes(self, stats: Stats):
+    def get_stats(self, inputs: list[Path]) -> Stats:
+        data = load_raw_data(Path(inputs[0]))
+        return Stats(data)
+
+    def calculate_supernodes(self, stats: Stats) -> PairCount:
         raw_pair_counts = self.get_pairs(stats)
         pair_counts = self.filter_unusable_ops(raw_pair_counts)
         max_pair_length = max(len(str(uop)) for uop in pair_counts.keys())
@@ -329,6 +332,7 @@ class SuperNodeIterator:
         else:
             if type(self.pyperf_command) == str:
                 self.pyperf_command = self.pyperf_command.split(" ")
+        shutil.rmtree("/tmp/py_stats")
         self.run_command_list(
             [
                 ["python", "-m", "venv", "venv"],
@@ -342,7 +346,9 @@ class SuperNodeIterator:
         )
 
     def generate_supernodes_from_stats(self):
-        pass
+        analysis = SuperNodeAnalysis()
+        stats = analysis.get_stats()
+        new_nodes = analysis.calculate_supernodes(stats)
 
     def run_command_list(
         self, command_list: list[str], func=subprocess.run, kwargs=None
