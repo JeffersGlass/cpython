@@ -1,8 +1,10 @@
 import argparse
 import functools
+import os
 from pathlib import Path
 import shutil
 import subprocess
+import typing
 
 from summarize_stats import Stats, DEFAULT_DIR, load_raw_data
 
@@ -178,7 +180,15 @@ THRESHHOLD_DROP = 0.001
 type PairCount = dict[tuple[str, str], int]
 
 
-class SuperNodeAnalysis:
+class DPrintMixin:
+    verbose = 0
+
+    def dprint(self, level, *args, **kwargs):
+        if level <= self.verbose:
+            print(*args, **kwargs)
+
+
+class SuperNodeAnalysis(DPrintMixin):
     def __init__(self, /, dry_run=False, verbose=False):
         self.dry_run = dry_run
         self.verbose = verbose
@@ -238,10 +248,6 @@ class SuperNodeAnalysis:
             )
         return to_add
 
-        # print(stats.get_opcode_stats("uops").get_execution_counts())
-        # print(current_supernodes_seen)
-        # print(to_add)
-
     def update_supernodes_c(self, supernodes: list[tuple[str]]) -> None:
         new_supers = (
             f"super() = {" + ".join(uop for uop in node)};" for node in supernodes
@@ -277,30 +283,43 @@ class SuperNodeAnalysis:
             return result
 
 
-class SuperNodeIterator:
+class SuperNodeIterator(DPrintMixin):
 
     default_kwargs = {
         "cwd": CPYTHON_ROOT_DIR,
         "shell": True,
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.STDOUT,
     }
 
-    def __init__(self, /, verbose=False, threads=2, pyperf_command=None):
+    def __init__(self, /, verbose=False, threads=2, pyperf_command=None, iterations=5):
         self.verbose = verbose
+        if self.verbose >= 2:
+            # Send build output to the terminal
+            del self.default_kwargs["stdout"]
+            del self.default_kwargs["stderr"]
         self.threads = threads
         self.pyperf_command = pyperf_command
+        self.iterations = iterations
 
     def iterate_supernodes(self):
-        # Build Python with current nodes/supernodes
-        self.build_python()
+        print(
+            f"Beginning supernode generation process for {self.iterations} iterations max"
+        )
+        for gen in range(self.iterations):
+            print(f"Starting supernode generation {gen+1} of {self.iterations}")
+            # Build Python with current nodes/supernodes
+            self.build_python()
 
-        # Generate Stats
-        self.generate_stats()
-        # Generate new set of supernodes
+            # Generate Stats
+            self.generate_stats()
+            # Generate new set of supernodes
 
-        self.generate_supernodes_from_stats()
-        # Continue until ???
+            self.generate_supernodes_from_stats()
+            # Continue until ???
 
     def build_python(self) -> None:
+        self.dprint(1, "Building python")
         commands = [
             ["make", "distclean"],
             [
@@ -317,6 +336,7 @@ class SuperNodeIterator:
         self.run_command_list(commands)
 
     def generate_stats(self) -> None:
+        self.dprint(1, "Generating statistics")
         # delete prexisting venv
         if (venv := Path("./venv")).exists() and venv.is_dir():
             shutil.rmtree(venv)
@@ -333,8 +353,13 @@ class SuperNodeIterator:
         else:
             if type(self.pyperf_command) == str:
                 self.pyperf_command = self.pyperf_command.split(" ")
+
+        # delete
         try:
-            shutil.rmtree("/tmp/py_stats")
+            directory = "/tmp/py_stats"
+            stats_files = os.listdir(directory)
+            for file in stats_files:
+                os.remove(os.path.join(directory, file))
         except FileNotFoundError:
             pass
         self.call_command_list(
@@ -355,8 +380,7 @@ class SuperNodeIterator:
 
     def do_command_func(self, command_list: list[str], func, kwargs=None):
         for command in command_list:
-            if self.verbose:
-                print(f"Running {command=} with function {func}")
+            self.dprint(1, f"Running {command=} with function {func.__name__}")
             if kwargs == None:
                 kwargs = self.default_kwargs
             _ = func(command, **kwargs)
@@ -365,12 +389,38 @@ class SuperNodeIterator:
     call_command_list = functools.partialmethod(do_command_func, func=subprocess.call)
 
 
+def _update(args: argparse.Namespace) -> None:
+    analysis = SuperNodeAnalysis(dry_run=args.dry_run, verbose=args.verbose)
+    analysis.output_pair_stats(args.inputs)
+
+
+def _iterate(args: argparse.Namespace) -> None:
+    manager = SuperNodeIterator(
+        pyperf_command=args.perf_command,
+        threads=args.jobs,
+        verbose=args.verbose,
+        iterations=args.iterations,
+    )
+    manager.iterate_supernodes()
+
+
 def main():
-    parser = argparse.ArgumentParser(prog="Tools for examining and updating supernodes")
+    parser = argparse.ArgumentParser(
+        prog="Tools for examining and updating supernodes", add_help=False
+    )
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="show additional debug information",
+    )
+
     subparsers = parser.add_subparsers(help="Sub-command help")
 
     update_parser = subparsers.add_parser(
-        "update", help="Update superinstructions based on pystats"
+        "update", help="Update superinstructions based on pystats", parents=[parser]
     )
 
     update_parser.add_argument(
@@ -388,32 +438,56 @@ def main():
     )
 
     update_parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="show information on superinstructions being added",
-    )
-
-    update_parser.add_argument(
         "--dry-run", action="store_true", help="Do not update supernodes.c"
     )
+
+    update_parser.set_defaults(func=_update)
 
     # -- Iterate --
 
     iterate_parser = subparsers.add_parser(
-        "iterate", help="Rebuild and re-stat python builds to identify supernodes"
+        "iterate",
+        help="Rebuild and re-stat python builds to identify supernodes",
+        parents=[parser],
     )
 
-    # Args:
-    #   -v verbose
-    #   -i, --iterations: Max number of interations
-    #   -B, --biesect-segfaults: Identify segfaulting supernodes by bisecint
-    #   -b, --bisect-failures: Identify supernodes that fail tests by biesecting. Implies -B
+    iterate_parser.add_argument(
+        "-i",
+        "--iterations",
+        type=int,
+        default=5,
+        help="Maximum number of generations to iterate",
+    )
+
+    iterate_parser.add_argument(
+        "--perf-command", type=str, help="Pyperf command to run to generate stats"
+    )
+
+    iterate_parser.add_argument(
+        "-j",
+        "--jobs",
+        type=int,
+        default=2,
+        help="Number of threads to run builds and tests with",
+    )
+
+    iterate_parser.add_argument(
+        "--bisect-sefaults",
+        action="store_true",
+        help="Identify segfaulting supernodes by bisecting and attempt to continue running.",
+    )
+
+    iterate_parser.add_argument(
+        "-b",
+        "--bisect-failures",
+        action="store_true",
+        help="Identify supernodes that fail tests by bisecting and attempt to continue running. Implies -B",
+    )
+
+    iterate_parser.set_defaults(func=_iterate)
 
     args = parser.parse_args()
-
-    u = SuperNodeAnalysis(dry_run=args.dry_run, verbose=args.verbose)
-    u.output_pair_stats(args.inputs)
+    args.func(args)
 
 
 if __name__ == "__main__":
