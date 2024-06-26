@@ -1,12 +1,12 @@
 import argparse
 from pathlib import Path
-from typing import TypeAlias
-
+import subprocess
 
 from summarize_stats import Stats, DEFAULT_DIR, load_raw_data
 
 ROOT = Path(__file__).parent.parent.parent
 DEFAULT_SUPERNODES_INPUT = (ROOT / "Python/supernodes.c").absolute().as_posix()
+CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
 
 PRE = """// This file contains instruction definitions.
 // It is read by generators stored in Tools/cases_generator/
@@ -271,6 +271,37 @@ class SuperNodeAnalysis:
 
             return result
 
+class SuperNodeIterator:
+
+        def __init__(self, /,  verbose=False, threads = 2):
+            self.verbose = verbose
+            self.threads = threads
+
+        def iterate_supernodes(self):
+            self.build_python()
+            #Build Python with current nodes/supernodes
+            #Generate Stats
+            #Generate new set of supernodes
+            #Continue until ???
+
+        def build_python(self):
+            commands = [
+                ["make", "distclean"],
+                ["./configure", "--enable-experimental-jit", "--enable-pystats",],
+                ["make", f"-j{self.threads}",]
+            ]
+
+            kwargs = {
+                "cwd": CPYTHON_ROOT_DIR,
+                "shell" :  True,
+            }
+
+            for command in commands:
+                print(f"Runing {command=}")
+                build_process = subprocess.run(command,
+                **kwargs
+                )
+
 
 def main():
     parser = argparse.ArgumentParser(description="Summarize pystats results")
@@ -307,4 +338,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    #main()
+    I = SuperNodeIterator(verbose=True, threads=8)
+    I.iterate_supernodes()
