@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+import shutil
 import subprocess
 
 from summarize_stats import Stats, DEFAULT_DIR, load_raw_data
@@ -271,36 +272,87 @@ class SuperNodeAnalysis:
 
             return result
 
+
 class SuperNodeIterator:
 
-        def __init__(self, /,  verbose=False, threads = 2):
-            self.verbose = verbose
-            self.threads = threads
+    default_kwargs = {
+        "cwd": CPYTHON_ROOT_DIR,
+        "shell": True,
+    }
 
-        def iterate_supernodes(self):
-            self.build_python()
-            #Build Python with current nodes/supernodes
-            #Generate Stats
-            #Generate new set of supernodes
-            #Continue until ???
+    def __init__(self, /, verbose=False, threads=2, pyperf_command=None):
+        self.verbose = verbose
+        self.threads = threads
+        self.pyperf_command = pyperf_command
 
-        def build_python(self):
-            commands = [
-                ["make", "distclean"],
-                ["./configure", "--enable-experimental-jit", "--enable-pystats",],
-                ["make", f"-j{self.threads}",]
+    def iterate_supernodes(self):
+        # Build Python with current nodes/supernodes
+        # self.build_python()
+
+        # Generate Stats
+        self.generate_stats()
+        # Generate new set of supernodes
+
+        self.generate_supernodes_from_stats()
+        # Continue until ???
+
+    def build_python(self) -> None:
+        commands = [
+            ["make", "distclean"],
+            [
+                "./configure",
+                "--enable-experimental-jit",
+                "--enable-pystats",
+            ],
+            [
+                "make",
+                f"-j{self.threads}",
+            ],
+        ]
+
+        self.run_command_list(commands)
+
+    def generate_stats(self) -> None:
+        # delete prexisting venv
+        if (venv := Path("./venv")).exists() and venv.is_dir():
+            shutil.rmtree(venv)
+
+        if self.pyperf_command == None:
+            self.pyperf_command = [
+                "./venv/bin/python",
+                "-m",
+                "pyperformance",
+                "run",
+                "-p",
+                "./python",
             ]
-
-            kwargs = {
+        else:
+            if type(self.pyperf_command) == str:
+                self.pyperf_command = self.pyperf_command.split(" ")
+        self.run_command_list(
+            [
+                ["python", "-m", "venv", "venv"],
+                ["./venv/bin/python", "-m", "pip", "install", "pyperformance"],
+                self.pyperf_command,
+            ],
+            kwargs={
                 "cwd": CPYTHON_ROOT_DIR,
-                "shell" :  True,
-            }
+            },
+            func=subprocess.call,
+        )
 
-            for command in commands:
-                print(f"Runing {command=}")
-                build_process = subprocess.run(command,
-                **kwargs
-                )
+    def generate_supernodes_from_stats(self):
+        pass
+
+    def run_command_list(
+        self, command_list: list[str], func=subprocess.run, kwargs=None
+    ):
+        for command in command_list:
+            if self.verbose:
+                print(f"Running {command=} with function {func}")
+            if kwargs == None:
+                kwargs = self.default_kwargs
+            _ = func(command, **kwargs)
 
 
 def main():
@@ -338,6 +390,7 @@ def main():
 
 
 if __name__ == "__main__":
-    #main()
+    # main()
     I = SuperNodeIterator(verbose=True, threads=8)
     I.iterate_supernodes()
+    # subprocess.call(["python", "-m", "venv", "venv"])
