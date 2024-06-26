@@ -176,8 +176,7 @@ THRESHHOLD_DROP = 0.001
 type PairCount = dict[tuple[str, str], int]
 
 
-class UopStatAnalysis:
-
+class SuperNodeAnalysis:
     def __init__(self, /, dry_run=False, verbose=False):
         self.dry_run = dry_run
         self.verbose = verbose
@@ -303,7 +302,7 @@ def main():
 
     args = parser.parse_args()
 
-    u = UopStatAnalysis(dry_run=args.dry_run, verbose=args.verbose)
+    u = SuperNodeAnalysis(dry_run=args.dry_run, verbose=args.verbose)
     u.output_pair_stats(args.inputs)
 
 
