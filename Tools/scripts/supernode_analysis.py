@@ -1,4 +1,5 @@
 import argparse
+import functools
 from pathlib import Path
 import shutil
 import subprocess
@@ -290,7 +291,7 @@ class SuperNodeIterator:
 
     def iterate_supernodes(self):
         # Build Python with current nodes/supernodes
-        # self.build_python()
+        self.build_python()
 
         # Generate Stats
         self.generate_stats()
@@ -332,8 +333,11 @@ class SuperNodeIterator:
         else:
             if type(self.pyperf_command) == str:
                 self.pyperf_command = self.pyperf_command.split(" ")
-        shutil.rmtree("/tmp/py_stats")
-        self.run_command_list(
+        try:
+            shutil.rmtree("/tmp/py_stats")
+        except FileNotFoundError:
+            pass
+        self.call_command_list(
             [
                 ["python", "-m", "venv", "venv"],
                 ["./venv/bin/python", "-m", "pip", "install", "pyperformance"],
@@ -342,7 +346,6 @@ class SuperNodeIterator:
             kwargs={
                 "cwd": CPYTHON_ROOT_DIR,
             },
-            func=subprocess.call,
         )
 
     def generate_supernodes_from_stats(self):
@@ -350,15 +353,16 @@ class SuperNodeIterator:
         stats = analysis.get_stats()
         new_nodes = analysis.calculate_supernodes(stats)
 
-    def run_command_list(
-        self, command_list: list[str], func=subprocess.run, kwargs=None
-    ):
+    def do_command_func(self, command_list: list[str], func, kwargs=None):
         for command in command_list:
             if self.verbose:
                 print(f"Running {command=} with function {func}")
             if kwargs == None:
                 kwargs = self.default_kwargs
             _ = func(command, **kwargs)
+
+    run_command_list = functools.partialmethod(do_command_func, func=subprocess.run)
+    call_command_list = functools.partialmethod(do_command_func, func=subprocess.call)
 
 
 def main():
