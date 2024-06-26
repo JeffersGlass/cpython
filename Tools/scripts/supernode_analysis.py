@@ -366,9 +366,14 @@ class SuperNodeIterator:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Summarize pystats results")
+    parser = argparse.ArgumentParser(prog="Tools for examining and updating supernodes")
+    subparsers = parser.add_subparsers(help="Sub-command help")
 
-    parser.add_argument(
+    update_parser = subparsers.add_parser(
+        "update", help="Update superinstructions based on pystats"
+    )
+
+    update_parser.add_argument(
         "inputs",
         nargs="*",
         type=str,
@@ -382,15 +387,21 @@ def main():
         """,
     )
 
-    parser.add_argument(
+    update_parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
         help="show information on superinstructions being added",
     )
 
-    parser.add_argument(
+    update_parser.add_argument(
         "--dry-run", action="store_true", help="Do not update supernodes.c"
+    )
+
+    # -- Iterate --
+
+    iterate_parser = subparsers.add_parser(
+        "iterate", help="Rebuild and re-stat python builds to identify supernodes"
     )
 
     args = parser.parse_args()
@@ -400,7 +411,7 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-    I = SuperNodeIterator(verbose=True, threads=8)
-    I.iterate_supernodes()
+    main()
+    # I = SuperNodeIterator(verbose=True, threads=8)
+    # I.iterate_supernodes()
     # subprocess.call(["python", "-m", "venv", "venv"])
