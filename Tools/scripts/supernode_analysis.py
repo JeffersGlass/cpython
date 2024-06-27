@@ -2,9 +2,11 @@ import argparse
 import functools
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
-import re
+import textwrap
+
 
 from summarize_stats import Stats, DEFAULT_DIR, load_raw_data
 
@@ -174,22 +176,25 @@ POST = """
 
 // Future families go below this point //"""
 
-THRESHHOLD_ADD = 0.01
-THRESHHOLD_DROP = 0.001
+THRESHHOLD_ADD_NEW = 0.01
+THRESHHOLD_RETAIN = 0.005
 
 type PairCount = dict[tuple[str, str], int]
-
 
 class DPrintMixin:
     verbose = 0
 
-    def dprint(self, level, *args, **kwargs):
+    def dprint(self, level: int, *args, wrap=True, **kwargs):
         if level <= self.verbose:
-            print("  " * (level - 1), *args, **kwargs)
+            if wrap:
+                print(textwrap.fill(''.join(str(a) for a in args), initial_indent= "  " * level, subsequent_indent= ("  " * level + "↳")))
+            else:
+                print("  " * level, *args, **kwargs)
+
 
 
 class SuperNodeAnalysis(DPrintMixin):
-    def __init__(self, /, dry_run=False, verbose=False):
+    def __init__(self, /, dry_run=False, verbose=0):
         self.dry_run = dry_run
         self.verbose = verbose
 
@@ -206,48 +211,70 @@ class SuperNodeAnalysis(DPrintMixin):
         return Stats(data)
 
     def calculate_supernodes(self, stats: Stats) -> PairCount:
-        raw_pair_counts = self.get_pairs(stats)
-        pair_counts = self.filter_unusable_ops(raw_pair_counts)
-        max_pair_length = max(len(str(uop)) for uop in pair_counts.keys())
+        opcode_stats = stats.get_opcode_stats("uops")
+
+        raw_pairs =  opcode_stats.get_pair_counts()
+        exec_counts = opcode_stats.get_execution_counts()
+        pair_counts = self.filter_unusable_ops(raw_pairs)
+
+        # TODO filter by conflicting oparg/operand/target here
+
+        max_pair_str_length = max(len(str(uop)) for uop in pair_counts.keys())
+
         # current_supernodes_seen = set(name for name in stats.get_opcode_stats("uops").get_execution_counts().keys() if "_PLUS_" in name)
-        total = sum(value for value in pair_counts.values())
-        if not self.verbose:
-            to_add = {
-                k: v for k, v in pair_counts.items() if (v / total) > THRESHHOLD_ADD
-            }
-        else:
-            to_add = {}
-            messages = []
-            for k, v in pair_counts.items():
-                if (percent := (v / total)) > THRESHHOLD_ADD:
-                    messages.append(
-                        (
-                            "   ADDED Pair {0:<{1}}    {2}%".format(
-                                str(k), max_pair_length, round(percent * 100, 2)
-                            ),
-                            percent,
-                        )
+        total_pair_count = sum(value for value in pair_counts.values())
+
+        to_add = {}
+        messages: list[tuple[str, int]] = []
+
+        # Add/Decline newly identified pairs
+        for k, v in pair_counts.items():
+            if (percent := (v / total_pair_count)) > THRESHHOLD_ADD_NEW:
+                messages.append(
+                    (
+                        "ADDED Pair {0:<{1}}    {2}%".format(
+                            str(k), max_pair_str_length, round(percent * 100, 2)
+                        ),
+                        percent,
                     )
-                    to_add[k] = v
-                else:
-                    messages.append(
-                        (
-                            "DECLINED Pair {0:<{1}}    {2}%".format(
-                                str(k), max_pair_length, round(percent * 100, 2)
-                            ),
-                            percent,
-                        )
+                )
+                to_add[k] = v
+            else:
+                messages.append(
+                    (
+                        "  DECLINED Pair {0:<{1}}    {2}%".format(
+                            str(k), max_pair_str_length, round(percent * 100, 2)
+                        ),
+                        percent,
                     )
-            self.dprint(
-                1,
-                "\n".join(
-                    m[0] for m in sorted(messages, key=lambda m: m[1], reverse=True)
-                ),
-            )
-            self.dprint(
-                1,
-                f"Added {len(to_add)} of {len(raw_pair_counts)} possible supernodes that make up more than {100*THRESHHOLD_ADD}% of nodes and are viable",
-            )
+                )
+
+        #Retain/Remove previous supernodes:
+        exec_counts = opcode_stats.get_execution_counts()
+        super_exec_counts = {s: v for s, v in exec_counts.items() if "_PLUS_" in s}
+        total_exec_count = sum(value[0] for value in exec_counts.values())
+        max_super_str_length = max(len(str(uop)) for uop in exec_counts.keys())
+
+        for k, v in super_exec_counts.items():
+            count = v[0]
+            if (percent := (count / total_exec_count)) > THRESHHOLD_RETAIN:
+                messages.append(("  RETAINED old op {0:<{1}}    {2}%".format(
+                    str(k), max_super_str_length, round(percent * 100, 2)
+                ), percent))
+                k0, k1 = k.split("_PLUS_", 1)
+                to_add[(k0, k1)] = v[0]
+            else:
+                messages.append(("  REMOVED old op  {0:<{1}}    {2}%".format(
+                    str(k), max_super_str_length, round(percent * 100, 2)), percent
+                ))
+
+        for m in sorted(messages, key=lambda m: m[1], reverse=True):
+            self.dprint(2, m[0], wrap=False)
+
+        self.dprint(
+            1,
+            f"Added {len(to_add)} of {len(raw_pairs)} possible supernodes that make up more than {100*THRESHHOLD_ADD_NEW}% of nodes and are viable",
+        )
         return to_add
 
     def update_supernodes_c(self, supernodes: list[tuple[str]]) -> None:
@@ -286,6 +313,10 @@ class SuperNodeAnalysis(DPrintMixin):
 
             return result
 
+    @classmethod
+    def get_supernode_executor_cases(cls) -> set[str]:
+        with open(SUPERNODE_CASES, "r") as f:
+            return set(m for m in re.findall(r"case (?P<name>[_A-Z0-9]+):", f.read()))
 
 class SuperNodeIterator(DPrintMixin):
 
@@ -320,8 +351,10 @@ class SuperNodeIterator(DPrintMixin):
             f"Beginning supernode generation process for {self.iterations} iterations max"
         )
         for gen in range(self.iterations):
-            print(f"Starting supernode generation {gen+1} of {self.iterations}")
+            self.dprint(0, f"Starting supernode generation {gen+1} of {self.iterations}")
             # Build Python with current nodes/supernodes
+            starting_supernodes = SuperNodeAnalysis.get_supernode_executor_cases()
+
             self.build_python()
 
             # Generate Stats
@@ -330,16 +363,31 @@ class SuperNodeIterator(DPrintMixin):
 
             self.generate_supernodes_from_stats()
 
+            ending_supernodes = SuperNodeAnalysis.get_supernode_executor_cases()
+            added = ending_supernodes - starting_supernodes
+            removed = starting_supernodes - ending_supernodes
+            retained = starting_supernodes & ending_supernodes
+
+            if added:
+                self.dprint(2, f"Added {len(added)} supernodes")
+                self.dprint(3, added)
+
+            if removed:
+                self.dprint(2, f"Removed {len(removed)} supernodes")
+                self.dprint(3, removed)
+
+            if retained:
+                self.dprint(2, f"Retained {len(retained)} supernodes")
+                self.dprint(3, retained)
+
             # TODO Run tests and gather failure types
-            # Bail on specific failure types specified by args
+            # TODO Bail on specific failure types specified by args
 
     def build_python(self) -> None:
         self.dprint(1, "Building python")
         if self.verbose >= 3:
-            with open(SUPERNODE_CASES, "r") as f:
-                nodes = [m for m in re.findall(r"case (?P<name>[_A-Z0-9]+):", f.read())]
-
-        self.dprint(3, f"Supernodes: {nodes}")
+            nodes = SuperNodeAnalysis.get_supernode_executor_cases()
+            self.dprint(3, f"Supernodes: {nodes}")
         self.dprint(2, "Running `make clean`")
         subprocess.call(["make", "clean"], stdout=subprocess.DEVNULL)
         self.dprint(2, "Running `configure --enable-experimental-jit --enable-pystats`")
@@ -419,22 +467,22 @@ class SuperNodeIterator(DPrintMixin):
 
     def generate_supernodes_from_stats(self):
         self.dprint(1, "Generating supernodes from stats")
-        analysis = SuperNodeAnalysis()
+        analysis = SuperNodeAnalysis(verbose=self.verbose)
 
         self.dprint(2, "Collating statistics")
         stats = analysis.get_stats([DEFAULT_DIR])
-        self.dprint(2, "Calculating supernoes from stats")
+        self.dprint(2, "Calculating supernodes from stats")
         new_supers = analysis.calculate_supernodes(stats)
-        self.dprint(3, f"Updating supernodes.c with {len(new_supers)} potential supernodes")
+        self.dprint(2, f"Updating supernodes.c with {len(new_supers)} potential supernodes")
         analysis.update_supernodes_c(new_supers)
 
-        self.dprint(2, "Running commnad `make regen-uop-ids`")
+        self.dprint(2, "Running command `make regen-uop-ids`")
         subprocess.check_call(["make", "regen-uop-ids"], stdout=subprocess.DEVNULL)
-        self.dprint(2, "Running commnad `make regen-uop-metadata`")
+        self.dprint(2, "Running command `make regen-uop-metadata`")
         subprocess.check_call(["make", "regen-uop-metadata"], stdout=subprocess.DEVNULL)
-        self.dprint(2, "Running commnad `make regen-executor-cases`")
+        self.dprint(2, "Running command `make regen-executor-cases`")
         subprocess.check_call(["make", "regen-executor-cases"], stdout=subprocess.DEVNULL)
-        self.dprint(2, "Running commnad `make regen-jit`")
+        self.dprint(2, "Running command `make regen-jit`")
         subprocess.check_call(["make", "regen-jit"], stdout=subprocess.DEVNULL)
 
     def do_command_func(self, command_list: list[str], func, kwargs=None, ignore_errors = False):
@@ -442,7 +490,7 @@ class SuperNodeIterator(DPrintMixin):
             self.dprint(2, f"Running {command=} with function {func.__name__}")
             if kwargs == None:
                 kwargs = self.default_kwargs
-            result: subprocess.CompletedProcess = func(command, **kwargs)
+            result: subprocess.CompletedProcess = func(command, {"stdout": subprocess.DEVNULL}.update(kwargs))
             if not ignore_errors and result.returncode: raise RuntimeError(f"Command {command} exiting with error code {result.returncode}")
 
     run_command_list = functools.partialmethod(do_command_func, func=subprocess.run)
