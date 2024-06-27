@@ -4,13 +4,13 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
-import typing
+import re
 
 from summarize_stats import Stats, DEFAULT_DIR, load_raw_data
 
 ROOT = Path(__file__).parent.parent.parent
 DEFAULT_SUPERNODES_INPUT = (ROOT / "Python/supernodes.c").absolute().as_posix()
-CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
+SUPERNODE_CASES = (ROOT / "Python" / "supernodes_cases.c.h").absolute().as_posix()
 
 PRE = """// This file contains instruction definitions.
 // It is read by generators stored in Tools/cases_generator/
@@ -185,7 +185,7 @@ class DPrintMixin:
 
     def dprint(self, level, *args, **kwargs):
         if level <= self.verbose:
-            print(*args, **kwargs)
+            print("  " * (level - 1), *args, **kwargs)
 
 
 class SuperNodeAnalysis(DPrintMixin):
@@ -290,7 +290,7 @@ class SuperNodeAnalysis(DPrintMixin):
 class SuperNodeIterator(DPrintMixin):
 
     default_kwargs = {
-        "cwd": CPYTHON_ROOT_DIR,
+        "cwd": ROOT,
         "shell": True,
         "stdout": subprocess.PIPE,
         "stderr": subprocess.STDOUT,
@@ -335,18 +335,27 @@ class SuperNodeIterator(DPrintMixin):
 
     def build_python(self) -> None:
         self.dprint(1, "Building python")
-        subprocess.call(["make", "clean"])
+        if self.verbose >= 3:
+            with open(SUPERNODE_CASES, "r") as f:
+                nodes = [m for m in re.findall(r"case (?P<name>[_A-Z0-9]+):", f.read())]
+
+        self.dprint(3, f"Supernodes: {nodes}")
+        self.dprint(2, "Running `make clean`")
+        subprocess.call(["make", "clean"], stdout=subprocess.DEVNULL)
+        self.dprint(2, "Running `configure --enable-experimental-jit --enable-pystats`")
         subprocess.call(
             [
                 "./configure",
                 "--enable-experimental-jit",
                 "--enable-pystats",
             ]
-        )
+        , stdout=subprocess.DEVNULL)
 
         # self.run_command_list([["make", "regen-uop-ids"] "regen-uop-metadata", "regen-exeuctor-cases", "regen-jit"]])
         # self.call_command_list([["./configure","--enable-experimental-jit","--enable-pystats",],])
-        self.run_command_list([["make", f"-j{self.threads}"]])
+        self.dprint(2, f"Running `make -j{self.threads}")
+        subprocess.run(["make", f"-j{self.threads}"], stdout=subprocess.DEVNULL)
+        #self.run_command_list([["make", f"-j{self.threads}"]])
 
         """         commands = [
             ["make", "distclean"],
@@ -365,8 +374,8 @@ class SuperNodeIterator(DPrintMixin):
 
     def generate_stats(self) -> None:
         self.dprint(1, "Generating statistics")
-        # delete prexisting venv
         if (venv := Path("./venv")).exists() and venv.is_dir():
+            self.dprint(2, "Deleting old venv")
             shutil.rmtree(venv)
 
         if self.pyperf_command == None:
@@ -376,25 +385,26 @@ class SuperNodeIterator(DPrintMixin):
                 "pyperformance",
                 "run",
                 "--python",
-                str(CPYTHON_ROOT_DIR / "python"),
+                str(ROOT / "python"),
             ]
-            if self.verbose:
-                self.pyperf_command.append(f"-{'v'*self.verbose}")
+            #if self.verbose:
+            #    self.pyperf_command.append(f"-{'v'*self.verbose}")
             if self.benchmarks:
-                print(f">>> Extending with benchmarks {self.benchmarks}")
+                self.dprint(2, f"Adding benchmarks to command: {self.benchmarks}")
                 self.pyperf_command.extend(["-b", self.benchmarks])
         else:
             if type(self.pyperf_command) == str:
                 self.pyperf_command = self.pyperf_command.split(" ")
 
         # delete old pystats
+
         try:
             directory = "/tmp/py_stats"
             stats_files = os.listdir(directory)
             for file in stats_files:
                 os.remove(os.path.join(directory, file))
-        except FileNotFoundError:
-            pass
+        except FileNotFoundError as e:
+            self.dprint(1, f"Could not remove all of /tmp/py_stats. Failed with error: {e}")
 
         self.call_command_list(
             [
@@ -403,24 +413,33 @@ class SuperNodeIterator(DPrintMixin):
                 self.pyperf_command,
             ],
             kwargs={
-                "cwd": CPYTHON_ROOT_DIR,
+                "cwd": ROOT,
             },
         )
 
     def generate_supernodes_from_stats(self):
         self.dprint(1, "Generating supernodes from stats")
         analysis = SuperNodeAnalysis()
+
+        self.dprint(2, "Collating statistics")
         stats = analysis.get_stats([DEFAULT_DIR])
+        self.dprint(2, "Calculating supernoes from stats")
         new_supers = analysis.calculate_supernodes(stats)
+        self.dprint(3, f"Updating supernodes.c with {len(new_supers)} potential supernodes")
         analysis.update_supernodes_c(new_supers)
-        subprocess.check_call(["make", "regen-uop-ids"])
-        subprocess.check_call(["make", "regen-uop-metadata"])
-        subprocess.check_call(["make", "regen-executor-cases"])
-        subprocess.check_call(["make", "regen-jit"])
+
+        self.dprint(2, "Running commnad `make regen-uop-ids`")
+        subprocess.check_call(["make", "regen-uop-ids"], stdout=subprocess.DEVNULL)
+        self.dprint(2, "Running commnad `make regen-uop-metadata`")
+        subprocess.check_call(["make", "regen-uop-metadata"], stdout=subprocess.DEVNULL)
+        self.dprint(2, "Running commnad `make regen-executor-cases`")
+        subprocess.check_call(["make", "regen-executor-cases"], stdout=subprocess.DEVNULL)
+        self.dprint(2, "Running commnad `make regen-jit`")
+        subprocess.check_call(["make", "regen-jit"], stdout=subprocess.DEVNULL)
 
     def do_command_func(self, command_list: list[str], func, kwargs=None, ignore_errors = False):
         for command in command_list:
-            self.dprint(1, f"Running {command=} with function {func.__name__}")
+            self.dprint(2, f"Running {command=} with function {func.__name__}")
             if kwargs == None:
                 kwargs = self.default_kwargs
             result: subprocess.CompletedProcess = func(command, **kwargs)
