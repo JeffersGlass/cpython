@@ -177,26 +177,40 @@ POST = """
 // Future families go below this point //"""
 
 THRESHHOLD_ADD_NEW = 0.01
-THRESHHOLD_RETAIN = 0.005
+THRESHHOLD_RETAIN = 0.003
 
 type PairCount = dict[tuple[str, str], int]
 
 class DPrintMixin:
     verbose = 0
+    dump = False
+
+    def __init__(self, dump = False, verbose=0):
+        self.verbose = verbose
+        self.dump = dump
+
+    def clear_dump_output(self):
+        if self.dump:
+            with open("./out.txt", "w+") as f:
+                f.write("")
 
     def dprint(self, level: int, *args, wrap=True, **kwargs):
         if level <= self.verbose:
             if wrap:
-                print(textwrap.fill(''.join(str(a) for a in args), initial_indent= "  " * level, subsequent_indent= ("  " * level + "↳")))
+                text = [textwrap.fill(''.join(str(a) for a in args), initial_indent= "  " * level, subsequent_indent= ("  " * level + "↳"))]
             else:
-                print("  " * level, *args, **kwargs)
+                text = ["  " * level, *args]
+            print(*text, **kwargs)
+            if self.dump:
+                with open("./out.txt", "a+") as f:
+                    f.write(''.join(text) + "\n")
 
 
 
 class SuperNodeAnalysis(DPrintMixin):
-    def __init__(self, /, dry_run=False, verbose=0):
+    def __init__(self, /, dry_run=False, **kwargs):
+        super().__init__(**kwargs)
         self.dry_run = dry_run
-        self.verbose = verbose
 
     def output_pair_stats(self, inputs: list[Path]):
         match len(inputs):
@@ -229,11 +243,12 @@ class SuperNodeAnalysis(DPrintMixin):
 
         # Add/Decline newly identified pairs
         for k, v in pair_counts.items():
+
             if (percent := (v / total_pair_count)) > THRESHHOLD_ADD_NEW:
                 messages.append(
                     (
                         "ADDED Pair {0:<{1}}    {2}%".format(
-                            str(k), max_pair_str_length, round(percent * 100, 2)
+                            str(k), max_pair_str_length, round(percent * 100, 4)
                         ),
                         percent,
                     )
@@ -243,7 +258,7 @@ class SuperNodeAnalysis(DPrintMixin):
                 messages.append(
                     (
                         "  DECLINED Pair {0:<{1}}    {2}%".format(
-                            str(k), max_pair_str_length, round(percent * 100, 2)
+                            str(k), max_pair_str_length, round(percent * 100, 4)
                         ),
                         percent,
                     )
@@ -288,14 +303,14 @@ class SuperNodeAnalysis(DPrintMixin):
             f.writelines(POST)
 
     def get_pairs(
-        self, base_stats: Stats, verbose: bool = False
+        self, base_stats: Stats
     ) -> dict[tuple[str, str], int]:
         opcode_stats = base_stats.get_opcode_stats("uops")
         return opcode_stats.get_pair_counts()
 
-    def filter_unusable_ops(self, pairs: PairCount, verbose=False) -> PairCount:
+    def filter_unusable_ops(self, pairs: PairCount) -> PairCount:
         forbidden = ("_EXIT_TRACE",)
-        if not verbose:
+        if self.verbose==0:
             return {
                 k: v
                 for k, v in pairs.items()
@@ -330,13 +345,13 @@ class SuperNodeIterator(DPrintMixin):
     def __init__(
         self,
         /,
-        verbose=False,
         threads=2,
         pyperf_command=None,
         iterations=5,
         benchmarks=None,
+        **kwargs
     ):
-        self.verbose = verbose
+        super().__init__(**kwargs)
         if self.verbose >= 2:
             # Send build output to the terminal
             del self.default_kwargs["stdout"]
@@ -347,7 +362,9 @@ class SuperNodeIterator(DPrintMixin):
         self.benchmarks = benchmarks
 
     def iterate_supernodes(self):
-        print(
+        self.clear_dump_output()
+        self.dprint(0, "Dumping output to ./out.txt")
+        self.dprint(0,
             f"Beginning supernode generation process for {self.iterations} iterations max"
         )
         for gen in range(self.iterations):
@@ -379,6 +396,10 @@ class SuperNodeIterator(DPrintMixin):
             if retained:
                 self.dprint(2, f"Retained {len(retained)} supernodes")
                 self.dprint(3, retained)
+
+            if starting_supernodes == ending_supernodes:
+                self.dprint(0, "No supernodes were changed during this run, ending run")
+                break
 
             # TODO Run tests and gather failure types
             # TODO Bail on specific failure types specified by args
@@ -467,7 +488,7 @@ class SuperNodeIterator(DPrintMixin):
 
     def generate_supernodes_from_stats(self):
         self.dprint(1, "Generating supernodes from stats")
-        analysis = SuperNodeAnalysis(verbose=self.verbose)
+        analysis = SuperNodeAnalysis(verbose=self.verbose, dump=self.dump)
 
         self.dprint(2, "Collating statistics")
         stats = analysis.get_stats([DEFAULT_DIR])
@@ -509,6 +530,7 @@ def _iterate(args: argparse.Namespace) -> None:
         verbose=args.verbose,
         iterations=args.iterations,
         benchmarks=args.benchmarks,
+        dump=args.dump_output
     )
     manager.iterate_supernodes()
 
@@ -524,6 +546,12 @@ def main():
         action="count",
         default=0,
         help="show additional debug information",
+    )
+
+    parser.add_argument(
+        "--dump-output",
+        action="store_true",
+        help="Dump stdout output to ./out.txt"
     )
 
     subparsers = parser.add_subparsers(help="Sub-command help")
