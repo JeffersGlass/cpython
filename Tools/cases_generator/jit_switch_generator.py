@@ -163,6 +163,7 @@ def generate_jit_header_file(
 
 
 def _supernode_max_depth(supernodes: dict[str:SuperNode]):
+    if not supernodes: return 1
     return max(len(node.uops) for node in supernodes.values())
 
 
