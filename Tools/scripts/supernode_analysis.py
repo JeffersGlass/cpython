@@ -18,7 +18,10 @@ SUPERNODE_CASES = (ROOT / "Python" / "supernodes_cases.c.h").absolute().as_posix
 THRESHHOLD_ADD_NEW = 0.001
 THRESHHOLD_RETAIN = THRESHHOLD_ADD_NEW * 0.02
 
-FORBIDDEN = ("_EXIT_TRACE",)
+FORBIDDEN = (
+            ("_EXIT_TRACE",),
+            ("_START_EXECUTOR", "_POP_TOP"),
+            )
 
 type PairCount = dict[tuple[str, str], int]
 
@@ -179,7 +182,7 @@ class SuperNodeAnalysis(DPrintMixin):
         opcode_stats = base_stats.get_opcode_stats("uops")
         return opcode_stats.get_pair_counts()
 
-    def filter_unusable_ops(self, pairs: PairCount) -> PairCount:
+    def filter_unusable_ops(self, pairs: PairCount, known_bad_sequences=None) -> PairCount:
         """Some uops/superops seem to crash the interpreter/JIT whenver they are included. Currently,
         these are hardcoded into the FORBIDDEN list. This would be a good thing to continue invesitgated
 
@@ -190,14 +193,33 @@ class SuperNodeAnalysis(DPrintMixin):
             PairCount: _description_
         """
 
+        def is_subseq(x, y):
+            it = iter(y)
+            return all(c in it for c in x)
+
         result = {}
         for k, v in pairs.items():
-            if (fail := k[0]) in FORBIDDEN or (fail := k[1]) in FORBIDDEN:
-                self.dprint(
-                    1, f"Rejecting pair {k} because {fail} is forbidden in superops"
-                )
-            else:
-                result[k] = v
+            good = True
+            uop_sequence = k[0].split("_PLUS_") + k[1].split("_PLUS_")
+
+            if known_bad_sequences is not None:
+                for bad in known_bad_sequences:
+                    if is_subseq(bad, uop_sequence):
+                        self.dprint(
+                                2, f"Rejecting pair {k} because {f} is a known failing sequence"
+                            )
+                        good = False
+                        break
+
+            for f in FORBIDDEN:
+                if is_subseq(f, uop_sequence):
+                    self.dprint(
+                        2, f"Rejecting pair {k} because {f} is forbidden in superops"
+                    )
+                    good = False
+                    break
+
+            if good: result[k] = v
 
         return result
 
@@ -215,7 +237,7 @@ class SuperNodeEvolver(DPrintMixin):
     }
 
     def __init__(
-        self, /, threads=2, pyperf_command=None, iterations=5, benchmarks=None, **kwargs
+        self, /, threads=2, pyperf_command=None, iterations=5, benchmarks=None, fail_segfaults=False, **kwargs
     ):
         """Manages the iterative process of taking a set of supernodes; running some benchmarking with pystats on,
         analyzing the results, generating a new set of supernodes, and repeating.
@@ -235,6 +257,8 @@ class SuperNodeEvolver(DPrintMixin):
         self.pyperf_command = pyperf_command
         self.iterations = iterations
         self.benchmarks = benchmarks
+        self.fail_segfaults = fail_segfaults
+
         self.known_bad_supernodes = set()
 
     def iterate_supernodes(self):
@@ -263,11 +287,11 @@ class SuperNodeEvolver(DPrintMixin):
 
                 # TODO Run tests and gather failure types
                 # TODO Bail on specific failure types specified by args
-            self.dprint(0, f"Ending supernodes:\n{'\n'.join(ending_supernodes)}")
-            self.dprint(0, f"Known bad supernodes:\n{'\n'.join(self.known_bad_supernodes)}")
+        self.dprint(0, f"Ending supernodes:\n{'\n'.join(ending_supernodes)}")
+        self.dprint(0, f"Known bad supernodes:\n{'\n'.join(self.known_bad_supernodes)}")
 
     def build_and_bisect_python(self) -> list[str]:
-        self.dprint(1, "Building python")
+        self.dprint(1, "Beginning Python Build")
         nodes = SuperNodeAnalysis.get_supernode_executor_cases()
         self.run_command(["make", "distclean"], raise_errors = False)
         self.run_command(
@@ -278,13 +302,15 @@ class SuperNodeEvolver(DPrintMixin):
                 ],
             )
 
-        good, bad = self._build_python_with_nodes(list(nodes))
-        self.dprint(1, f"Build ultimately succeeded with nodes: \n{'  \n'.join(good)}")
-        self.dprint(1, f"Build ultimately failed (and bypassed) nodes: \n{'  \n'.join(bad)}")
+        good, bad = self._build_python_with_nodes(list(nodes), total_nodes=len(nodes))
+        self.dprint(2, f"Build ultimately succeeded with nodes: \n{'  \n'.join(good)}")
+        if bad: self.dprint(2, f"Build ultimately failed (and bypassed) nodes: \n{'  \n'.join(bad)}")
+        else: self.dprint(2, f"No bad nodes were identified during this build")
+
         self.known_bad_supernodes.update(bad) # cache failed ops for speed and later logging
         return good
 
-    def _build_python_with_nodes(self, nodes: list[str]) -> tuple[list[str], list[str]]:
+    def _build_python_with_nodes(self, nodes: list[str], total_nodes = "???") -> tuple[list[str], list[str]]:
         """Tries to build python with the specified supernodes; if not, recursively split the list of
         nodes to identify which can be successfully built and which fail.
 
@@ -294,29 +320,29 @@ class SuperNodeEvolver(DPrintMixin):
         Returns:
             tuple[list[str], list[str]]: A list of the supernodes which successfully built, followed by a list of hte supernodes which failed to build
         """
-        self.dprint(1, f"Bulding python with nodes {nodes}")
+        self.dprint(1, f"Building python with {len(nodes)} nodes {nodes}")
         self.run_command(["make", "clean"])
         self.update_supernodes_c(node.split("_PLUS_") for node in nodes)
         self.update_supernode_metadata()
 
         build_result: subprocess.CompletedProcess[str] = self.run_command(["make", f"-j{self.threads}"])
         if build_result.returncode:
-                self.dprint(1, "BUILD FAILED")
-                self.dprint(2, f"Failed with {len(nodes)} nodes: \n{'\n'.join(nodes)}")
-                if len(nodes) == 1:
-                    print(2, f"Identified bad node: {nodes[0]}")
-                    return ([], nodes)
+            if self.fail_segfaults:
+                raise RuntimeError(f"Build failed with error {build_result}")
+            self.dprint(1, f"BUILD FAILED, bisecting with {len(nodes)}/{total_nodes} nodes")
+            self.dprint(2, f"Failed with {len(nodes)} nodes: \n{'\n'.join(nodes)}")
+            if len(nodes) == 1:
+                print(2, f"Identified bad node: {nodes[0]}")
+                return ([], nodes)
 
-                half_point = len(nodes) // 2
+            half_point = len(nodes) // 2
 
-                first_good, first_bad =  self._build_python_with_nodes(nodes[:half_point])
-                second_good, second_bad = self._build_python_with_nodes((nodes[half_point:]))
-                return (first_good + second_good, first_bad + second_bad)
+            first_good, first_bad =  self._build_python_with_nodes(nodes[:half_point])
+            second_good, second_bad = self._build_python_with_nodes((nodes[half_point:]))
+            return (first_good + second_good, first_bad + second_bad)
         else:
             self.dprint(1, "BUILD SUCCEEDED")
             return (list(nodes), [])
-
-
 
     def generate_stats(self) -> None:
         """Run a command (defaults to pyperformance with all benchmarks) and generate pystats
@@ -358,7 +384,11 @@ class SuperNodeEvolver(DPrintMixin):
         # run pyperformance
         self.run_command(["python", "-m", "venv", "venv"])
         self.run_command(["./venv/bin/python", "-m", "pip", "install", "pyperformance"])
-        self.run_command(self.pyperf_command)
+        result = self.run_command(self.pyperf_command)
+        if result.returncode:
+            self.dprint(0, "About to error, dumping data")
+            self.dprint(0, f"{self.known_bad_supernodes=}")
+            raise RuntimeError(f"Error running benchmarks: {result}")
 
     def generate_supernodes_from_stats(self):
         """Once stats have been generated, calculate new supernodes, then regenerate
@@ -379,6 +409,7 @@ class SuperNodeEvolver(DPrintMixin):
 
     def update_supernode_metadata(self):
 
+        self.dprint(1, "Updating supernode metadata")
         for command in [
             ("make", "regen-uop-ids"),
             ("make", "regen-uop-metadata"),
@@ -396,7 +427,7 @@ class SuperNodeEvolver(DPrintMixin):
         """
         supernodes = list(supernodes)
         self.dprint(1, "Updating supernodes.c")
-        self.dprint(2, f"Updating with nodes {list(supernodes)}")
+        self.dprint(2, f"Updating supernodes.c with nodes {list(supernodes)}")
         new_supers = [
             f"super() = {" + ".join(uop for uop in node)};" for node in list(supernodes)
         ]
@@ -420,16 +451,16 @@ class SuperNodeEvolver(DPrintMixin):
         retained = start & end
 
         if added:
-            self.dprint(2, f"Added {len(added)} supernodes")
-            self.dprint(3, added)
+            self.dprint(1, f"Added {len(added)} supernodes")
+            self.dprint(2, added)
 
         if removed:
-            self.dprint(2, f"Removed {len(removed)} supernodes")
-            self.dprint(3, removed)
+            self.dprint(1, f"Removed {len(removed)} supernodes")
+            self.dprint(2, removed)
 
         if retained:
-            self.dprint(2, f"Retained {len(retained)} supernodes")
-            self.dprint(3, retained)
+            self.dprint(1, f"Retained {len(retained)} supernodes")
+            self.dprint(2, retained)
 
     def run_command(
         self, command: list[str], raise_errors=False, kwargs=None,
@@ -458,6 +489,7 @@ def _iterate(args: argparse.Namespace) -> None:
         pyperf_command=args.perf_command,
         threads=args.jobs,
         verbose=args.verbose,
+        fail_segfaults = args.fail_segfaults,
         iterations=args.iterations,
         benchmarks=args.benchmarks,
         dump=args.dump_output,
@@ -533,16 +565,16 @@ def main():
     )
 
     iterate_parser.add_argument(
-        "--bisect-sefaults",
+        "--fail-segfaults",
         action="store_true",
-        help="Identify segfaulting supernodes by bisecting and attempt to continue running.",
+        help="Don't bisect and attempt to continue running when segfaulting - just bail.",
     )
 
-    iterate_parser.add_argument(
-        "--bisect-failures",
+    """ iterate_parser.add_argument(
+        "---test-failures",
         action="store_true",
         help="Identify supernodes that fail tests by bisecting and attempt to continue running. Implies -B",
-    )
+    ) """
 
     iterate_parser.add_argument(
         "-b",
