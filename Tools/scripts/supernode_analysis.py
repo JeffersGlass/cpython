@@ -1,11 +1,11 @@
 import argparse
-import functools
 import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
 import textwrap
+import typing
 
 
 from summarize_stats import Stats, DEFAULT_DIR, load_raw_data
@@ -63,26 +63,23 @@ class DPrintMixin:
 
 
 class SuperNodeAnalysis(DPrintMixin):
-    def __init__(self, /, dry_run=False, **kwargs):
-        """_summary_
-
-        Args:
-            dry_run (bool, optional): If True, output analysis but do not update any output files. Defaults to False.
-        """
+    def __init__(self, /, **kwargs):
         super().__init__(**kwargs)
-        self.dry_run = dry_run
 
-    def update_supernode_pairs(self, inputs: list[Path]) -> None:
+    def calculate_new_supernodes(self, inputs: list[Path]) -> PairCount:
         """Grab the stats from a (collection of) Pystats runs, calcalate the resulting next set of supernodes,
         and (optionally) update `supernodes.c` whhere they are stored.
 
         Args:
-            inputs (list[Path]): _description_
+            inputs (list[Path]): The list of files/paths to analyze for pystats
+
+        Returns:
+            PairCount (dict[tuple[str, str], int]): A mapping of pairs of uops/superops to the count of
+            their occurance in the stats.
         """
+
         stats = self.get_stats(inputs)
-        new_supers = self.calculate_supernodes(stats)
-        if not self.dry_run:
-            self.update_supernodes_c(new_supers)
+        return self.calculate_supernodes(stats)
 
     def get_stats(self, inputs: list[Path]) -> Stats:
         data = load_raw_data(Path(inputs[0]))
@@ -426,9 +423,9 @@ class SuperNodeEvolver(DPrintMixin):
 ### argparse functions:
 
 
-def _update(args: argparse.Namespace) -> None:
-    analysis = SuperNodeAnalysis(dry_run=args.dry_run, verbose=args.verbose)
-    analysis.update_supernode_pairs(args.inputs)
+def _calculate_new(args: argparse.Namespace) -> None:
+    analysis = SuperNodeAnalysis(verbose=args.verbose)
+    print(analysis.calculate_new_supernodes(args.inputs))
 
 
 def _iterate(args: argparse.Namespace) -> None:
@@ -463,7 +460,7 @@ def main():
     subparsers = parser.add_subparsers(help="Sub-command help")
 
     update_parser = subparsers.add_parser(
-        "update", help="Update superinstructions based on pystats", parents=[parser]
+        "calculate", help="Calculate new superinstructions based on pystats", parents=[parser]
     )
 
     update_parser.add_argument(
@@ -480,11 +477,7 @@ def main():
         """,
     )
 
-    update_parser.add_argument(
-        "--dry-run", action="store_true", help="Do not update supernodes.c"
-    )
-
-    update_parser.set_defaults(func=_update)
+    update_parser.set_defaults(func=_calculate_new)
 
     # -- Iterate --
 
