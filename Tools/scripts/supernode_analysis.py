@@ -312,29 +312,33 @@ class SuperNodeEvolver(DPrintMixin):
         self.known_bad_supernodes.update(bad) # cache failed ops for speed and later logging
         return good
 
-    def _bisect_with_command(self, nodes: list[str], command: list[str], verb: str, total_nodes = "???") -> tuple[list[str], list[str]]:
+    def _build_and_bisect(self, nodes: list[str], command: list[str], verb: str, total_nodes = "???") -> tuple[list[str], list[str]]:
         self.dprint(1, f"{verb.capitalize()}-ing python with {len(nodes)} of {total_nodes} nodes")
         self.dprint(2, f"{nodes}")
         self.run_command(["make", "clean"])
         self.update_supernodes_c(node.split("_PLUS_") for node in nodes)
         self.update_supernode_metadata()
 
-        result: subprocess.CompletedProcess[str] = self.run_command(command)
+        current_verb = "build"
+        result: subprocess.CompletedProcess[str] = self.run_command(["make", f"-j{self.threads}"])
+        if command and not result.returncode : #only run command if build succeeded
+            current_verb = verb
+            result = self.run_command(command)
         if result.returncode:
             if self.fail_segfaults:
-                raise RuntimeError(f"{verb} failed with error {result}")
+                raise RuntimeError(f"{current_verb} failed with error {result}")
             half_point = len(nodes) // 2
-            self.dprint(1, f"{verb.capitalize()} FAILED, bisecting")
+            self.dprint(1, f"{current_verb.capitalize()} FAILED, bisecting")
             self.dprint(2, f"Failed with {len(nodes)} nodes: \n{'\n'.join(nodes)}")
             if len(nodes) == 1:
-                self.dprint(1, f"Identified bad node during {verb}: {nodes[0]}")
+                self.dprint(1, f"Identified bad node during {current_verb}: {nodes[0]}")
                 self.dprint(2, f"When running with command {command}")
                 return ([], nodes)
 
 
 
-            first_good, first_bad =  self._bisect_with_command(nodes[:half_point], command=command, verb=verb, total_nodes=total_nodes)
-            second_good, second_bad = self._bisect_with_command(nodes[half_point:], command=command, verb=verb, total_nodes=total_nodes)
+            first_good, first_bad =  self._build_and_bisect(nodes[:half_point], command=command, verb=verb, total_nodes=total_nodes)
+            second_good, second_bad = self._build_and_bisect(nodes[half_point:], command=command, verb=verb, total_nodes=total_nodes)
             return (first_good + second_good, first_bad + second_bad)
         else:
             self.dprint(1, f"{verb.capitalize()} SUCCEEDED")
@@ -342,10 +346,10 @@ class SuperNodeEvolver(DPrintMixin):
 
 
     def _build_python_with_nodes(self, nodes: list[str]) -> tuple[list[str], list[str]]:
-        return self._bisect_with_command(nodes, command=["make", f"-j{self.threads}"], verb="build", total_nodes=len(nodes))
+        return self._build_and_bisect(nodes, command=None, verb="build", total_nodes=len(nodes))
 
     def _run_pyperformance_with_nodes(self, nodes: list[str]) -> tuple[list[str], list[str]]:
-        return self._bisect_with_command(nodes, command=["make", f"-j{self.threads}", "&&"] + self.pyperf_command, verb="stat", total_nodes=len(nodes))
+        return self._build_and_bisect(nodes, command= self.pyperf_command, verb="stat", total_nodes=len(nodes))
 
     def generate_stats(self, nodes: list[str]) -> None:
         """Run a command (defaults to pyperformance with all benchmarks) and generate pystats
