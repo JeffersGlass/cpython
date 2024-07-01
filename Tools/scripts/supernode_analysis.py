@@ -136,7 +136,7 @@ class SuperNodeAnalysis(DPrintMixin):
             else:
                 messages.append(
                     (
-                        "  DECLINED Pair {0:<{1}}    {2}%".format(
+                        "DECLINED Pair {0:<{1}}    {2}%".format(
                             str(k), max_pair_str_length, round(percent * 100, 4)
                         ),
                         percent,
@@ -148,8 +148,8 @@ class SuperNodeAnalysis(DPrintMixin):
             if (percent := (count / big_total)) > THRESHHOLD_RETAIN:
                 messages.append(
                     (
-                        "  RETAINED old op {0:<{1}}    {2}%".format(
-                            str(k), max_super_str_length, round(percent * 100, 2)
+                        "RETAINED old op {0:<{1}}    {2}%".format(
+                            str(k), max_pair_str_length, round(percent * 100, 2)
                         ),
                         percent,
                     )
@@ -159,8 +159,8 @@ class SuperNodeAnalysis(DPrintMixin):
             else:
                 messages.append(
                     (
-                        "  REMOVED old op  {0:<{1}}    {2}%".format(
-                            str(k), max_super_str_length, round(percent * 100, 2)
+                        "REMOVED old op  {0:<{1}}    {2}%".format(
+                            str(k), max_pair_str_length, round(percent * 100, 2)
                         ),
                         percent,
                     )
@@ -262,6 +262,8 @@ class SuperNodeEvolver(DPrintMixin):
 
                 # TODO Run tests and gather failure types
                 # TODO Bail on specific failure types specified by args
+            self.dprint(0, f"Ending supernodes:\n{'\n'.join(ending_supernodes)}")
+            self.dprint(0, f"Known bad supernodes:\n{'\n'.join(self.known_bad_supernodes)}")
 
     def build_and_bisect_python(self) -> None:
         nodes = SuperNodeAnalysis.get_supernode_executor_cases()
