@@ -798,7 +798,7 @@ def add_macro(
 
 
 def add_supernode(
-    node: parser.SuperNode, uops: dict[str, Uop], supernodes: dict[str, SuperNode]
+    node: parser.SuperNodeDef, uops: dict[str, Uop], supernodes: dict[str, SuperNode]
 ):
     parts: list[Uop | Skip] = []
     if len(node.uops) < 2:
@@ -975,7 +975,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 pass
             case parser.Pseudo():
                 pass
-            case parser.SuperNode():
+            case parser.SuperNodeDef():
                 pass
             case _:
                 assert False
@@ -983,7 +983,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         if isinstance(node, parser.Macro):
             add_macro(node, instructions, uops)
     for node in forest:
-        if isinstance(node, parser.SuperNode):
+        if isinstance(node, parser.SuperNodeDef):
             add_supernode(node, uops, supernodes)
     for node in forest:
         match node:

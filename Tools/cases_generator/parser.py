@@ -3,7 +3,7 @@ from parsing import (  # noqa: F401
     Macro,
     Pseudo,
     Family,
-    SuperNode,
+    SuperNodeDef,
     Parser,
     Context,
     CacheEffect,
