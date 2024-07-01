@@ -1,5 +1,6 @@
 import argparse
 import functools
+import itertools
 import os
 from pathlib import Path
 import re
@@ -9,175 +10,14 @@ import textwrap
 
 
 from summarize_stats import Stats, DEFAULT_DIR, load_raw_data
+from _bytecode_file_parts import PRE, POST
 
 ROOT = Path(__file__).parent.parent.parent
 DEFAULT_SUPERNODES_INPUT = (ROOT / "Python/supernodes.c").absolute().as_posix()
 SUPERNODE_CASES = (ROOT / "Python" / "supernodes_cases.c.h").absolute().as_posix()
 
-PRE = """// This file contains instruction definitions.
-// It is read by generators stored in Tools/cases_generator/
-// to generate Python/generated_cases.c.h and others.
-// Note that there is some dummy C code at the top and bottom of the file
-// to fool text editors like VS Code into believing this is valid C code.
-// The actual instruction definitions start at // BEGIN BYTECODES //.
-// See Tools/cases_generator/README.md for more information.
-
-#include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_backoff.h"
-#include "pycore_cell.h"          // PyCell_GetRef()
-#include "pycore_code.h"
-#include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
-#include "pycore_function.h"
-#include "pycore_instruments.h"
-#include "pycore_intrinsics.h"
-#include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_moduleobject.h"  // PyModuleObject
-#include "pycore_object.h"        // _PyObject_GC_TRACK()
-#include "pycore_opcode_metadata.h"  // uop names
-#include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
-#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
-#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
-#include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_range.h"         // _PyRangeIterObject
-#include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
-#include "pycore_sysmodule.h"     // _PySys_Audit()
-#include "pycore_tuple.h"         // _PyTuple_ITEMS()
-#include "pycore_typeobject.h"    // _PySuper_Lookup()
-
-#include "pycore_dict.h"
-#include "dictobject.h"
-#include "pycore_frame.h"
-#include "opcode.h"
-#include "optimizer.h"
-#include "pydtrace.h"
-#include "setobject.h"
-
-
-#define USE_COMPUTED_GOTOS 0
-#include "ceval_macros.h"
-
-/* Flow control macros */
-#define GO_TO_INSTRUCTION(instname) ((void)0)
-
-#define inst(name, ...) case name:
-#define op(name, ...) /* NAME is ignored */
-#define macro(name) static int MACRO_##name
-#define super(name) static int SUPER_##name
-#define family(name, ...) static int family_##name
-#define pseudo(name) static int pseudo_##name
-#define macro(name) static int SUPER_##name
-
-/* Annotations */
-#define guard
-#define override
-#define specializing
-#define split
-#define replicate(TIMES)
-
-// Dummy variables for stack effects.
-static PyObject *value, *value1, *value2, *left, *right, *res, *sum, *prod, *sub;
-static PyObject *container, *start, *stop, *v, *lhs, *rhs, *res2;
-static PyObject *list, *tuple, *dict, *owner, *set, *str, *tup, *map, *keys;
-static PyObject *exit_func, *lasti, *val, *retval, *obj, *iter, *exhausted;
-static PyObject *aiter, *awaitable, *iterable, *w, *exc_value, *bc, *locals;
-static PyObject *orig, *excs, *update, *b, *fromlist, *level, *from;
-static PyObject **pieces, **values;
-static size_t jump;
-// Dummy variables for cache effects
-static uint16_t invert, counter, index, hint;
-#define unused 0  // Used in a macro def, can't be static
-static uint32_t type_version;
-static _PyExecutorObject *current_executor;
-
-static PyObject *
-dummy_func(
-    PyThreadState *tstate,
-    _PyInterpreterFrame *frame,
-    unsigned char opcode,
-    unsigned int oparg,
-    _Py_CODEUNIT *next_instr,
-    PyObject **stack_pointer,
-    int throwflag,
-    PyObject *args[]
-)
-{
-    // Dummy labels.
-    pop_1_error:
-    // Dummy locals.
-    PyObject *dummy;
-    _Py_CODEUNIT *this_instr;
-    PyObject *attr;
-    PyObject *attrs;
-    PyObject *bottom;
-    PyObject *callable;
-    PyObject *callargs;
-    PyObject *codeobj;
-    PyObject *cond;
-    PyObject *descr;
-    _PyInterpreterFrame  entry_frame;
-    PyObject *exc;
-    PyObject *exit;
-    PyObject *fget;
-    PyObject *fmt_spec;
-    PyObject *func;
-    uint32_t func_version;
-    PyObject *getattribute;
-    PyObject *kwargs;
-    PyObject *kwdefaults;
-    PyObject *len_o;
-    PyObject *match;
-    PyObject *match_type;
-    PyObject *method;
-    PyObject *mgr;
-    Py_ssize_t min_args;
-    PyObject *names;
-    PyObject *new_exc;
-    PyObject *next;
-    PyObject *none;
-    PyObject *null;
-    PyObject *prev_exc;
-    PyObject *receiver;
-    PyObject *rest;
-    int result;
-    PyObject *self;
-    PyObject *seq;
-    PyObject *slice;
-    PyObject *step;
-    PyObject *subject;
-    PyObject *top;
-    PyObject *type;
-    PyObject *typevars;
-    PyObject *val0;
-    PyObject *val1;
-    int values_or_none;
-
-    switch (opcode) {
-
-// BEGIN BYTECODES //
-"""
-
-POST = """
-// END BYTECODES //
-
-    }
- dispatch_opcode:
- error:
- exception_unwind:
- exit_unwind:
- handle_eval_breaker:
- resume_frame:
- resume_with_error:
- start_frame:
- unbound_local_error:
-    ;
-}
-
-// Future families go below this point //"""
-
-THRESHHOLD_ADD_NEW = 0.01
-THRESHHOLD_RETAIN = 0.003
+THRESHHOLD_ADD_NEW = 0.001
+THRESHHOLD_RETAIN = THRESHHOLD_ADD_NEW * .02
 
 type PairCount = dict[tuple[str, str], int]
 
@@ -230,21 +70,23 @@ class SuperNodeAnalysis(DPrintMixin):
         raw_pairs =  opcode_stats.get_pair_counts()
         exec_counts = opcode_stats.get_execution_counts()
         pair_counts = self.filter_unusable_ops(raw_pairs)
-
-        # TODO filter by conflicting oparg/operand/target here
-
-        max_pair_str_length = max(len(str(uop)) for uop in pair_counts.keys())
-
-        # current_supernodes_seen = set(name for name in stats.get_opcode_stats("uops").get_execution_counts().keys() if "_PLUS_" in name)
         total_pair_count = sum(value for value in pair_counts.values())
+        max_pair_str_length = max(len(str(uop)) for uop in pair_counts.keys()) if pair_counts else 40
 
+        #Retain/Remove previous supernodes:
+        super_exec_counts = {s: v for s, v in exec_counts.items() if "_PLUS_" in s}
+        max_super_str_length = max(len(str(uop)) for uop in super_exec_counts.keys()) if super_exec_counts else 40
+        total_exec_count = sum(value[0] for value in exec_counts.values())
+
+        big_total = total_exec_count + total_pair_count
+        # TODO filter by conflicting oparg/operand/target here
         to_add = {}
         messages: list[tuple[str, int]] = []
 
         # Add/Decline newly identified pairs
         for k, v in pair_counts.items():
 
-            if (percent := (v / total_pair_count)) > THRESHHOLD_ADD_NEW:
+            if (percent := (v / big_total)) > THRESHHOLD_ADD_NEW:
                 messages.append(
                     (
                         "ADDED Pair {0:<{1}}    {2}%".format(
@@ -264,15 +106,9 @@ class SuperNodeAnalysis(DPrintMixin):
                     )
                 )
 
-        #Retain/Remove previous supernodes:
-        exec_counts = opcode_stats.get_execution_counts()
-        super_exec_counts = {s: v for s, v in exec_counts.items() if "_PLUS_" in s}
-        total_exec_count = sum(value[0] for value in exec_counts.values())
-        max_super_str_length = max(len(str(uop)) for uop in exec_counts.keys())
-
         for k, v in super_exec_counts.items():
             count = v[0]
-            if (percent := (count / total_exec_count)) > THRESHHOLD_RETAIN:
+            if (percent := (count / big_total)) > THRESHHOLD_RETAIN:
                 messages.append(("  RETAINED old op {0:<{1}}    {2}%".format(
                     str(k), max_super_str_length, round(percent * 100, 2)
                 ), percent))
@@ -422,7 +258,7 @@ class SuperNodeIterator(DPrintMixin):
 
         # self.run_command_list([["make", "regen-uop-ids"] "regen-uop-metadata", "regen-exeuctor-cases", "regen-jit"]])
         # self.call_command_list([["./configure","--enable-experimental-jit","--enable-pystats",],])
-        self.dprint(2, f"Running `make -j{self.threads}")
+        self.dprint(2, f"Running `make -j{self.threads}`")
         subprocess.run(["make", f"-j{self.threads}"], stdout=subprocess.DEVNULL)
         #self.run_command_list([["make", f"-j{self.threads}"]])
 
@@ -497,14 +333,14 @@ class SuperNodeIterator(DPrintMixin):
         self.dprint(2, f"Updating supernodes.c with {len(new_supers)} potential supernodes")
         analysis.update_supernodes_c(new_supers)
 
-        self.dprint(2, "Running command `make regen-uop-ids`")
-        subprocess.check_call(["make", "regen-uop-ids"], stdout=subprocess.DEVNULL)
-        self.dprint(2, "Running command `make regen-uop-metadata`")
-        subprocess.check_call(["make", "regen-uop-metadata"], stdout=subprocess.DEVNULL)
-        self.dprint(2, "Running command `make regen-executor-cases`")
-        subprocess.check_call(["make", "regen-executor-cases"], stdout=subprocess.DEVNULL)
-        self.dprint(2, "Running command `make regen-jit`")
-        subprocess.check_call(["make", "regen-jit"], stdout=subprocess.DEVNULL)
+        for command in [
+            ("make", "regen-uop-ids"),
+            ("make", "regen-uop-metadata"),
+            ("make", "regen-executor-cases"),
+            ("make", "regen-jit"),
+            ]:
+            self.dprint(2, f"Running command `{command}`")
+            subprocess.check_call(command, stdout=subprocess.DEVNULL)
 
     def do_command_func(self, command_list: list[str], func, kwargs=None, ignore_errors = False):
         for command in command_list:
@@ -634,10 +470,4 @@ def main():
 
 
 if __name__ == "__main__":
-    #I = SuperNodeIterator(verbose=True, threads=8)
-    #I.generate_supernodes_from_stats()
     main()
-    # I.iterate_supernodes()
-    # subprocess.call(["./configure","--enable-experimental-jit","--enable-pystats",])
-
-    # subprocess.call(["./venv/bin/python", "-m", "pyperformance", "run", "--python", "/home/jglass/Documents/cpython/python","-b", "spectral_norm"])
