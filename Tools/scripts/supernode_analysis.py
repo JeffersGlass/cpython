@@ -175,22 +175,6 @@ class SuperNodeAnalysis(DPrintMixin):
         )
         return next_nodes
 
-    def update_supernodes_c(self, supernodes: list[tuple[str, ...]]) -> None:
-        """Given a list of supernodes, update `supernode.c` with properly formatted supernodes
-
-        Args:
-            supernodes (list[tuple[str, ...]]): The list of supernodes to add; each element of the inner tuple is
-            either a uop or another supernode
-        """
-        new_supers = (
-            f"super() = {" + ".join(uop for uop in node)};" for node in supernodes
-        )
-
-        with open(DEFAULT_SUPERNODES_INPUT, "w") as f:
-            f.writelines(PRE)
-            f.writelines("\t" + line + "\n" for line in new_supers)
-            f.writelines(POST)
-
     def get_pairs(self, base_stats: Stats) -> dict[tuple[str, str], int]:
         opcode_stats = base_stats.get_opcode_stats("uops")
         return opcode_stats.get_pair_counts()
@@ -255,7 +239,6 @@ class SuperNodeEvolver(DPrintMixin):
     def iterate_supernodes(self):
         """The primary iteration method for generating new supernodes."""
         self.clear_dump_output()
-        self.dprint(0, "Dumping output to ./out.txt")
         self.dprint(
             0,
             f"Beginning supernode generation process for {self.iterations} iterations max",
@@ -267,7 +250,7 @@ class SuperNodeEvolver(DPrintMixin):
             )
             starting_supernodes = SuperNodeAnalysis.get_supernode_executor_cases()
 
-            self.build_python()
+            self.build_and_bisect_python()
             self.generate_stats()
             self.generate_supernodes_from_stats()
 
@@ -280,38 +263,45 @@ class SuperNodeEvolver(DPrintMixin):
                 # TODO Run tests and gather failure types
                 # TODO Bail on specific failure types specified by args
 
-    def build_python(self) -> None:
-        self.dprint(1, "Building python")
-        if self.verbose >= 3:
-            nodes = SuperNodeAnalysis.get_supernode_executor_cases()
-            self.dprint(3, f"Supernodes: {nodes}")
-        self.dprint(2, "Running `make clean`")
-        subprocess.call(["make", "clean"], stdout=subprocess.DEVNULL)
-        self.dprint(2, "Running `configure --enable-experimental-jit --enable-pystats`")
-        subprocess.call(
-            [
-                "./configure",
-                "--enable-experimental-jit",
-                "--enable-pystats",
-            ],
-            stdout=subprocess.DEVNULL,
-        )
+    def build_and_bisect_python(self) -> None:
+        nodes = SuperNodeAnalysis.get_supernode_executor_cases()
+        valid_nodes = []
 
-        self.dprint(2, f"Running `make -j{self.threads}`")
-        subprocess.run(["make", f"-j{self.threads}"], stdout=subprocess.DEVNULL)
+        while True:
+            self.dprint(1, "Building python")
+            if self.verbose >= 3:
+                self.dprint(2, f"Supernodes: {nodes}")
+            self.run_command(["make", "clean"])
+            self.run_command(
+                [
+                    "./configure",
+                    "--enable-experimental-jit",
+                    "--enable-pystats",
+                ],
+            )
 
-        """         commands = [
-            ["make", "distclean"],
-            [
-                "./configure",
-                "--enable-experimental-jit",
-                "--enable-pystats",
-            ],
-            [
-                "make",
-                f"-j{self.threads}",
-            ],
-        ] """
+            build_result: subprocess.CompletedProcess[str] = self.run_command(["make", f"-j{self.threads}"])
+            if build_result.returncode:
+                self.dprint(0, "BUILD FAILED")
+                raise RuntimeError(build_result)
+            else:
+                break
+
+    def _build_python_with_nodes(self, nodes: typing.Iterable[str]) -> list[str]:
+        """Tries to build python with the specified supernodes; if not, recursively split the list of
+        nodes to identify which can be successfully built and which fail.
+
+        Args:
+            nodes (typing.Iterable[str]): The list of supernodes to be built with.
+
+        Returns:
+            list[str]: The list of valid supernodes from this subset
+        """
+        ...
+
+        self.upda
+
+
 
     def generate_stats(self) -> None:
         """Run a command (defaults to pyperformance with all benchmarks) and generate pystats
@@ -369,7 +359,7 @@ class SuperNodeEvolver(DPrintMixin):
         self.dprint(
             2, f"Updating supernodes.c with {len(new_supers)} potential supernodes"
         )
-        analysis.update_supernodes_c(new_supers)
+        self.update_supernodes_c(new_supers)
 
         for command in [
             ("make", "regen-uop-ids"),
@@ -380,16 +370,31 @@ class SuperNodeEvolver(DPrintMixin):
             self.dprint(2, f"Running command `{command}`")
             subprocess.check_call(command, stdout=subprocess.DEVNULL)
 
-    def print_supernode_changes(self, start, end):
+    def update_supernodes_c(self, supernodes: list[tuple[str, ...]]) -> None:
+        """Given a list of supernodes, update `supernode.c` with properly formatted supernodes
+
+        Args:
+            supernodes (list[tuple[str, ...]]): The list of supernodes to add; each element of the inner tuple is
+            either a uop or another supernode
+        """
+        new_supers = (
+            f"super() = {" + ".join(uop for uop in node)};" for node in supernodes
+        )
+
+        with open(DEFAULT_SUPERNODES_INPUT, "w") as f:
+            f.writelines(PRE)
+            f.writelines("\t" + line + "\n" for line in new_supers)
+            f.writelines(POST)
+
+    def print_supernode_changes(self, start: typing.Iterable[str], end: typing.Iterable[str]):
         """Print a summary of of changes between a starting set of nodes and an ending set
 
         Args:
-            start (_type_): _description_
-            end (_type_): _description_
-
-        Returns:
-            bool: _description_
+            start (typing.Iterable[str]): The set of supernodes at the start of the comparison
+            end (typing.Iterable[str]): The set of supernodesa at the end of the comparison
         """
+        start = set(start)
+        end = set(end)
         added = end - start
         removed = start - end
         retained = start & end
@@ -408,11 +413,11 @@ class SuperNodeEvolver(DPrintMixin):
 
     def run_command(
         self, command: list[str], kwargs=None, raise_errors=False
-    ) -> subprocess.CompletedProcess:
+    ) -> subprocess.CompletedProcess[str]:
         self.dprint(2, f"Running {command=}")
         if kwargs == None:
             kwargs = self.default_kwargs
-        result: subprocess.CompletedProcess = subprocess.run(command, **kwargs)
+        result: subprocess.CompletedProcess[str] = subprocess.run(command, **kwargs)
         if raise_errors and result.returncode:
             raise RuntimeError(
                 f"Command {command} exited with error code {result.returncode}"
