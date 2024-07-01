@@ -48,7 +48,7 @@ def generate_uop_ids(
                 out.emit(f"#define {name} {next_id}\n")
                 next_id += 1
 
-        out.emit(f"#define MAX_VANILLA_UOP_ID {next_id-1}\n")
+        out.emit(f"#define MAX_VANILLA_UOP_ID {next_id-1}\n\n")
 
         supernodes = [node for node in analysis.supernodes.values()]
         for node in sorted(supernodes, key=lambda u: u.name):

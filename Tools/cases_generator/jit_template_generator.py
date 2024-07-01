@@ -36,6 +36,13 @@ def update_jit_template(
     analysis: Analysis,
     template_file: str | Path,
 ) -> None:
+    """Given an Analysis of the Bytecode DSL, re-generate `template.c` to accomodate
+    the number of supernodes present
+
+    Args:
+        analysis (Analysis): An Analysis of the bytecodes specified in the DSL
+        template_file (str | Path): The template file to update (`template.c`)
+    """
     with open(template_file, "r") as f:
         lines = f.readlines()
 

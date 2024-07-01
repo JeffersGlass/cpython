@@ -1,6 +1,5 @@
 import argparse
 import functools
-import itertools
 import os
 from pathlib import Path
 import re
@@ -17,15 +16,26 @@ DEFAULT_SUPERNODES_INPUT = (ROOT / "Python/supernodes.c").absolute().as_posix()
 SUPERNODE_CASES = (ROOT / "Python" / "supernodes_cases.c.h").absolute().as_posix()
 
 THRESHHOLD_ADD_NEW = 0.001
-THRESHHOLD_RETAIN = THRESHHOLD_ADD_NEW * .02
+THRESHHOLD_RETAIN = THRESHHOLD_ADD_NEW * 0.02
+
+FORBIDDEN = ("_EXIT_TRACE",)
 
 type PairCount = dict[tuple[str, str], int]
+
 
 class DPrintMixin:
     verbose = 0
     dump = False
 
-    def __init__(self, dump = False, verbose=0):
+    def __init__(self, dump=False, verbose=0):
+        """A mixin class for doing debug printing, based on a per-instance "verbose" level
+
+        Optionally dump all output to this class to file (currently hardcoded as './out.txt')
+
+        Args:
+            dump (bool, optional): Whether to dump all printed output to file. Defaults to False.
+            verbose (int, optional): The verbosity level of output. Defaults to 0.
+        """
         self.verbose = verbose
         self.dump = dump
 
@@ -37,50 +47,80 @@ class DPrintMixin:
     def dprint(self, level: int, *args, wrap=True, **kwargs):
         if level <= self.verbose:
             if wrap:
-                text = [textwrap.fill(''.join(str(a) for a in args), initial_indent= "  " * level, subsequent_indent= ("  " * level + "↳"))]
+                text = [
+                    textwrap.fill(
+                        "".join(str(a) for a in args),
+                        initial_indent="  " * level,
+                        subsequent_indent=("  " * level + "↳"),
+                    )
+                ]
             else:
                 text = ["  " * level, *args]
             print(*text, **kwargs)
             if self.dump:
                 with open("./out.txt", "a+") as f:
-                    f.write(''.join(text) + "\n")
-
+                    f.write("".join(text) + "\n")
 
 
 class SuperNodeAnalysis(DPrintMixin):
     def __init__(self, /, dry_run=False, **kwargs):
+        """_summary_
+
+        Args:
+            dry_run (bool, optional): If True, output analysis but do not update any output files. Defaults to False.
+        """
         super().__init__(**kwargs)
         self.dry_run = dry_run
 
-    def output_pair_stats(self, inputs: list[Path]):
-        match len(inputs):
-            case 1:
-                stats = self.get_stats(inputs)
-                new_supers = self.calculate_supernodes(stats)
-                if not self.dry_run:
-                    self.update_supernodes_c(new_supers)
+    def update_supernode_pairs(self, inputs: list[Path]) -> None:
+        """Grab the stats from a (collection of) Pystats runs, calcalate the resulting next set of supernodes,
+        and (optionally) update `supernodes.c` whhere they are stored.
+
+        Args:
+            inputs (list[Path]): _description_
+        """
+        stats = self.get_stats(inputs)
+        new_supers = self.calculate_supernodes(stats)
+        if not self.dry_run:
+            self.update_supernodes_c(new_supers)
 
     def get_stats(self, inputs: list[Path]) -> Stats:
         data = load_raw_data(Path(inputs[0]))
         return Stats(data)
 
     def calculate_supernodes(self, stats: Stats) -> PairCount:
+        """Give a set of statistics from previous pystats runs, use a series of metrics to determine
+        which supernodes to add, keep, and remove from the set to improve performance
+
+        Args:
+            stats (Stats): An amalgamation of
+
+        Returns:
+            PairCount (dict[tuple[str, str], int]): A mapping of pairs of uops/superops to the count of
+            their occurance in the stats.
+        """
         opcode_stats = stats.get_opcode_stats("uops")
 
-        raw_pairs =  opcode_stats.get_pair_counts()
+        raw_pairs = opcode_stats.get_pair_counts()
         exec_counts = opcode_stats.get_execution_counts()
         pair_counts = self.filter_unusable_ops(raw_pairs)
         total_pair_count = sum(value for value in pair_counts.values())
-        max_pair_str_length = max(len(str(uop)) for uop in pair_counts.keys()) if pair_counts else 40
+        max_pair_str_length = (
+            max(len(str(uop)) for uop in pair_counts.keys()) if pair_counts else 40
+        )
 
-        #Retain/Remove previous supernodes:
+        # Retain/Remove previous supernodes:
         super_exec_counts = {s: v for s, v in exec_counts.items() if "_PLUS_" in s}
-        max_super_str_length = max(len(str(uop)) for uop in super_exec_counts.keys()) if super_exec_counts else 40
+        max_super_str_length = (
+            max(len(str(uop)) for uop in super_exec_counts.keys())
+            if super_exec_counts
+            else 40
+        )
         total_exec_count = sum(value[0] for value in exec_counts.values())
 
         big_total = total_exec_count + total_pair_count
         # TODO filter by conflicting oparg/operand/target here
-        to_add = {}
+        next_nodes = {}
         messages: list[tuple[str, int]] = []
 
         # Add/Decline newly identified pairs
@@ -95,7 +135,7 @@ class SuperNodeAnalysis(DPrintMixin):
                         percent,
                     )
                 )
-                to_add[k] = v
+                next_nodes[k] = v
             else:
                 messages.append(
                     (
@@ -109,26 +149,42 @@ class SuperNodeAnalysis(DPrintMixin):
         for k, v in super_exec_counts.items():
             count = v[0]
             if (percent := (count / big_total)) > THRESHHOLD_RETAIN:
-                messages.append(("  RETAINED old op {0:<{1}}    {2}%".format(
-                    str(k), max_super_str_length, round(percent * 100, 2)
-                ), percent))
+                messages.append(
+                    (
+                        "  RETAINED old op {0:<{1}}    {2}%".format(
+                            str(k), max_super_str_length, round(percent * 100, 2)
+                        ),
+                        percent,
+                    )
+                )
                 k0, k1 = k.split("_PLUS_", 1)
-                to_add[(k0, k1)] = v[0]
+                next_nodes[(k0, k1)] = v[0]
             else:
-                messages.append(("  REMOVED old op  {0:<{1}}    {2}%".format(
-                    str(k), max_super_str_length, round(percent * 100, 2)), percent
-                ))
+                messages.append(
+                    (
+                        "  REMOVED old op  {0:<{1}}    {2}%".format(
+                            str(k), max_super_str_length, round(percent * 100, 2)
+                        ),
+                        percent,
+                    )
+                )
 
         for m in sorted(messages, key=lambda m: m[1], reverse=True):
             self.dprint(2, m[0], wrap=False)
 
         self.dprint(
             1,
-            f"Added {len(to_add)} of {len(raw_pairs)} possible supernodes that make up more than {100*THRESHHOLD_ADD_NEW}% of nodes and are viable",
+            f"Added {len(next_nodes)} of {len(raw_pairs)} possible supernodes that make up more than {100*THRESHHOLD_ADD_NEW}% of nodes and are viable",
         )
-        return to_add
+        return next_nodes
 
-    def update_supernodes_c(self, supernodes: list[tuple[str]]) -> None:
+    def update_supernodes_c(self, supernodes: list[tuple[str, ...]]) -> None:
+        """Given a list of supernodes, update `supernode.c` with properly formatted supernodes
+
+        Args:
+            supernodes (list[tuple[str, ...]]): The list of supernodes to add; each element of the inner tuple is
+            either a uop or another supernode
+        """
         new_supers = (
             f"super() = {" + ".join(uop for uop in node)};" for node in supernodes
         )
@@ -138,55 +194,57 @@ class SuperNodeAnalysis(DPrintMixin):
             f.writelines("\t" + line + "\n" for line in new_supers)
             f.writelines(POST)
 
-    def get_pairs(
-        self, base_stats: Stats
-    ) -> dict[tuple[str, str], int]:
+    def get_pairs(self, base_stats: Stats) -> dict[tuple[str, str], int]:
         opcode_stats = base_stats.get_opcode_stats("uops")
         return opcode_stats.get_pair_counts()
 
     def filter_unusable_ops(self, pairs: PairCount) -> PairCount:
-        forbidden = ("_EXIT_TRACE",)
-        if self.verbose==0:
-            return {
-                k: v
-                for k, v in pairs.items()
-                if k[0] not in forbidden and k[1] not in forbidden
-            }
-        else:
-            result = {}
-            for k, v in pairs.items():
-                if (fail := k[0]) in forbidden or (fail := k[1]) in forbidden:
-                    self.dprint(
-                        1, f"Rejecting pair {k} because {fail} is forbidden in superops"
-                    )
-                else:
-                    result[k] = v
+        """Some uops/superops seem to crash the interpreter/JIT whenver they are included. Currently,
+        these are hardcoded into the FORBIDDEN list. This would be a good thing to continue invesitgated
 
-            return result
+        Args:
+            pairs (PairCount): _description_
+
+        Returns:
+            PairCount: _description_
+        """
+
+        result = {}
+        for k, v in pairs.items():
+            if (fail := k[0]) in FORBIDDEN or (fail := k[1]) in FORBIDDEN:
+                self.dprint(
+                    1, f"Rejecting pair {k} because {fail} is forbidden in superops"
+                )
+            else:
+                result[k] = v
+
+        return result
 
     @classmethod
     def get_supernode_executor_cases(cls) -> set[str]:
         with open(SUPERNODE_CASES, "r") as f:
             return set(m for m in re.findall(r"case (?P<name>[_A-Z0-9]+):", f.read()))
 
-class SuperNodeIterator(DPrintMixin):
 
+class SuperNodeEvolver(DPrintMixin):
     default_kwargs = {
         "cwd": ROOT,
-        "shell": True,
         "stdout": subprocess.PIPE,
         "stderr": subprocess.STDOUT,
     }
 
     def __init__(
-        self,
-        /,
-        threads=2,
-        pyperf_command=None,
-        iterations=5,
-        benchmarks=None,
-        **kwargs
+        self, /, threads=2, pyperf_command=None, iterations=5, benchmarks=None, **kwargs
     ):
+        """Manages the iterative process of taking a set of supernodes; running some benchmarking with pystats on,
+        analyzing the results, generating a new set of supernodes, and repeating.
+
+        Args:
+            threads (int, optional): The number of threads to use for build and test tasks. Defaults to 2.
+            pyperf_command (_type_, optional): _description_. Defaults to ./venv/bin/python -m pyperformance run --python ./python
+            iterations (int, optional): The maximum number of times to iteratively generate new supernodes. Defaults to 5. Node geneation will halt if no supernodes change after a given iteration.
+            benchmarks (_type_, optional): The set of pyperformance benchmarks to rum. Defaults to running all benchmarks.
+        """
         super().__init__(**kwargs)
         if self.verbose >= 2:
             # Send build output to the terminal
@@ -198,47 +256,32 @@ class SuperNodeIterator(DPrintMixin):
         self.benchmarks = benchmarks
 
     def iterate_supernodes(self):
+        """The primary iteration method for generating new supernodes."""
         self.clear_dump_output()
         self.dprint(0, "Dumping output to ./out.txt")
-        self.dprint(0,
-            f"Beginning supernode generation process for {self.iterations} iterations max"
+        self.dprint(
+            0,
+            f"Beginning supernode generation process for {self.iterations} iterations max",
         )
+
         for gen in range(self.iterations):
-            self.dprint(0, f"Starting supernode generation {gen+1} of {self.iterations}")
-            # Build Python with current nodes/supernodes
+            self.dprint(
+                0, f"Starting supernode generation {gen+1} of {self.iterations}"
+            )
             starting_supernodes = SuperNodeAnalysis.get_supernode_executor_cases()
 
             self.build_python()
-
-            # Generate Stats
             self.generate_stats()
-            # Generate new set of supernodes
-
             self.generate_supernodes_from_stats()
 
             ending_supernodes = SuperNodeAnalysis.get_supernode_executor_cases()
-            added = ending_supernodes - starting_supernodes
-            removed = starting_supernodes - ending_supernodes
-            retained = starting_supernodes & ending_supernodes
-
-            if added:
-                self.dprint(2, f"Added {len(added)} supernodes")
-                self.dprint(3, added)
-
-            if removed:
-                self.dprint(2, f"Removed {len(removed)} supernodes")
-                self.dprint(3, removed)
-
-            if retained:
-                self.dprint(2, f"Retained {len(retained)} supernodes")
-                self.dprint(3, retained)
-
+            self.print_supernode_changes(starting_supernodes, ending_supernodes)
             if starting_supernodes == ending_supernodes:
                 self.dprint(0, "No supernodes were changed during this run, ending run")
                 break
 
-            # TODO Run tests and gather failure types
-            # TODO Bail on specific failure types specified by args
+                # TODO Run tests and gather failure types
+                # TODO Bail on specific failure types specified by args
 
     def build_python(self) -> None:
         self.dprint(1, "Building python")
@@ -253,14 +296,12 @@ class SuperNodeIterator(DPrintMixin):
                 "./configure",
                 "--enable-experimental-jit",
                 "--enable-pystats",
-            ]
-        , stdout=subprocess.DEVNULL)
+            ],
+            stdout=subprocess.DEVNULL,
+        )
 
-        # self.run_command_list([["make", "regen-uop-ids"] "regen-uop-metadata", "regen-exeuctor-cases", "regen-jit"]])
-        # self.call_command_list([["./configure","--enable-experimental-jit","--enable-pystats",],])
         self.dprint(2, f"Running `make -j{self.threads}`")
         subprocess.run(["make", f"-j{self.threads}"], stdout=subprocess.DEVNULL)
-        #self.run_command_list([["make", f"-j{self.threads}"]])
 
         """         commands = [
             ["make", "distclean"],
@@ -275,14 +316,16 @@ class SuperNodeIterator(DPrintMixin):
             ],
         ] """
 
-        # self.run_command_list(commands)
-
     def generate_stats(self) -> None:
+        """Run a command (defaults to pyperformance with all benchmarks) and generate pystats
+        There could be other ways of generating stats in the future.
+        """
         self.dprint(1, "Generating statistics")
         if (venv := Path("./venv")).exists() and venv.is_dir():
             self.dprint(2, "Deleting old venv")
             shutil.rmtree(venv)
 
+        # Set pyperformance command
         if self.pyperf_command == None:
             self.pyperf_command = [
                 "./venv/bin/python",
@@ -292,8 +335,6 @@ class SuperNodeIterator(DPrintMixin):
                 "--python",
                 str(ROOT / "python"),
             ]
-            #if self.verbose:
-            #    self.pyperf_command.append(f"-{'v'*self.verbose}")
             if self.benchmarks:
                 self.dprint(2, f"Adding benchmarks to command: {self.benchmarks}")
                 self.pyperf_command.extend(["-b", self.benchmarks])
@@ -302,27 +343,25 @@ class SuperNodeIterator(DPrintMixin):
                 self.pyperf_command = self.pyperf_command.split(" ")
 
         # delete old pystats
-
         try:
             directory = "/tmp/py_stats"
             stats_files = os.listdir(directory)
             for file in stats_files:
                 os.remove(os.path.join(directory, file))
         except FileNotFoundError as e:
-            self.dprint(1, f"Could not remove all of /tmp/py_stats. Failed with error: {e}")
+            self.dprint(
+                1, f"Could not remove all of /tmp/py_stats. Failed with error: {e}"
+            )
 
-        self.call_command_list(
-            [
-                ["python", "-m", "venv", "venv"],
-                ["./venv/bin/python", "-m", "pip", "install", "pyperformance"],
-                self.pyperf_command,
-            ],
-            kwargs={
-                "cwd": ROOT,
-            },
-        )
+        # run pyperformance
+        self.run_command(["python", "-m", "venv", "venv"])
+        self.run_command(["./venv/bin/python", "-m", "pip", "install", "pyperformance"])
+        self.run_command(self.pyperf_command)
 
     def generate_supernodes_from_stats(self):
+        """Once stats have been generated, calculate new supernodes, then regenerate
+        relevant metadata
+        """
         self.dprint(1, "Generating supernodes from stats")
         analysis = SuperNodeAnalysis(verbose=self.verbose, dump=self.dump)
 
@@ -330,7 +369,9 @@ class SuperNodeIterator(DPrintMixin):
         stats = analysis.get_stats([DEFAULT_DIR])
         self.dprint(2, "Calculating supernodes from stats")
         new_supers = analysis.calculate_supernodes(stats)
-        self.dprint(2, f"Updating supernodes.c with {len(new_supers)} potential supernodes")
+        self.dprint(
+            2, f"Updating supernodes.c with {len(new_supers)} potential supernodes"
+        )
         analysis.update_supernodes_c(new_supers)
 
         for command in [
@@ -338,35 +379,66 @@ class SuperNodeIterator(DPrintMixin):
             ("make", "regen-uop-metadata"),
             ("make", "regen-executor-cases"),
             ("make", "regen-jit"),
-            ]:
+        ]:
             self.dprint(2, f"Running command `{command}`")
             subprocess.check_call(command, stdout=subprocess.DEVNULL)
 
-    def do_command_func(self, command_list: list[str], func, kwargs=None, ignore_errors = False):
-        for command in command_list:
-            self.dprint(2, f"Running {command=} with function {func.__name__}")
-            if kwargs == None:
-                kwargs = self.default_kwargs
-            result: subprocess.CompletedProcess = func(command, {"stdout": subprocess.DEVNULL}.update(kwargs))
-            if not ignore_errors and result.returncode: raise RuntimeError(f"Command {command} exiting with error code {result.returncode}")
+    def print_supernode_changes(self, start, end):
+        """Print a summary of of changes between a starting set of nodes and an ending set
 
-    run_command_list = functools.partialmethod(do_command_func, func=subprocess.run)
-    call_command_list = functools.partialmethod(do_command_func, func=subprocess.call, ignore_errors=True)
+        Args:
+            start (_type_): _description_
+            end (_type_): _description_
+
+        Returns:
+            bool: _description_
+        """
+        added = end - start
+        removed = start - end
+        retained = start & end
+
+        if added:
+            self.dprint(2, f"Added {len(added)} supernodes")
+            self.dprint(3, added)
+
+        if removed:
+            self.dprint(2, f"Removed {len(removed)} supernodes")
+            self.dprint(3, removed)
+
+        if retained:
+            self.dprint(2, f"Retained {len(retained)} supernodes")
+            self.dprint(3, retained)
+
+    def run_command(
+        self, command: list[str], kwargs=None, raise_errors=False
+    ) -> subprocess.CompletedProcess:
+        self.dprint(2, f"Running {command=}")
+        if kwargs == None:
+            kwargs = self.default_kwargs
+        result: subprocess.CompletedProcess = subprocess.run(command, **kwargs)
+        if raise_errors and result.returncode:
+            raise RuntimeError(
+                f"Command {command} exited with error code {result.returncode}"
+            )
+        return result
+
+
+### argparse functions:
 
 
 def _update(args: argparse.Namespace) -> None:
     analysis = SuperNodeAnalysis(dry_run=args.dry_run, verbose=args.verbose)
-    analysis.output_pair_stats(args.inputs)
+    analysis.update_supernode_pairs(args.inputs)
 
 
 def _iterate(args: argparse.Namespace) -> None:
-    manager = SuperNodeIterator(
+    manager = SuperNodeEvolver(
         pyperf_command=args.perf_command,
         threads=args.jobs,
         verbose=args.verbose,
         iterations=args.iterations,
         benchmarks=args.benchmarks,
-        dump=args.dump_output
+        dump=args.dump_output,
     )
     manager.iterate_supernodes()
 
@@ -385,9 +457,7 @@ def main():
     )
 
     parser.add_argument(
-        "--dump-output",
-        action="store_true",
-        help="Dump stdout output to ./out.txt"
+        "--dump-output", action="store_true", help="Dump stdout output to ./out.txt"
     )
 
     subparsers = parser.add_subparsers(help="Sub-command help")
