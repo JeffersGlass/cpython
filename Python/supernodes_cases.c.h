@@ -7,60 +7,160 @@
             #error "This file is for Tier 2 only"
         #endif
         #define TIER_TWO 2
-        case _RETURN_VALUE_PLUS__LOAD_FAST_5: {
+        case _SET_IP_PLUS__LOAD_ATTR: {
         }
-        case _RESUME_CHECK_PLUS__LOAD_CONST_INLINE: {
+        case _GUARD_NOT_EXHAUSTED_LIST_PLUS__ITER_NEXT_LIST: {
         }
-        case _SET_IP_PLUS__BINARY_OP: {
+        case _LOAD_ATTR_PLUS__CHECK_VALIDITY: {
         }
-        case _BINARY_OP_PLUS__CHECK_VALIDITY: {
+        case _LIST_APPEND_PLUS__JUMP_TO_TOP_PLUS__TIER2_RESUME_CHECK: {
         }
-        case _BINARY_OP_ADD_FLOAT_PLUS__STORE_FAST_3: {
+        case _PUSH_FRAME_PLUS__DYNAMIC_EXIT_PLUS__START_EXECUTOR: {
         }
         case _BINARY_OP_ADD_INT_PLUS__SET_IP: {
         }
-        case _BINARY_OP_ADD_INT_PLUS__LOAD_CONST_INLINE_BORROW: {
+        case _CALL_BUILTIN_FAST_PLUS__CHECK_PERIODIC: {
         }
-        case _BINARY_OP_ADD_INT_PLUS__LOAD_FAST_0: {
+        case _CALL_BUILTIN_O_PLUS__CHECK_PERIODIC: {
         }
-        case _BINARY_OP_MULTIPLY_INT_PLUS__LOAD_CONST_INLINE_BORROW: {
+        case _CALL_NON_PY_GENERAL_PLUS__CHECK_PERIODIC: {
+        }
+        case _CHECK_PERIODIC_PLUS__CHECK_VALIDITY: {
         }
         case _CHECK_STACK_SPACE_OPERAND_PLUS__INIT_CALL_PY_EXACT_ARGS_2: {
         }
-        case _CHECK_VALIDITY_PLUS__RETURN_VALUE: {
+        case _CHECK_STACK_SPACE_PLUS__INIT_CALL_PY_EXACT_ARGS_1: {
+        }
+        case _CHECK_VALIDITY_AND_SET_IP_PLUS__GET_ITER: {
         }
         case _CHECK_VALIDITY_PLUS__LOAD_FAST_0: {
         }
-        case _GUARD_NOS_INT_PLUS__LOAD_CONST_INLINE_BORROW: {
+        case _CHECK_VALIDITY_PLUS__LOAD_FAST_1: {
+        }
+        case _CHECK_VALIDITY_PLUS__RETURN_VALUE: {
+        }
+        case _CHECK_VALIDITY_PLUS__STORE_FAST: {
+        }
+        case _CHECK_VALIDITY_PLUS__STORE_FAST_2: {
+        }
+        case _CHECK_VALIDITY_PLUS__STORE_FAST_3: {
+        }
+        case _CHECK_VALIDITY_PLUS__STORE_FAST_4_PLUS__LOAD_FAST_3_PLUS__LOAD_FAST_4_PLUS__LOAD_FAST_2_PLUS__BUILD_TUPLE: {
+        }
+        case _GET_ITER_PLUS__CHECK_VALIDITY: {
+        }
+        case _GUARD_IS_FALSE_POP_PLUS__JUMP_TO_TOP: {
+        }
+        case _GUARD_IS_FALSE_POP_PLUS__LOAD_FAST_3_PLUS__LOAD_FAST_2_PLUS__SET_IP: {
+        }
+        case _GUARD_IS_NONE_POP_PLUS__LOAD_FAST_0: {
+        }
+        case _GUARD_IS_TRUE_POP_PLUS__LOAD_CONST_INLINE_WITH_NULL: {
+        }
+        case _GUARD_IS_TRUE_POP_PLUS__LOAD_FAST_0: {
+        }
+        case _GUARD_NOT_EXHAUSTED_LIST_PLUS__ITER_NEXT_LIST_PLUS__STORE_FAST_2_PLUS__LOAD_FAST_2: {
+        }
+        case _GUARD_NOT_EXHAUSTED_LIST_PLUS__ITER_NEXT_LIST_PLUS__STORE_FAST_3_PLUS__LOAD_FAST_3: {
+        }
+        case _GUARD_NOT_EXHAUSTED_TUPLE_PLUS__ITER_NEXT_TUPLE: {
+        }
+        case _INIT_CALL_PY_EXACT_ARGS_1_PLUS__SAVE_RETURN_OFFSET_PLUS__PUSH_FRAME: {
         }
         case _INIT_CALL_PY_EXACT_ARGS_2_PLUS__SAVE_RETURN_OFFSET: {
         }
-        case _JUMP_TO_TOP_PLUS__TIER2_RESUME_CHECK: {
+        case _ITER_NEXT_LIST_PLUS__STORE_FAST_2: {
+        }
+        case _ITER_NEXT_LIST_PLUS__STORE_FAST_3: {
+        }
+        case _LIST_APPEND_PLUS__JUMP_TO_TOP: {
+        }
+        case _LOAD_ATTR_METHOD_NO_DICT_PLUS__LOAD_FAST_0: {
+        }
+        case _LOAD_ATTR_PLUS__CHECK_VALIDITY_AND_SET_IP: {
+        }
+        case _LOAD_ATTR_PLUS__CHECK_VALIDITY_PLUS__STORE_FAST_2_PLUS__LOAD_FAST_0: {
         }
         case _LOAD_CONST_INLINE_PLUS__LOAD_FAST_0: {
         }
-        case _LOAD_CONST_INLINE_BORROW_PLUS__BINARY_OP_ADD_INT: {
+        case _LOAD_CONST_INLINE_PLUS__PUSH_NULL: {
         }
-        case _LOAD_FAST_0_PLUS__GUARD_NOS_INT: {
+        case _LOAD_CONST_INLINE_WITH_NULL_PLUS__LOAD_FAST_0: {
         }
-        case _LOAD_FAST_0_PLUS__LOAD_FAST_1: {
+        case _LOAD_CONST_INLINE_WITH_NULL_PLUS__LOAD_FAST_3: {
         }
-        case _LOAD_FAST_1_PLUS__BINARY_OP_ADD_INT: {
+        case _LOAD_CONST_INLINE_WITH_NULL_PLUS__LOAD_FAST_5_PLUS__LOAD_FAST_2: {
+        }
+        case _LOAD_FAST_0_PLUS__CHECK_MANAGED_OBJECT_HAS_VALUES: {
+        }
+        case _LOAD_FAST_0_PLUS__GUARD_TYPE_VERSION: {
+        }
+        case _LOAD_FAST_0_PLUS__LOAD_FAST_1_PLUS__SET_IP_PLUS__CALL_BUILTIN_FAST_PLUS__CHECK_PERIODIC: {
         }
         case _LOAD_FAST_1_PLUS__GUARD_BOTH_INT: {
         }
-        case _LOAD_FAST_3_PLUS__CHECK_FUNCTION: {
+        case _LOAD_FAST_1_PLUS__GUARD_TYPE_VERSION: {
+        }
+        case _LOAD_FAST_1_PLUS__SET_IP: {
+        }
+        case _LOAD_FAST_2_PLUS__GUARD_TYPE_VERSION: {
+        }
+        case _LOAD_FAST_2_PLUS__SET_IP: {
+        }
+        case _LOAD_FAST_3_PLUS__LOAD_CONST_INLINE_BORROW: {
+        }
+        case _LOAD_FAST_3_PLUS__LOAD_FAST_2: {
+        }
+        case _LOAD_FAST_4_PLUS__SET_IP: {
+        }
+        case _LOAD_FAST_5_PLUS__SET_IP: {
+        }
+        case _LOAD_FAST_PLUS__TO_BOOL_NONE_PLUS__POP_TOP: {
+        }
+        case _PUSH_FRAME_PLUS__DYNAMIC_EXIT: {
         }
         case _PUSH_FRAME_PLUS__RESUME_CHECK: {
         }
-        case _SAVE_RETURN_OFFSET_PLUS__PUSH_FRAME: {
+        case _RESUME_CHECK_PLUS__LOAD_FAST_0: {
         }
-        case _STORE_FAST_3_PLUS__JUMP_TO_TOP: {
+        case _RESUME_CHECK_PLUS__LOAD_FAST_2: {
+        }
+        case _SAVE_RETURN_OFFSET_PLUS__PUSH_FRAME_PLUS__CHECK_VALIDITY: {
+        }
+        case _SAVE_RETURN_OFFSET_PLUS__PUSH_FRAME_PLUS__RESUME_CHECK: {
+        }
+        case _SET_IP_PLUS__BINARY_SUBSCR_DICT: {
+        }
+        case _SET_IP_PLUS__CALL_BUILTIN_FAST: {
+        }
+        case _SET_IP_PLUS__CALL_BUILTIN_O: {
+        }
+        case _SET_IP_PLUS__CONTAINS_OP_DICT: {
+        }
+        case _SET_IP_PLUS__LOAD_ATTR_PLUS__CHECK_VALIDITY_PLUS__LOAD_FAST_1: {
+        }
+        case _SET_IP_PLUS__LOAD_ATTR_PLUS__CHECK_VALIDITY_PLUS__LOAD_FAST_5: {
+        }
+        case _SET_IP_PLUS__STORE_SUBSCR_DICT: {
+        }
+        case _STORE_FAST_2_PLUS__LOAD_FAST_0_PLUS__GUARD_TYPE_VERSION: {
+        }
+        case _STORE_FAST_3_PLUS__LOAD_FAST_3: {
         }
         case _STORE_FAST_4_PLUS__STORE_FAST_5: {
         }
-        case _STORE_FAST_5_PLUS__LOAD_FAST_3: {
+        case _STORE_FAST_5_PLUS__CHECK_FUNCTION: {
+        }
+        case _STORE_FAST_7_PLUS__STORE_FAST_PLUS__LOAD_FAST_6_PLUS__GUARD_TYPE_VERSION: {
+        }
+        case _STORE_FAST_PLUS__LOAD_FAST_6: {
+        }
+        case _TIER2_RESUME_CHECK_PLUS__LOAD_FAST_0: {
         }
         case _TIER2_RESUME_CHECK_PLUS__SET_IP: {
+        }
+        case _TO_BOOL_NONE_PLUS__POP_TOP: {
+        }
+        case _UNPACK_SEQUENCE_TUPLE_PLUS__STORE_FAST_6: {
         }
 #undef TIER_TWO

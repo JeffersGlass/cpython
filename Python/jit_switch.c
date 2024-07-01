@@ -21,50 +21,131 @@ extern "C" {
 #ifdef _Py_JIT
 
 
-// This function always needs to be fed 2 uops
+// This function always needs to be fed 6 uops
 SuperNode
 _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
     switch (uops[start_index + 0].opcode) {
-        case _RETURN_VALUE:
-            switch (uops[start_index + 1].opcode) {
-                case _LOAD_FAST_5:
-                    return (SuperNode) {.index = _RETURN_VALUE_PLUS__LOAD_FAST_5, .length = 2};
-                    break;
-                default:
-                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
-            }
-            break;
-        case _RESUME_CHECK:
-            switch (uops[start_index + 1].opcode) {
-                case _LOAD_CONST_INLINE:
-                    return (SuperNode) {.index = _RESUME_CHECK_PLUS__LOAD_CONST_INLINE, .length = 2};
-                    break;
-                default:
-                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
-            }
-            break;
         case _SET_IP:
             switch (uops[start_index + 1].opcode) {
-                case _BINARY_OP:
-                    return (SuperNode) {.index = _SET_IP_PLUS__BINARY_OP, .length = 2};
+                case _LOAD_ATTR:
+                    switch (uops[start_index + 2].opcode) {
+                        case _CHECK_VALIDITY:
+                            switch (uops[start_index + 3].opcode) {
+                                case _LOAD_FAST_1:
+                                    return (SuperNode) {.index = _SET_IP_PLUS__LOAD_ATTR_PLUS__CHECK_VALIDITY_PLUS__LOAD_FAST_1, .length = 4};
+                                    break;
+                                case _LOAD_FAST_5:
+                                    return (SuperNode) {.index = _SET_IP_PLUS__LOAD_ATTR_PLUS__CHECK_VALIDITY_PLUS__LOAD_FAST_5, .length = 4};
+                                    break;
+                                default:
+                                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                            }
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
+                    break;
+                case _BINARY_SUBSCR_DICT:
+                    return (SuperNode) {.index = _SET_IP_PLUS__BINARY_SUBSCR_DICT, .length = 2};
+                    break;
+                case _CALL_BUILTIN_FAST:
+                    return (SuperNode) {.index = _SET_IP_PLUS__CALL_BUILTIN_FAST, .length = 2};
+                    break;
+                case _CALL_BUILTIN_O:
+                    return (SuperNode) {.index = _SET_IP_PLUS__CALL_BUILTIN_O, .length = 2};
+                    break;
+                case _CONTAINS_OP_DICT:
+                    return (SuperNode) {.index = _SET_IP_PLUS__CONTAINS_OP_DICT, .length = 2};
+                    break;
+                case _STORE_SUBSCR_DICT:
+                    return (SuperNode) {.index = _SET_IP_PLUS__STORE_SUBSCR_DICT, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
             }
             break;
-        case _BINARY_OP:
+        case _GUARD_NOT_EXHAUSTED_LIST:
+            switch (uops[start_index + 1].opcode) {
+                case _ITER_NEXT_LIST:
+                    switch (uops[start_index + 2].opcode) {
+                        case _STORE_FAST_2:
+                            switch (uops[start_index + 3].opcode) {
+                                case _LOAD_FAST_2:
+                                    return (SuperNode) {.index = _GUARD_NOT_EXHAUSTED_LIST_PLUS__ITER_NEXT_LIST_PLUS__STORE_FAST_2_PLUS__LOAD_FAST_2, .length = 4};
+                                    break;
+                                default:
+                                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                            }
+                            break;
+                        case _STORE_FAST_3:
+                            switch (uops[start_index + 3].opcode) {
+                                case _LOAD_FAST_3:
+                                    return (SuperNode) {.index = _GUARD_NOT_EXHAUSTED_LIST_PLUS__ITER_NEXT_LIST_PLUS__STORE_FAST_3_PLUS__LOAD_FAST_3, .length = 4};
+                                    break;
+                                default:
+                                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                            }
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _LOAD_ATTR:
             switch (uops[start_index + 1].opcode) {
                 case _CHECK_VALIDITY:
-                    return (SuperNode) {.index = _BINARY_OP_PLUS__CHECK_VALIDITY, .length = 2};
+                    switch (uops[start_index + 2].opcode) {
+                        case _STORE_FAST_2:
+                            switch (uops[start_index + 3].opcode) {
+                                case _LOAD_FAST_0:
+                                    return (SuperNode) {.index = _LOAD_ATTR_PLUS__CHECK_VALIDITY_PLUS__STORE_FAST_2_PLUS__LOAD_FAST_0, .length = 4};
+                                    break;
+                                default:
+                                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                            }
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
+                    break;
+                case _CHECK_VALIDITY_AND_SET_IP:
+                    return (SuperNode) {.index = _LOAD_ATTR_PLUS__CHECK_VALIDITY_AND_SET_IP, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
             }
             break;
-        case _BINARY_OP_ADD_FLOAT:
+        case _LIST_APPEND:
             switch (uops[start_index + 1].opcode) {
-                case _STORE_FAST_3:
-                    return (SuperNode) {.index = _BINARY_OP_ADD_FLOAT_PLUS__STORE_FAST_3, .length = 2};
+                case _JUMP_TO_TOP:
+                    switch (uops[start_index + 2].opcode) {
+                        case _TIER2_RESUME_CHECK:
+                            return (SuperNode) {.index = _LIST_APPEND_PLUS__JUMP_TO_TOP_PLUS__TIER2_RESUME_CHECK, .length = 3};
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _PUSH_FRAME:
+            switch (uops[start_index + 1].opcode) {
+                case _DYNAMIC_EXIT:
+                    switch (uops[start_index + 2].opcode) {
+                        case _START_EXECUTOR:
+                            return (SuperNode) {.index = _PUSH_FRAME_PLUS__DYNAMIC_EXIT_PLUS__START_EXECUTOR, .length = 3};
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
+                    break;
+                case _RESUME_CHECK:
+                    return (SuperNode) {.index = _PUSH_FRAME_PLUS__RESUME_CHECK, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
@@ -75,20 +156,41 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
                 case _SET_IP:
                     return (SuperNode) {.index = _BINARY_OP_ADD_INT_PLUS__SET_IP, .length = 2};
                     break;
-                case _LOAD_CONST_INLINE_BORROW:
-                    return (SuperNode) {.index = _BINARY_OP_ADD_INT_PLUS__LOAD_CONST_INLINE_BORROW, .length = 2};
-                    break;
-                case _LOAD_FAST_0:
-                    return (SuperNode) {.index = _BINARY_OP_ADD_INT_PLUS__LOAD_FAST_0, .length = 2};
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _CALL_BUILTIN_FAST:
+            switch (uops[start_index + 1].opcode) {
+                case _CHECK_PERIODIC:
+                    return (SuperNode) {.index = _CALL_BUILTIN_FAST_PLUS__CHECK_PERIODIC, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
             }
             break;
-        case _BINARY_OP_MULTIPLY_INT:
+        case _CALL_BUILTIN_O:
             switch (uops[start_index + 1].opcode) {
-                case _LOAD_CONST_INLINE_BORROW:
-                    return (SuperNode) {.index = _BINARY_OP_MULTIPLY_INT_PLUS__LOAD_CONST_INLINE_BORROW, .length = 2};
+                case _CHECK_PERIODIC:
+                    return (SuperNode) {.index = _CALL_BUILTIN_O_PLUS__CHECK_PERIODIC, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _CALL_NON_PY_GENERAL:
+            switch (uops[start_index + 1].opcode) {
+                case _CHECK_PERIODIC:
+                    return (SuperNode) {.index = _CALL_NON_PY_GENERAL_PLUS__CHECK_PERIODIC, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _CHECK_PERIODIC:
+            switch (uops[start_index + 1].opcode) {
+                case _CHECK_VALIDITY:
+                    return (SuperNode) {.index = _CHECK_PERIODIC_PLUS__CHECK_VALIDITY, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
@@ -103,22 +205,148 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
             }
             break;
-        case _CHECK_VALIDITY:
+        case _CHECK_STACK_SPACE:
             switch (uops[start_index + 1].opcode) {
-                case _RETURN_VALUE:
-                    return (SuperNode) {.index = _CHECK_VALIDITY_PLUS__RETURN_VALUE, .length = 2};
-                    break;
-                case _LOAD_FAST_0:
-                    return (SuperNode) {.index = _CHECK_VALIDITY_PLUS__LOAD_FAST_0, .length = 2};
+                case _INIT_CALL_PY_EXACT_ARGS_1:
+                    return (SuperNode) {.index = _CHECK_STACK_SPACE_PLUS__INIT_CALL_PY_EXACT_ARGS_1, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
             }
             break;
-        case _GUARD_NOS_INT:
+        case _CHECK_VALIDITY_AND_SET_IP:
             switch (uops[start_index + 1].opcode) {
-                case _LOAD_CONST_INLINE_BORROW:
-                    return (SuperNode) {.index = _GUARD_NOS_INT_PLUS__LOAD_CONST_INLINE_BORROW, .length = 2};
+                case _GET_ITER:
+                    return (SuperNode) {.index = _CHECK_VALIDITY_AND_SET_IP_PLUS__GET_ITER, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _CHECK_VALIDITY:
+            switch (uops[start_index + 1].opcode) {
+                case _LOAD_FAST_0:
+                    return (SuperNode) {.index = _CHECK_VALIDITY_PLUS__LOAD_FAST_0, .length = 2};
+                    break;
+                case _LOAD_FAST_1:
+                    return (SuperNode) {.index = _CHECK_VALIDITY_PLUS__LOAD_FAST_1, .length = 2};
+                    break;
+                case _RETURN_VALUE:
+                    return (SuperNode) {.index = _CHECK_VALIDITY_PLUS__RETURN_VALUE, .length = 2};
+                    break;
+                case _STORE_FAST:
+                    return (SuperNode) {.index = _CHECK_VALIDITY_PLUS__STORE_FAST, .length = 2};
+                    break;
+                case _STORE_FAST_2:
+                    return (SuperNode) {.index = _CHECK_VALIDITY_PLUS__STORE_FAST_2, .length = 2};
+                    break;
+                case _STORE_FAST_3:
+                    return (SuperNode) {.index = _CHECK_VALIDITY_PLUS__STORE_FAST_3, .length = 2};
+                    break;
+                case _STORE_FAST_4:
+                    switch (uops[start_index + 2].opcode) {
+                        case _LOAD_FAST_3:
+                            switch (uops[start_index + 3].opcode) {
+                                case _LOAD_FAST_4:
+                                    switch (uops[start_index + 4].opcode) {
+                                        case _LOAD_FAST_2:
+                                            switch (uops[start_index + 5].opcode) {
+                                                case _BUILD_TUPLE:
+                                                    return (SuperNode) {.index = _CHECK_VALIDITY_PLUS__STORE_FAST_4_PLUS__LOAD_FAST_3_PLUS__LOAD_FAST_4_PLUS__LOAD_FAST_2_PLUS__BUILD_TUPLE, .length = 6};
+                                                    break;
+                                                default:
+                                                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                                            }
+                                            break;
+                                        default:
+                                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                                    }
+                                    break;
+                                default:
+                                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                            }
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _GET_ITER:
+            switch (uops[start_index + 1].opcode) {
+                case _CHECK_VALIDITY:
+                    return (SuperNode) {.index = _GET_ITER_PLUS__CHECK_VALIDITY, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _GUARD_IS_FALSE_POP:
+            switch (uops[start_index + 1].opcode) {
+                case _JUMP_TO_TOP:
+                    return (SuperNode) {.index = _GUARD_IS_FALSE_POP_PLUS__JUMP_TO_TOP, .length = 2};
+                    break;
+                case _LOAD_FAST_3:
+                    switch (uops[start_index + 2].opcode) {
+                        case _LOAD_FAST_2:
+                            switch (uops[start_index + 3].opcode) {
+                                case _SET_IP:
+                                    return (SuperNode) {.index = _GUARD_IS_FALSE_POP_PLUS__LOAD_FAST_3_PLUS__LOAD_FAST_2_PLUS__SET_IP, .length = 4};
+                                    break;
+                                default:
+                                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                            }
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _GUARD_IS_NONE_POP:
+            switch (uops[start_index + 1].opcode) {
+                case _LOAD_FAST_0:
+                    return (SuperNode) {.index = _GUARD_IS_NONE_POP_PLUS__LOAD_FAST_0, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _GUARD_IS_TRUE_POP:
+            switch (uops[start_index + 1].opcode) {
+                case _LOAD_CONST_INLINE_WITH_NULL:
+                    return (SuperNode) {.index = _GUARD_IS_TRUE_POP_PLUS__LOAD_CONST_INLINE_WITH_NULL, .length = 2};
+                    break;
+                case _LOAD_FAST_0:
+                    return (SuperNode) {.index = _GUARD_IS_TRUE_POP_PLUS__LOAD_FAST_0, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _GUARD_NOT_EXHAUSTED_TUPLE:
+            switch (uops[start_index + 1].opcode) {
+                case _ITER_NEXT_TUPLE:
+                    return (SuperNode) {.index = _GUARD_NOT_EXHAUSTED_TUPLE_PLUS__ITER_NEXT_TUPLE, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _INIT_CALL_PY_EXACT_ARGS_1:
+            switch (uops[start_index + 1].opcode) {
+                case _SAVE_RETURN_OFFSET:
+                    switch (uops[start_index + 2].opcode) {
+                        case _PUSH_FRAME:
+                            return (SuperNode) {.index = _INIT_CALL_PY_EXACT_ARGS_1_PLUS__SAVE_RETURN_OFFSET_PLUS__PUSH_FRAME, .length = 3};
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
@@ -133,10 +361,22 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
             }
             break;
-        case _JUMP_TO_TOP:
+        case _ITER_NEXT_LIST:
             switch (uops[start_index + 1].opcode) {
-                case _TIER2_RESUME_CHECK:
-                    return (SuperNode) {.index = _JUMP_TO_TOP_PLUS__TIER2_RESUME_CHECK, .length = 2};
+                case _STORE_FAST_2:
+                    return (SuperNode) {.index = _ITER_NEXT_LIST_PLUS__STORE_FAST_2, .length = 2};
+                    break;
+                case _STORE_FAST_3:
+                    return (SuperNode) {.index = _ITER_NEXT_LIST_PLUS__STORE_FAST_3, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _LOAD_ATTR_METHOD_NO_DICT:
+            switch (uops[start_index + 1].opcode) {
+                case _LOAD_FAST_0:
+                    return (SuperNode) {.index = _LOAD_ATTR_METHOD_NO_DICT_PLUS__LOAD_FAST_0, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
@@ -147,14 +387,29 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
                 case _LOAD_FAST_0:
                     return (SuperNode) {.index = _LOAD_CONST_INLINE_PLUS__LOAD_FAST_0, .length = 2};
                     break;
+                case _PUSH_NULL:
+                    return (SuperNode) {.index = _LOAD_CONST_INLINE_PLUS__PUSH_NULL, .length = 2};
+                    break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
             }
             break;
-        case _LOAD_CONST_INLINE_BORROW:
+        case _LOAD_CONST_INLINE_WITH_NULL:
             switch (uops[start_index + 1].opcode) {
-                case _BINARY_OP_ADD_INT:
-                    return (SuperNode) {.index = _LOAD_CONST_INLINE_BORROW_PLUS__BINARY_OP_ADD_INT, .length = 2};
+                case _LOAD_FAST_0:
+                    return (SuperNode) {.index = _LOAD_CONST_INLINE_WITH_NULL_PLUS__LOAD_FAST_0, .length = 2};
+                    break;
+                case _LOAD_FAST_3:
+                    return (SuperNode) {.index = _LOAD_CONST_INLINE_WITH_NULL_PLUS__LOAD_FAST_3, .length = 2};
+                    break;
+                case _LOAD_FAST_5:
+                    switch (uops[start_index + 2].opcode) {
+                        case _LOAD_FAST_2:
+                            return (SuperNode) {.index = _LOAD_CONST_INLINE_WITH_NULL_PLUS__LOAD_FAST_5_PLUS__LOAD_FAST_2, .length = 3};
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
@@ -162,11 +417,32 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
             break;
         case _LOAD_FAST_0:
             switch (uops[start_index + 1].opcode) {
-                case _GUARD_NOS_INT:
-                    return (SuperNode) {.index = _LOAD_FAST_0_PLUS__GUARD_NOS_INT, .length = 2};
+                case _CHECK_MANAGED_OBJECT_HAS_VALUES:
+                    return (SuperNode) {.index = _LOAD_FAST_0_PLUS__CHECK_MANAGED_OBJECT_HAS_VALUES, .length = 2};
+                    break;
+                case _GUARD_TYPE_VERSION:
+                    return (SuperNode) {.index = _LOAD_FAST_0_PLUS__GUARD_TYPE_VERSION, .length = 2};
                     break;
                 case _LOAD_FAST_1:
-                    return (SuperNode) {.index = _LOAD_FAST_0_PLUS__LOAD_FAST_1, .length = 2};
+                    switch (uops[start_index + 2].opcode) {
+                        case _SET_IP:
+                            switch (uops[start_index + 3].opcode) {
+                                case _CALL_BUILTIN_FAST:
+                                    switch (uops[start_index + 4].opcode) {
+                                        case _CHECK_PERIODIC:
+                                            return (SuperNode) {.index = _LOAD_FAST_0_PLUS__LOAD_FAST_1_PLUS__SET_IP_PLUS__CALL_BUILTIN_FAST_PLUS__CHECK_PERIODIC, .length = 5};
+                                            break;
+                                        default:
+                                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                                    }
+                                    break;
+                                default:
+                                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                            }
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
@@ -174,11 +450,26 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
             break;
         case _LOAD_FAST_1:
             switch (uops[start_index + 1].opcode) {
-                case _BINARY_OP_ADD_INT:
-                    return (SuperNode) {.index = _LOAD_FAST_1_PLUS__BINARY_OP_ADD_INT, .length = 2};
-                    break;
                 case _GUARD_BOTH_INT:
                     return (SuperNode) {.index = _LOAD_FAST_1_PLUS__GUARD_BOTH_INT, .length = 2};
+                    break;
+                case _GUARD_TYPE_VERSION:
+                    return (SuperNode) {.index = _LOAD_FAST_1_PLUS__GUARD_TYPE_VERSION, .length = 2};
+                    break;
+                case _SET_IP:
+                    return (SuperNode) {.index = _LOAD_FAST_1_PLUS__SET_IP, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _LOAD_FAST_2:
+            switch (uops[start_index + 1].opcode) {
+                case _GUARD_TYPE_VERSION:
+                    return (SuperNode) {.index = _LOAD_FAST_2_PLUS__GUARD_TYPE_VERSION, .length = 2};
+                    break;
+                case _SET_IP:
+                    return (SuperNode) {.index = _LOAD_FAST_2_PLUS__SET_IP, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
@@ -186,17 +477,56 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
             break;
         case _LOAD_FAST_3:
             switch (uops[start_index + 1].opcode) {
-                case _CHECK_FUNCTION:
-                    return (SuperNode) {.index = _LOAD_FAST_3_PLUS__CHECK_FUNCTION, .length = 2};
+                case _LOAD_CONST_INLINE_BORROW:
+                    return (SuperNode) {.index = _LOAD_FAST_3_PLUS__LOAD_CONST_INLINE_BORROW, .length = 2};
+                    break;
+                case _LOAD_FAST_2:
+                    return (SuperNode) {.index = _LOAD_FAST_3_PLUS__LOAD_FAST_2, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
             }
             break;
-        case _PUSH_FRAME:
+        case _LOAD_FAST_4:
             switch (uops[start_index + 1].opcode) {
-                case _RESUME_CHECK:
-                    return (SuperNode) {.index = _PUSH_FRAME_PLUS__RESUME_CHECK, .length = 2};
+                case _SET_IP:
+                    return (SuperNode) {.index = _LOAD_FAST_4_PLUS__SET_IP, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _LOAD_FAST_5:
+            switch (uops[start_index + 1].opcode) {
+                case _SET_IP:
+                    return (SuperNode) {.index = _LOAD_FAST_5_PLUS__SET_IP, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _LOAD_FAST:
+            switch (uops[start_index + 1].opcode) {
+                case _TO_BOOL_NONE:
+                    switch (uops[start_index + 2].opcode) {
+                        case _POP_TOP:
+                            return (SuperNode) {.index = _LOAD_FAST_PLUS__TO_BOOL_NONE_PLUS__POP_TOP, .length = 3};
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _RESUME_CHECK:
+            switch (uops[start_index + 1].opcode) {
+                case _LOAD_FAST_0:
+                    return (SuperNode) {.index = _RESUME_CHECK_PLUS__LOAD_FAST_0, .length = 2};
+                    break;
+                case _LOAD_FAST_2:
+                    return (SuperNode) {.index = _RESUME_CHECK_PLUS__LOAD_FAST_2, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
@@ -205,7 +535,31 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
         case _SAVE_RETURN_OFFSET:
             switch (uops[start_index + 1].opcode) {
                 case _PUSH_FRAME:
-                    return (SuperNode) {.index = _SAVE_RETURN_OFFSET_PLUS__PUSH_FRAME, .length = 2};
+                    switch (uops[start_index + 2].opcode) {
+                        case _CHECK_VALIDITY:
+                            return (SuperNode) {.index = _SAVE_RETURN_OFFSET_PLUS__PUSH_FRAME_PLUS__CHECK_VALIDITY, .length = 3};
+                            break;
+                        case _RESUME_CHECK:
+                            return (SuperNode) {.index = _SAVE_RETURN_OFFSET_PLUS__PUSH_FRAME_PLUS__RESUME_CHECK, .length = 3};
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _STORE_FAST_2:
+            switch (uops[start_index + 1].opcode) {
+                case _LOAD_FAST_0:
+                    switch (uops[start_index + 2].opcode) {
+                        case _GUARD_TYPE_VERSION:
+                            return (SuperNode) {.index = _STORE_FAST_2_PLUS__LOAD_FAST_0_PLUS__GUARD_TYPE_VERSION, .length = 3};
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
@@ -213,8 +567,8 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
             break;
         case _STORE_FAST_3:
             switch (uops[start_index + 1].opcode) {
-                case _JUMP_TO_TOP:
-                    return (SuperNode) {.index = _STORE_FAST_3_PLUS__JUMP_TO_TOP, .length = 2};
+                case _LOAD_FAST_3:
+                    return (SuperNode) {.index = _STORE_FAST_3_PLUS__LOAD_FAST_3, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
@@ -231,8 +585,38 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
             break;
         case _STORE_FAST_5:
             switch (uops[start_index + 1].opcode) {
-                case _LOAD_FAST_3:
-                    return (SuperNode) {.index = _STORE_FAST_5_PLUS__LOAD_FAST_3, .length = 2};
+                case _CHECK_FUNCTION:
+                    return (SuperNode) {.index = _STORE_FAST_5_PLUS__CHECK_FUNCTION, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _STORE_FAST_7:
+            switch (uops[start_index + 1].opcode) {
+                case _STORE_FAST:
+                    switch (uops[start_index + 2].opcode) {
+                        case _LOAD_FAST_6:
+                            switch (uops[start_index + 3].opcode) {
+                                case _GUARD_TYPE_VERSION:
+                                    return (SuperNode) {.index = _STORE_FAST_7_PLUS__STORE_FAST_PLUS__LOAD_FAST_6_PLUS__GUARD_TYPE_VERSION, .length = 4};
+                                    break;
+                                default:
+                                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                            }
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _STORE_FAST:
+            switch (uops[start_index + 1].opcode) {
+                case _LOAD_FAST_6:
+                    return (SuperNode) {.index = _STORE_FAST_PLUS__LOAD_FAST_6, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
@@ -240,8 +624,29 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
             break;
         case _TIER2_RESUME_CHECK:
             switch (uops[start_index + 1].opcode) {
+                case _LOAD_FAST_0:
+                    return (SuperNode) {.index = _TIER2_RESUME_CHECK_PLUS__LOAD_FAST_0, .length = 2};
+                    break;
                 case _SET_IP:
                     return (SuperNode) {.index = _TIER2_RESUME_CHECK_PLUS__SET_IP, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _TO_BOOL_NONE:
+            switch (uops[start_index + 1].opcode) {
+                case _POP_TOP:
+                    return (SuperNode) {.index = _TO_BOOL_NONE_PLUS__POP_TOP, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _UNPACK_SEQUENCE_TUPLE:
+            switch (uops[start_index + 1].opcode) {
+                case _STORE_FAST_6:
+                    return (SuperNode) {.index = _UNPACK_SEQUENCE_TUPLE_PLUS__STORE_FAST_6, .length = 2};
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
