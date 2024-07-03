@@ -272,6 +272,5 @@ if __name__ == "__main__":
     with open(args.output, "w") as outfile:
         generate_tier2(args.input, data, outfile, args.emit_line_directives)
 
-    if data.supernodes:
-        with open(args.superfile, "w") as outfile:
-            generate_supernodes(args.input, data, outfile)
+    with open(args.superfile, "w") as outfile:
+        generate_supernodes(args.input, data, outfile)
