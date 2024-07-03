@@ -172,7 +172,7 @@ class SuperNodeAnalysis(DPrintMixin):
                     )
                 )
 
-        for supernode, (count, misses) in super_exec_counts.items():
+        for supernode, (count, _) in super_exec_counts.items():
             if (percent := (count / big_total)) > THRESHHOLD_RETAIN:
                 messages.append(
                     (
@@ -201,10 +201,6 @@ class SuperNodeAnalysis(DPrintMixin):
             f"Added {len(next_nodes)} of {len(raw_pairs)} possible supernodes that make up more than {100*THRESHHOLD_ADD_NEW}% of nodes and are viable",
         )
         return next_nodes
-
-    def get_pairs(self, base_stats: Stats) -> PairCount:
-        opcode_stats = base_stats.get_opcode_stats("uops")
-        return opcode_stats.get_pair_counts()
 
     def filter_tenable_pairs(
         self, pairs: PairCount, known_bad_sequences=None
@@ -352,35 +348,12 @@ class SuperNodeEvolver(DPrintMixin):
             f"Known bad supernodes:\n{'\n'.join(str(node) for node in self.known_bad_supernodes)}",
         )
 
-    def build_and_bisect_python(self) -> list[SuperNode]:
-        self.dprint(1, "Beginning Python Build")
-        nodes = SuperNodeAnalysis.get_supernode_executor_cases()
-
-        good, bad = self._build_python_with_nodes(list(nodes))
-        self.dprint(
-            2,
-            f"Build ultimately succeeded with nodes: \n{'  \n'.join(g.name for g in good)}",
-        )
-        if bad:
-            self.dprint(
-                2,
-                f"Build ultimately failed (and bypassed) nodes: \n{'  \n'.join(b.name for b in bad)}",
-            )
-        else:
-            self.dprint(2, f"No bad nodes were identified during this build")
-
-        self.known_bad_supernodes.update(
-            bad
-        )  # cache failed ops for speed and later logging
-        return good
-
     def _build_and_bisect(
         self,
         nodes: list[SuperNode],
         command: list[str] | None,
         verb: str = "Action",
         total_nodes="???",
-        build=True,
     ) -> tuple[list[SuperNode], list[SuperNode]]:
         """Build Python and (optionally) run a shell command. If either the build or the command fails,
         bisect the list of supernodes that were used and try again, until all nodes have been
