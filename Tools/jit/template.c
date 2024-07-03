@@ -132,9 +132,6 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState
 #endif
 
     // The actual instruction definitions (only one will be used):
-    if (uopcode == _JUMP_TO_TOP) {
-        PATCH_JUMP(_JIT_TOP);
-    }
     switch (uopcode_array[0]) {
 #include "executor_cases.c.h"
         default:
@@ -147,31 +144,6 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState
 
     // START SUPEROP HANDLERS //
 
-    if (_JIT_LENGTH > 1){
-        int uopcode = uopcode_array[1];
-        UOP_STAT_INC(uopcode, execution_count);
-        if (uopcode == _JUMP_TO_TOP) {
-            PATCH_JUMP(_JIT_TOP);
-        }
-        switch (uopcode_array[1]) {
-#include "executor_cases.c.h"
-            default:
-                Py_UNREACHABLE();
-        }
-    }
-
-    if (_JIT_LENGTH > 2){
-        int uopcode = uopcode_array[2];
-        UOP_STAT_INC(uopcode, execution_count);
-        if (uopcode == _JUMP_TO_TOP) {
-            PATCH_JUMP(_JIT_TOP);
-        }
-        switch (uopcode_array[2]) {
-#include "executor_cases.c.h"
-            default:
-                Py_UNREACHABLE();
-        }
-    }
 
     // END SUPEROP HANDLERS //
 

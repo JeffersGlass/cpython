@@ -8,6 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_backoff.h"
+#include "pycore_code.h"
 #include "pycore_uop_ids.h"
 #include <stdbool.h>
 

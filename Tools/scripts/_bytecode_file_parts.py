@@ -35,7 +35,7 @@ PRE = """// This file contains instruction definitions.
 #include "dictobject.h"
 #include "pycore_frame.h"
 #include "opcode.h"
-#include "optimizer.h"
+#include "pycore_optimizer.h"
 #include "pydtrace.h"
 #include "setobject.h"
 

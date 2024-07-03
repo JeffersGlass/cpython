@@ -13,7 +13,7 @@
 #include "pycore_uop_metadata.h"
 #include "pycore_opcode_utils.h"
 #include "pycore_optimizer.h"
-#include "cpython/optimizer.h"
+#include "pycore_optimizer.h"
 #include "pycore_pyerrors.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
@@ -49,14 +49,6 @@
                     uop->oparg,
                     uop->format,
                     uop->jump_target,
-                    uop->error_target,
-                    (uint64_t)uop->operand);
-                break;
-            case UOP_FORMAT_EXIT:
-                DPRINTF(level, " (oparg: %d, format=%d, exit_index=0x%x, error_target=0x%x, operand=%#" PRIx64,
-                    uop->oparg,
-                    uop->format,
-                    uop->exit_index,
                     uop->error_target,
                     (uint64_t)uop->operand);
                 break;
@@ -573,7 +565,7 @@ _PyJIT_Free(_PyExecutorObject *executor)
 int
 _PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_t start_index, uint16_t count, uint16_t supernode_index){
     DPRINTF(2, "Starting PyJIT_Combine\n");
-    uint16_t format = UOP_FORMAT_UNUSED;
+    uint16_t format = 0;
     uint32_t temp_target = 0;
     uint16_t oparg = 0;
     uint64_t operand = 0;
@@ -589,14 +581,8 @@ _PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_
             DPRINTF(4, "      replacing operand due to flags 0x%x\n", _PyUop_Flags[uops[i].opcode]);
              operand = uops[i].operand;
         }
-        //assert(format == UOP_FORMAT_UNUSED || uops[i].format == UOP_FORMAT_UNUSED);
         switch(uops[i].format){
             case UOP_FORMAT_TARGET:
-                break;
-            case UOP_FORMAT_EXIT:
-            format = UOP_FORMAT_EXIT;
-                temp_target = uop_get_exit_index(&uops[i]) << 16 | uop_get_error_target(&uops[i]);
-                format = UOP_FORMAT_EXIT;
                 break;
             case UOP_FORMAT_JUMP:
                 format = UOP_FORMAT_JUMP;
@@ -620,15 +606,9 @@ _PyJIT_Combine(_PyUOpInstruction *holder, const _PyUOpInstruction *uops, uint16_
         case UOP_FORMAT_TARGET:
             //holder->target = temp_target;
             break;
-        case UOP_FORMAT_EXIT:
-            holder->exit_index = (uint16_t) ((temp_target & 0xFFFF0000) >> 16);
-            holder->error_target = (uint16_t) (temp_target & 0x0000FFFF);
-            break;
         case UOP_FORMAT_JUMP:
             holder->jump_target = (uint16_t) ((temp_target & 0xFFFF0000) >> 16);
             holder->error_target = (uint16_t) (temp_target & 0x0000FFFF);
-            break;
-        case UOP_FORMAT_UNUSED:
             break;
         default:
             return -1;

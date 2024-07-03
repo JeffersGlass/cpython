@@ -53,7 +53,6 @@
         case _LOAD_FAST_0: {
             _PyStackRef value;
             oparg = 0;
-            assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
@@ -65,7 +64,6 @@
         case _LOAD_FAST_1: {
             _PyStackRef value;
             oparg = 1;
-            assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
@@ -77,7 +75,6 @@
         case _LOAD_FAST_2: {
             _PyStackRef value;
             oparg = 2;
-            assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
@@ -89,7 +86,6 @@
         case _LOAD_FAST_3: {
             _PyStackRef value;
             oparg = 3;
-            assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
@@ -101,7 +97,6 @@
         case _LOAD_FAST_4: {
             _PyStackRef value;
             oparg = 4;
-            assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
@@ -113,7 +108,6 @@
         case _LOAD_FAST_5: {
             _PyStackRef value;
             oparg = 5;
-            assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
@@ -125,7 +119,6 @@
         case _LOAD_FAST_6: {
             _PyStackRef value;
             oparg = 6;
-            assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;
@@ -137,7 +130,6 @@
         case _LOAD_FAST_7: {
             _PyStackRef value;
             oparg = 7;
-            assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
             stack_pointer[0] = value;

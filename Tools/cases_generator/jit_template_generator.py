@@ -19,9 +19,6 @@ template_section = """
     if (_JIT_LENGTH > {num}){{
         int uopcode = uopcode_array[{num}];
         UOP_STAT_INC(uopcode, execution_count);
-        if (uopcode == _JUMP_TO_TOP) {{
-            PATCH_JUMP(_JIT_TOP);
-        }}
         switch (uopcode_array[{num}]) {{
 #include "executor_cases.c.h"
             default:

@@ -175,7 +175,8 @@ def generate_jit_header_file(
         textwrap.dedent(
             """
         #include "Python.h"
-        #include "cpython/optimizer.h"
+        #include "pycore_backoff.h"
+        #include "pycore_optimizer.h"
 
         typedef struct {
             const uint64_t index;

@@ -4,15 +4,16 @@
 // Do not edit!
 
 #include "Python.h"
-#include "cpython/optimizer.h"
+#include "pycore_backoff.h"
+#include "pycore_optimizer.h"
 
 typedef struct {
     const uint64_t index;
     const uint16_t length;
 } SuperNode;
 
-#define SUPERNODE_MAX_DEPTH 2
+#define SUPERNODE_MAX_DEPTH 1
 
-//This function must always be fed 2 uops
+//This function must always be fed 1 uops
 SuperNode
 _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index);
