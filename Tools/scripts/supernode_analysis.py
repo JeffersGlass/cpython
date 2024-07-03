@@ -95,10 +95,9 @@ class DPrintMixin:
 
 
     @contextlib.contextmanager
-    def debug_prefix(self, new_prefix: str, level: int = 0):
-        lead_spacing = self.spacing(level)
+    def debug_prefix(self, new_prefix: str):
         old_prefix = self._dprint_prefix
-        self._dprint_prefix = lead_spacing + self._dprint_prefix + new_prefix
+        self._dprint_prefix = + new_prefix + self._dprint_prefix
         yield
         self._dprint_prefix = old_prefix
 
@@ -297,7 +296,7 @@ class SuperNodeEvolver(DPrintMixin):
             benchmarks (str, optional): The set of pyperformance benchmarks to rum. Defaults to running all benchmarks.
         """
         super().__init__(**kwargs)
-        if self.verbose >= 2:
+        if self.verbose >= 3:
             # Send build output to the terminal
             del self.default_kwargs["stdout"]
             del self.default_kwargs["stderr"]
@@ -367,7 +366,7 @@ class SuperNodeEvolver(DPrintMixin):
         nodes: list[SuperNode],
         command: list[str] | None,
         verb: str = "Action",
-        total_nodes="???",
+        total_nodes: str ="???",
     ) -> tuple[list[SuperNode], list[SuperNode]]:
         """Build Python and (optionally) run a shell command. If either the build or the command fails,
         bisect the list of supernodes that were used and try again, until all nodes have been
@@ -378,8 +377,6 @@ class SuperNodeEvolver(DPrintMixin):
             command (list[str]): A single shell command (as a list of strings) to optionally run after building
             verb (str): The thing currently being done, for logging purposes
             total_nodes (str, optional): The total number of nodes the run started with, for logging purposes. Defaults to "???".
-            build (bool): Whether to build during this run. Defaults to True.
-
         Raises:
             RuntimeError: Throws an error if the build fails and self.fail_segfaults is true, or if the command fails and fail_stats is true
 
@@ -420,11 +417,11 @@ class SuperNodeEvolver(DPrintMixin):
                 self.dprint(2, f"When running with command {command}")
                 return ([], nodes)
 
-            with self.debug_prefix("|", level=1):
+            with self.debug_prefix("  |"):
                 first_good, first_bad = self._build_and_bisect(
                     nodes[:half_point], command=command, verb=verb, total_nodes=total_nodes
                 )
-            with self.debug_prefix("|", level=1):
+            with self.debug_prefix("  |"):
                 second_good, second_bad = self._build_and_bisect(
                     nodes[half_point:], command=command, verb=verb, total_nodes=total_nodes
                 )
