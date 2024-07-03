@@ -1,5 +1,7 @@
 import argparse
+import contextlib
 import dataclasses
+import io
 import os
 from pathlib import Path
 import re
@@ -22,10 +24,14 @@ THRESHHOLD_RETAIN = THRESHHOLD_ADD_NEW * 0.02
 FORBIDDEN = (
     ("_EXIT_TRACE",),
     ("_START_EXECUTOR", "_POP_TOP"),
+    ('_GUARD_IS_FALSE_POP', '_JUMP_TO_TOP')
 )
 
 type PairCount = dict[tuple[str, str], int]
 
+def is_subseq(x, y):
+    it = iter(y)
+    return all(c in it for c in x)
 
 @dataclasses.dataclass(eq=True)
 class SuperNode:
@@ -65,24 +71,36 @@ class DPrintMixin:
         """
         self.verbose = verbose
         self.dump = dump
+        self._dprint_prefix = ""
 
-    def dprint(self, level: int, *args, wrap=True, **kwargs):
-        if wrap:
-            text = [
-                textwrap.fill(
-                    "".join(str(a) for a in args),
-                    initial_indent="  " * level,
-                    subsequent_indent=("  " * level + "↳"),
-                )
-            ]
-        else:
-            text = ["  " * level, *args]
+    def spacing(self, level):
+        return level * "  "
+
+    def dprint(self, level: int, *args, **kwargs):
+        output = io.StringIO()
+        print(*args, file=output, **kwargs)
 
         if level <= self.verbose:
-            print(*text, **kwargs)
+            text = textwrap.fill(
+                    "".join(str(a) for a in args),
+                    width=120,
+                    initial_indent= self._dprint_prefix + self.spacing(level),
+                    subsequent_indent=(self._dprint_prefix + self.spacing(level) + "↳"),
+                )
+            print(text, **kwargs)
         if self.dump:
             with open("./out.txt", "a+") as f:
-                f.write("".join(text) + "\n")
+                text = textwrap.indent(output.getvalue(), prefix = self._dprint_prefix + "  " * level)
+                f.write(text)
+
+
+    @contextlib.contextmanager
+    def debug_prefix(self, new_prefix: str, level: int = 0):
+        lead_spacing = self.spacing(level)
+        old_prefix = self._dprint_prefix
+        self._dprint_prefix = lead_spacing + self._dprint_prefix + new_prefix
+        yield
+        self._dprint_prefix = old_prefix
 
     def clear_dump_output(self):
         if self.dump:
@@ -194,7 +212,7 @@ class SuperNodeAnalysis(DPrintMixin):
                 )
 
         for m in sorted(messages, key=lambda m: m[1], reverse=True):
-            self.dprint(2, m[0], wrap=False)
+            self.dprint(2, m[0])
 
         self.dprint(
             1,
@@ -214,10 +232,6 @@ class SuperNodeAnalysis(DPrintMixin):
         Returns:
             PairCount: _description_
         """
-
-        def is_subseq(x, y):
-            it = iter(y)
-            return all(c in it for c in x)
 
         result = {}
         for k, v in pairs.items():
@@ -406,12 +420,14 @@ class SuperNodeEvolver(DPrintMixin):
                 self.dprint(2, f"When running with command {command}")
                 return ([], nodes)
 
-            first_good, first_bad = self._build_and_bisect(
-                nodes[:half_point], command=command, verb=verb, total_nodes=total_nodes
-            )
-            second_good, second_bad = self._build_and_bisect(
-                nodes[half_point:], command=command, verb=verb, total_nodes=total_nodes
-            )
+            with self.debug_prefix("|", level=1):
+                first_good, first_bad = self._build_and_bisect(
+                    nodes[:half_point], command=command, verb=verb, total_nodes=total_nodes
+                )
+            with self.debug_prefix("|", level=1):
+                second_good, second_bad = self._build_and_bisect(
+                    nodes[half_point:], command=command, verb=verb, total_nodes=total_nodes
+                )
             return (first_good + second_good, first_bad + second_bad)
         else:
             self.dprint(1, f"{verb.capitalize()} SUCCEEDED")
@@ -484,9 +500,8 @@ class SuperNodeEvolver(DPrintMixin):
         analysis = SuperNodeAnalysis(verbose=self.verbose, dump=self.dump)
 
         new_supers = analysis.calculate_new_supernodes([DEFAULT_DIR])
+        new_supers = [s for s in new_supers if not any(is_subseq(bad.uops, s.uops) for bad in self.known_bad_supernodes)]
 
-        if any(s.uops[0] == "_" for s in new_supers):
-            breakpoint()
         self.dprint(
             2, f"Updating supernodes.c with {len(new_supers)} potential supernodes"
         )
