@@ -1,4 +1,5 @@
 import argparse
+import dataclasses
 import os
 from pathlib import Path
 import re
@@ -24,6 +25,28 @@ FORBIDDEN = (
 )
 
 type PairCount = dict[tuple[str, str], int]
+
+@dataclasses.dataclass(eq=True)
+class SuperNode:
+    SEP = "_PLUS_"
+    uops: list[str]
+
+    @property
+    def name(self):
+        return self.SEP.join(self.uops)
+
+    def sum_form(self):
+        return " + ".join(self.uops)
+
+    def __hash__(self):
+        return hash(self.name)
+
+    @classmethod
+    def from_supernode_names(cls, *args: str):
+        uops: list[str] = []
+        for arg in args:
+            uops.extend(arg.split(cls.SEP))
+        return SuperNode(uops)
 
 
 class DPrintMixin:
@@ -89,7 +112,7 @@ class SuperNodeAnalysis(DPrintMixin):
         data = load_raw_data(Path(inputs[0]))
         return Stats(data)
 
-    def calculate_supernodes(self, stats: Stats) -> PairCount:
+    def calculate_supernodes(self, stats: Stats) -> list[SuperNode]:
         """Give a set of statistics from previous pystats runs, use a series of metrics to determine
         which supernodes to add, keep, and remove from the set to improve performance
 
@@ -111,17 +134,12 @@ class SuperNodeAnalysis(DPrintMixin):
         )
 
         # Retain/Remove previous supernodes:
-        super_exec_counts = {s: v for s, v in exec_counts.items() if "_PLUS_" in s}
-        max_super_str_length = (
-            max(len(str(uop)) for uop in super_exec_counts.keys())
-            if super_exec_counts
-            else 40
-        )
+        super_exec_counts = {s: v for s, v in exec_counts.items() if SuperNode.SEP in s}
         total_exec_count = sum(value[0] for value in exec_counts.values())
 
         big_total = total_exec_count + total_pair_count
         # TODO filter by conflicting oparg/operand/target here
-        next_nodes = {}
+        next_nodes: list[SuperNode] = []
         messages: list[tuple[str, int]] = []
 
         # Add/Decline newly identified pairs
@@ -136,7 +154,7 @@ class SuperNodeAnalysis(DPrintMixin):
                         percent,
                     )
                 )
-                next_nodes[k] = v
+                next_nodes.append(SuperNode.from_supernode_names(k))
             else:
                 messages.append(
                     (
@@ -158,8 +176,7 @@ class SuperNodeAnalysis(DPrintMixin):
                         percent,
                     )
                 )
-                k0, k1 = k.split("_PLUS_", 1)
-                next_nodes[(k0, k1)] = v[0]
+                next_nodes.append(SuperNode.from_supernode_names(k))
             else:
                 messages.append(
                     (
@@ -179,7 +196,7 @@ class SuperNodeAnalysis(DPrintMixin):
         )
         return next_nodes
 
-    def get_pairs(self, base_stats: Stats) -> dict[tuple[str, str], int]:
+    def get_pairs(self, base_stats: Stats) -> PairCount:
         opcode_stats = base_stats.get_opcode_stats("uops")
         return opcode_stats.get_pair_counts()
 
@@ -203,7 +220,7 @@ class SuperNodeAnalysis(DPrintMixin):
         result = {}
         for k, v in pairs.items():
             good = True
-            uop_sequence = k[0].split("_PLUS_") + k[1].split("_PLUS_")
+            uop_sequence = k[0].split(SuperNode.SEP) + k[1].split(SuperNode.SEP)
 
             if known_bad_sequences is not None:
                 for bad in known_bad_sequences:
@@ -229,11 +246,10 @@ class SuperNodeAnalysis(DPrintMixin):
         return result
 
     @classmethod
-    def get_supernode_executor_cases(cls) -> set[str]:
+    def get_supernode_executor_cases(cls) -> set[SuperNode]:
         with open(SUPERNODE_CASES, "r") as f:
-            return set(m for m in re.findall(r"case (?P<name>[_A-Z0-9]+):", f.read()))
-
-
+            raw_cases = re.findall(r"case (?P<name>[_A-Z0-9]+):", f.read())
+            return set(SuperNode.from_supernode_names(m) for m in raw_cases)
 class SuperNodeEvolver(DPrintMixin):
     default_kwargs = {
         "cwd": ROOT,
@@ -304,7 +320,7 @@ class SuperNodeEvolver(DPrintMixin):
         self.dprint(0, f"Ending supernodes:\n{'\n'.join(ending_supernodes)}")
         self.dprint(0, f"Known bad supernodes:\n{'\n'.join(self.known_bad_supernodes)}")
 
-    def build_and_bisect_python(self) -> list[str]:
+    def build_and_bisect_python(self) -> list[SuperNode]:
         self.dprint(1, "Beginning Python Build")
         nodes = SuperNodeAnalysis.get_supernode_executor_cases()
         self.run_command(["make", "distclean"], raise_errors=False)
@@ -317,54 +333,46 @@ class SuperNodeEvolver(DPrintMixin):
         )
 
         good, bad = self._build_python_with_nodes(list(nodes))
-        self.dprint(2, f"Build ultimately succeeded with nodes: \n{'  \n'.join(good)}")
-        if bad:
-            self.dprint(
-                2, f"Build ultimately failed (and bypassed) nodes: \n{'  \n'.join(bad)}"
-            )
-        else:
-            self.dprint(2, f"No bad nodes were identified during this build")
+        self.dprint(2, f"Build ultimately succeeded with nodes: \n{'  \n'.join(g.name for g in good)}")
+        if bad: self.dprint(2, f"Build ultimately failed (and bypassed) nodes: \n{'  \n'.join(b.name for b in bad)}")
+        else: self.dprint(2, f"No bad nodes were identified during this build")
 
         self.known_bad_supernodes.update(
             bad
         )  # cache failed ops for speed and later logging
         return good
 
-    def _build_and_bisect(
-        self, nodes: list[str], command: list[str], verb: str, total_nodes="???"
-    ) -> tuple[list[str], list[str]]:
+    def _build_and_bisect(self, nodes: list[SuperNode], command: list[str], verb: str, total_nodes = "???", build=True) -> tuple[list[str], list[str]]:
         """Build Python and (optionally) run a shell command. If either the build or the command fails,
         bisect the list of supernodes that were used and try again, until all nodes have been
         identified as successful or failing.
 
         Args:
-            nodes (list[str]): _description_
-            command (list[str]): _description_
-            verb (str): _description_
-            total_nodes (str, optional): _description_. Defaults to "???".
+            nodes (list[SuperNode]): The SuperNodes to build with
+            command (list[str]): A single shell command (as a list of strings) to optionally run after building
+            verb (str): The thing currently being done, for logging purposes
+            total_nodes (str, optional): The total number of nodes the run started with, for logging purposes. Defaults to "???".
+            build (bool): Whether to build during this run. Defaults to True.
 
         Raises:
-            RuntimeError: _description_
+            RuntimeError: Throws an error if the build fails and self.fail_segfaults is true, or if the command fails and fail_stats is true
 
         Returns:
-            tuple[list[str], list[str]]: _description_
+            tuple[list[SuperNode], list[SuperNode]]: Returns a tuple (good, bad) of supernodes which successfully built and tested, and those which caused the build or command to fail.
         """
-        self.dprint(
-            1,
-            f"{verb.capitalize()}-ing python with {len(nodes)} of {total_nodes} nodes",
-        )
-        self.dprint(2, f"{nodes}")
+        self.dprint(1, f"{verb.capitalize()}-ing python with {len(nodes)} of {total_nodes} nodes")
+        self.dprint(2, f"{[node.name for node in nodes]}")
         self.run_command(["make", "clean"])
         # TODO: These modifications should be made in temporary files, not in the main files,
         # so we don't lose data if the process is killed during bisection
-        self.update_supernodes_c(node.split("_PLUS_") for node in nodes)
+        self.update_supernodes_c(nodes)
         self.update_supernode_metadata()
 
+        self.dprint(1, f"Running make -j{self.threads}")
         current_verb = "build"
-        result: subprocess.CompletedProcess[str] = self.run_command(
-            ["make", f"-j{self.threads}"]
-        )
-        if command and not result.returncode:  # only run command if build succeeded
+        result: subprocess.CompletedProcess[str] = self.run_command(["make", f"-j{self.threads}"])
+        if command and not result.returncode : #only run command if build succeeded
+            self.dprint(1, f"Running {command}")
             current_verb = verb
             result = self.run_command(command)
         if result.returncode:
@@ -372,7 +380,7 @@ class SuperNodeEvolver(DPrintMixin):
                 raise RuntimeError(f"{current_verb} failed with error {result}")
             half_point = len(nodes) // 2
             self.dprint(1, f"{current_verb.capitalize()} FAILED, bisecting")
-            self.dprint(2, f"Failed with {len(nodes)} nodes: \n{'\n'.join(nodes)}")
+            self.dprint(2, f"Failed with {len(nodes)} nodes: \n{'\n'.join(node.name for node in nodes)}")
             if len(nodes) == 1:
                 self.dprint(1, f"Identified bad node during {current_verb}: {nodes[0]}")
                 self.dprint(2, f"When running with command {command}")
@@ -389,19 +397,14 @@ class SuperNodeEvolver(DPrintMixin):
             self.dprint(1, f"{verb.capitalize()} SUCCEEDED")
             return (list(nodes), [])
 
-    def _build_python_with_nodes(self, nodes: list[str]) -> tuple[list[str], list[str]]:
-        return self._build_and_bisect(
-            nodes, command=None, verb="build", total_nodes=len(nodes)
-        )
 
-    def _run_pyperformance_with_nodes(
-        self, nodes: list[str]
-    ) -> tuple[list[str], list[str]]:
-        return self._build_and_bisect(
-            nodes, command=self.pyperf_command, verb="stat", total_nodes=len(nodes)
-        )
+    def _build_python_with_nodes(self, nodes: list[SuperNode]) -> tuple[list[SuperNode], list[SuperNode]]:
+        return self._build_and_bisect(nodes, command=None, verb="build", total_nodes=len(nodes))
 
-    def generate_stats(self, nodes: list[str]) -> None:
+    def _run_pyperformance_with_nodes(self, nodes: list[SuperNode]) -> tuple[list[SuperNode], list[SuperNode]]:
+        return self._build_and_bisect(nodes, command= self.pyperf_command, verb="stat", total_nodes=len(nodes))
+
+    def generate_stats(self, nodes: list[SuperNode]) -> None:
         """Run a command (defaults to pyperformance with all benchmarks) and generate pystats
         There could be other ways of generating stats in the future.
         """
@@ -474,7 +477,7 @@ class SuperNodeEvolver(DPrintMixin):
         ]:
             self.run_command(command)
 
-    def update_supernodes_c(self, supernodes: list[tuple[str]]) -> None:
+    def update_supernodes_c(self, supernodes: typing.Iterable[SuperNode]) -> None:
         """Given a list of supernodes, update `supernode.c` with properly formatted supernodes
 
         Args:
@@ -483,9 +486,9 @@ class SuperNodeEvolver(DPrintMixin):
         """
         supernodes = list(supernodes)
         self.dprint(1, "Updating supernodes.c")
-        self.dprint(2, f"Updating supernodes.c with nodes {list(supernodes)}")
+        self.dprint(2, f"Updating supernodes.c with nodes {supernodes}")
         new_supers = [
-            f"super() = {" + ".join(uop for uop in node)};" for node in list(supernodes)
+            f"super() = {node.sum_form()};" for node in supernodes
         ]
 
         with open(DEFAULT_SUPERNODES_INPUT, "w") as f:
