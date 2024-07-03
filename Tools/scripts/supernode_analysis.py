@@ -26,6 +26,7 @@ FORBIDDEN = (
 
 type PairCount = dict[tuple[str, str], int]
 
+
 @dataclasses.dataclass(eq=True)
 class SuperNode:
     SEP = "_PLUS_"
@@ -136,7 +137,11 @@ class SuperNodeAnalysis(DPrintMixin):
         )
 
         # Retain/Remove previous supernodes:
-        super_exec_counts: dict[SuperNode, tuple[int, int]] = {SuperNode.from_supernode_names(s): v for s, v in exec_counts.items() if SuperNode.SEP in s}
+        super_exec_counts: dict[SuperNode, tuple[int, int]] = {
+            SuperNode.from_supernode_names(s): v
+            for s, v in exec_counts.items()
+            if SuperNode.SEP in s
+        }
         total_exec_count = sum(value[0] for value in exec_counts.values())
 
         big_total = total_exec_count + total_pair_count
@@ -236,7 +241,8 @@ class SuperNodeAnalysis(DPrintMixin):
             for forbidden in FORBIDDEN:
                 if is_subseq(forbidden, uop_sequence):
                     self.dprint(
-                        2, f"Rejecting pair {k} because {forbidden} is forbidden in superops"
+                        2,
+                        f"Rejecting pair {k} because {forbidden} is forbidden in superops",
                     )
                     good = False
                     break
@@ -251,6 +257,8 @@ class SuperNodeAnalysis(DPrintMixin):
         with open(SUPERNODE_CASES, "r") as f:
             raw_cases = re.findall(r"case (?P<name>[_A-Z0-9]+):", f.read())
             return list(SuperNode.from_supernode_names(m) for m in raw_cases)
+
+
 class SuperNodeEvolver(DPrintMixin):
     default_kwargs = {
         "cwd": ROOT,
@@ -319,7 +327,10 @@ class SuperNodeEvolver(DPrintMixin):
                 0, f"Starting supernode generation {gen+1} of {self.iterations}"
             )
             starting_supernodes = SuperNodeAnalysis.get_supernode_executor_cases()
-            self.dprint(2, f"Starting supernodes:\n{'\n'.join(str(node) for node in starting_supernodes)}")
+            self.dprint(
+                2,
+                f"Starting supernodes:\n{'\n'.join(str(node) for node in starting_supernodes)}",
+            )
 
             self.build_and_generate_stats(starting_supernodes)
             self.generate_supernodes_from_stats()
@@ -332,24 +343,45 @@ class SuperNodeEvolver(DPrintMixin):
 
                 # TODO Run tests and gather failure types
                 # TODO Bail on specific failure types specified by args
-        self.dprint(0, f"Ending supernodes:\n{'\n'.join(str(node) for node in ending_supernodes)}")
-        self.dprint(0, f"Known bad supernodes:\n{'\n'.join(str(node) for node in self.known_bad_supernodes)}")
+        self.dprint(
+            0,
+            f"Ending supernodes:\n{'\n'.join(str(node) for node in ending_supernodes)}",
+        )
+        self.dprint(
+            0,
+            f"Known bad supernodes:\n{'\n'.join(str(node) for node in self.known_bad_supernodes)}",
+        )
 
     def build_and_bisect_python(self) -> list[SuperNode]:
         self.dprint(1, "Beginning Python Build")
         nodes = SuperNodeAnalysis.get_supernode_executor_cases()
 
         good, bad = self._build_python_with_nodes(list(nodes))
-        self.dprint(2, f"Build ultimately succeeded with nodes: \n{'  \n'.join(g.name for g in good)}")
-        if bad: self.dprint(2, f"Build ultimately failed (and bypassed) nodes: \n{'  \n'.join(b.name for b in bad)}")
-        else: self.dprint(2, f"No bad nodes were identified during this build")
+        self.dprint(
+            2,
+            f"Build ultimately succeeded with nodes: \n{'  \n'.join(g.name for g in good)}",
+        )
+        if bad:
+            self.dprint(
+                2,
+                f"Build ultimately failed (and bypassed) nodes: \n{'  \n'.join(b.name for b in bad)}",
+            )
+        else:
+            self.dprint(2, f"No bad nodes were identified during this build")
 
         self.known_bad_supernodes.update(
             bad
         )  # cache failed ops for speed and later logging
         return good
 
-    def _build_and_bisect(self, nodes: list[SuperNode], command: list[str] | None, verb: str = "Action", total_nodes = "???", build=True) -> tuple[list[SuperNode], list[SuperNode]]:
+    def _build_and_bisect(
+        self,
+        nodes: list[SuperNode],
+        command: list[str] | None,
+        verb: str = "Action",
+        total_nodes="???",
+        build=True,
+    ) -> tuple[list[SuperNode], list[SuperNode]]:
         """Build Python and (optionally) run a shell command. If either the build or the command fails,
         bisect the list of supernodes that were used and try again, until all nodes have been
         identified as successful or failing.
@@ -367,7 +399,10 @@ class SuperNodeEvolver(DPrintMixin):
         Returns:
             tuple[list[SuperNode], list[SuperNode]]: Returns a tuple (good, bad) of supernodes which successfully built and tested, and those which caused the build or command to fail.
         """
-        self.dprint(1, f"{verb.capitalize()}-ing python with {len(nodes)} of {total_nodes} nodes")
+        self.dprint(
+            1,
+            f"{verb.capitalize()}-ing python with {len(nodes)} of {total_nodes} nodes",
+        )
         self.dprint(2, f"{[node.name for node in nodes]}")
         self.run_command(["make", "clean"])
         # TODO: These modifications should be made in temporary files, not in the main files,
@@ -377,8 +412,10 @@ class SuperNodeEvolver(DPrintMixin):
 
         self.dprint(1, f"Running make -j{self.threads}")
         current_verb = "build"
-        result: subprocess.CompletedProcess[str] = self.run_command(["make", f"-j{self.threads}"])
-        if command and not result.returncode : #only run command if build succeeded
+        result: subprocess.CompletedProcess[str] = self.run_command(
+            ["make", f"-j{self.threads}"]
+        )
+        if command and not result.returncode:  # only run command if build succeeded
             self.dprint(1, f"Running {command}")
             current_verb = verb
             result = self.run_command(command)
@@ -387,7 +424,10 @@ class SuperNodeEvolver(DPrintMixin):
                 raise RuntimeError(f"{current_verb} failed with error {result}")
             half_point = len(nodes) // 2
             self.dprint(1, f"{current_verb.capitalize()} FAILED, bisecting")
-            self.dprint(2, f"Failed with {len(nodes)} nodes: \n{'\n'.join(node.name for node in nodes)}")
+            self.dprint(
+                2,
+                f"Failed with {len(nodes)} nodes: \n{'\n'.join(node.name for node in nodes)}",
+            )
             if len(nodes) == 1:
                 self.dprint(1, f"Identified bad node during {current_verb}: {nodes[0]}")
                 self.dprint(2, f"When running with command {command}")
@@ -404,12 +444,19 @@ class SuperNodeEvolver(DPrintMixin):
             self.dprint(1, f"{verb.capitalize()} SUCCEEDED")
             return (list(nodes), [])
 
+    def _build_python_with_nodes(
+        self, nodes: list[SuperNode]
+    ) -> tuple[list[SuperNode], list[SuperNode]]:
+        return self._build_and_bisect(
+            nodes, command=None, verb="build", total_nodes=len(nodes)
+        )
 
-    def _build_python_with_nodes(self, nodes: list[SuperNode]) -> tuple[list[SuperNode], list[SuperNode]]:
-        return self._build_and_bisect(nodes, command=None, verb="build", total_nodes=len(nodes))
-
-    def _run_pyperformance_with_nodes(self, nodes: list[SuperNode]) -> tuple[list[SuperNode], list[SuperNode]]:
-        return self._build_and_bisect(nodes, command= self.pyperf_command, verb="stat", total_nodes=len(nodes))
+    def _run_pyperformance_with_nodes(
+        self, nodes: list[SuperNode]
+    ) -> tuple[list[SuperNode], list[SuperNode]]:
+        return self._build_and_bisect(
+            nodes, command=self.pyperf_command, verb="stat", total_nodes=len(nodes)
+        )
 
     def build_and_generate_stats(self, nodes: list[SuperNode]) -> list[SuperNode]:
         """Run a command (defaults to pyperformance with all benchmarks) and generate pystats
@@ -465,7 +512,8 @@ class SuperNodeEvolver(DPrintMixin):
 
         new_supers = analysis.calculate_new_supernodes([DEFAULT_DIR])
 
-        if any(s.uops[0] == '_' for s in new_supers): breakpoint()
+        if any(s.uops[0] == "_" for s in new_supers):
+            breakpoint()
         self.dprint(
             2, f"Updating supernodes.c with {len(new_supers)} potential supernodes"
         )
@@ -493,9 +541,7 @@ class SuperNodeEvolver(DPrintMixin):
         supernodes = list(supernodes)
         self.dprint(1, "Updating supernodes.c")
         self.dprint(2, f"Updating supernodes.c with nodes {supernodes}")
-        new_supers = [
-            f"super() = {node.sum_form()};" for node in supernodes
-        ]
+        new_supers = [f"super() = {node.sum_form()};" for node in supernodes]
 
         with open(DEFAULT_SUPERNODES_INPUT, "w") as f:
             f.writelines(PRE)
