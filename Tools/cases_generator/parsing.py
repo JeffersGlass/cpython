@@ -128,7 +128,7 @@ class Macro(Node):
     uops: list[UOp]
 
 @dataclass
-class SuperNode(Node):
+class SuperNodeDef(Node):
     name: str
     uops: list[UOp]
 
@@ -341,14 +341,14 @@ class Parser(PLexer):
         return None
 
     @contextual
-    def super_def(self) -> SuperNode | None:
+    def super_def(self) -> SuperNodeDef | None:
         if tkn := self.expect(lx.SUPER):
             if self.expect(lx.LPAREN):
                     if self.expect(lx.RPAREN):
                         if self.expect(lx.EQUALS):
                             if uops := self.uops():
                                 self.require(lx.SEMI)
-                                res = SuperNode(tkn.text, uops)
+                                res = SuperNodeDef(tkn.text, uops)
                                 return res
         return None
 

@@ -4,9 +4,7 @@ Writes the switch statement to jit_switch.c by default.
 """
 
 import argparse
-import itertools
 import textwrap
-import string
 
 from analyzer import Analysis, analyze_files, SuperNode
 from generators_common import (
@@ -48,8 +46,7 @@ POST = """
 #endif
 
 #endif // Py_SWITCH_JIT_H
-# """
-
+#"""
 
 def generate_jit_switch_file(
     filenames: list[str],
@@ -74,7 +71,13 @@ def generate_jit_switch_file(
                 break;
             case _LOAD_FAST_0:
                 ...
+
+    Args:
+        filenames (list[str]): The filenames from which input was generated. Only used to write the header.
+        analysis (Analysis): The Analysis of bytecodes specified in the DSL
+        outfile (TextIO): Where to write the output files (`jit_switch.c` and `.h`)
     """
+
     write_header(__file__, filenames, outfile)
     outfile.write(PREAMBLE)
     outfile.write("\n\n")
@@ -88,7 +91,15 @@ def generate_jit_switch_file(
 def _generate_jit_switch_function(
     supernodes: dict[str, SuperNode]
 ) -> Generator[str, None, None]:
+    """Recursively generate the switch function which selects supernodes for the jit
 
+    Args:
+        supernodes (dict[str, SuperNode]): A mapping of the names of supernodes to SuperNode objects identified
+        in the Analysis
+
+    Yields:
+        Generator[str, None, None]: Lines of the output file
+    """
     if supernodes.values():
         depth = max((len(node.uops)) for node in supernodes.values())
     else:
@@ -101,7 +112,19 @@ def _generate_jit_switch_function(
 
 
 def _recurse_jit(nodes: list[SuperNode], level: int, indent_level: int):
-    """Recursively generate lower levels of the switch statement"""
+    """Recursively generate lower levels of the switch statement
+
+    Args:
+        nodes (list[SuperNode]): A list of supernodes at this level or lower
+        level (int): The current depth into the tree of supernodes we are
+        indent_level (int): The amount to indent each level, for formatting purposes
+
+    Raises:
+        ValueError: If there are two identical nodes, raise a ValueError
+
+    Yields:
+        str: Lines of the jit switch statement
+    """
 
     initial_opcodes = []
     for node in nodes:
@@ -136,6 +159,16 @@ def generate_jit_header_file(
     analysis: Analysis,
     outfile: TextIO,
 ) -> Generator[str, None, None]:
+    """Generating `jit_switch.h` header file based on the supernodes in the provided Analysis
+
+    Args:
+        filenames (list[str]): The filenames from which input was generated. Only used to write the header.
+        analysis (Analysis): The Analysis of bytecodes specified in the DSL
+        outfile (TextIO): Where to write the output files (`jit_switch.c` and `.h`)
+
+    Yields:
+        Generator[str, None, None]: Lines of the output file
+    """
 
     write_header(__file__, filenames, outfile)
     outfile.write(
@@ -163,6 +196,7 @@ def generate_jit_header_file(
 
 
 def _supernode_max_depth(supernodes: dict[str:SuperNode]):
+    if not supernodes: return 1
     return max(len(node.uops) for node in supernodes.values())
 
 

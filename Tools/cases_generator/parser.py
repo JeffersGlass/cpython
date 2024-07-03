@@ -3,7 +3,7 @@ from parsing import (  # noqa: F401
     Macro,
     Pseudo,
     Family,
-    SuperNode,
+    SuperNodeDef,
     Parser,
     Context,
     CacheEffect,
@@ -52,6 +52,9 @@ def parse_files(filenames: list[str]) -> list[AstNode]:
             if tkn.text == END_MARKER:
                 break
         del psr.tokens[psr.getpos() - 1 :]
+
+        # Skip files with no instructions present
+        if (start >= len(psr.tokens)): continue
 
         # Parse from start
         psr.setpos(start)

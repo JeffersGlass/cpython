@@ -2898,6 +2898,7 @@ Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
 regen-jit:
 	@REGEN_JIT_COMMAND@
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/jit_switch_generator.py
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/cases_generator/jit_template_generator.py
 
 # Some make's put the object file in the current directory
 .c.o:

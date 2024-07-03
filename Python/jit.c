@@ -510,7 +510,7 @@ _PyJIT_Compile(_PyExecutorObject *executor, const _PyUOpInstruction trace[], siz
     final_index = 0;
     code += group->code_size;
     data += group->data_size;
-    assert(trace[0].opcode == _START_EXECUTOR || trace[0].opcode == _COLD_EXIT);
+    assert(trace[0].opcode == _START_EXECUTOR);
 
     if (length > SUPERNODE_MAX_DEPTH ) {
         for (size_t i = 0; i < length - SUPERNODE_MAX_DEPTH; ) {

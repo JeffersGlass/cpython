@@ -82,7 +82,7 @@ opmap = {pattern.replace("\\", "") or "\\": op for op, pattern in operators.item
 macro = r"# *(ifdef|ifndef|undef|define|error|endif|if|else|include|#)"
 CMACRO = "CMACRO"
 
-id_re = r"[a-zA-Z_][0-9a-zA-Z_]*"
+id_re = r"_?[a-zA-Z_][0-9a-zA-Z_]*"
 IDENTIFIER = "IDENTIFIER"
 
 

@@ -3,6 +3,7 @@ import lexer
 import parser
 import re
 from typing import Optional, Self
+from warnings import warn
 
 
 @dataclass
@@ -223,7 +224,7 @@ class SuperNode:
 
     def why_not_viable(self) -> str | None:
         return ", ".join(
-            uop.why_not_viable()
+            uop.name + ":" + uop.why_not_viable()
             for uop in self.uops
             if uop.why_not_viable() is not None
         )
@@ -816,12 +817,22 @@ def add_macro(
 
 
 def add_supernode(
-    node: parser.SuperNode, uops: dict[str, Uop], supernodes: dict[str, SuperNode]
+    node: parser.SuperNodeDef, uops: dict[str, Uop], supernodes: dict[str, SuperNode]
 ):
     parts: list[Uop | Skip] = []
     if len(node.uops) < 2:
         return
+
+    #pre-split existing superops
+    split_uops = []
     for part in node.uops:
+        if SuperNode.SEP in part.name:
+            split_uops.extend(replace(part, name=new_name) for new_name in part.name.split(SuperNode.SEP))
+        else:
+            split_uops.append(part)
+
+
+    for part in split_uops:
         match part:
             case parser.OpName():
                 if part.name in uops:
@@ -834,10 +845,10 @@ def add_supernode(
                 assert False
     assert parts
     if conflict := uop_input_conflict(parts):
-        raise analysis_error(
-            f"SuperNode with UOps {', '.join(uop.name for uop in node.uops)} has conflicting {conflict}",
+        warn(analysis_error(
+            f"SuperNode with UOps {', '.join(uop.name for uop in node.uops)} was not added due to conflict {conflict}",
             node.tokens[0],
-        )
+        ))
     else:
         append_supernode(
             SuperNode.SEP.join(part.name for part in parts), parts, supernodes
@@ -983,7 +994,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
                 pass
             case parser.Pseudo():
                 pass
-            case parser.SuperNode():
+            case parser.SuperNodeDef():
                 pass
             case _:
                 assert False
@@ -991,7 +1002,7 @@ def analyze_forest(forest: list[parser.AstNode]) -> Analysis:
         if isinstance(node, parser.Macro):
             add_macro(node, instructions, uops)
     for node in forest:
-        if isinstance(node, parser.SuperNode):
+        if isinstance(node, parser.SuperNodeDef):
             add_supernode(node, uops, supernodes)
     for node in forest:
         match node:
