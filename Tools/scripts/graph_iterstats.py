@@ -93,28 +93,12 @@ def parse_stat_dump(src: str) -> GraphData:
         for length in range(min_depth, max_depth+1):
             counts[length] = sum(1 if node.depth == length else 0 for node in end_ops)
         new_graph_nodes: list[GraphNode] = [GraphNode(label = str(length), supernodes = [e for e in end_ops if e.depth == length], x = igen * (1/num_generations), y = (i+1) * (1/(len(counts)+1))) for i, length in enumerate(counts.keys())]
-        new_graph_nodes.append(GraphNode(label='Removed', supernodes = [n for n, op in nodes if op is Operation.REMOVED] x = igen * (1/num_generations), y = 0))
+        new_graph_nodes.append(GraphNode(label='Removed', supernodes = [n for n, op in nodes if op is Operation.REMOVED], x = igen * (1/num_generations), y = 0))
 
         graph.generation_nodes.append(new_graph_nodes)
 
 
     return graph
-    """ #calculate link sizes
-        link_counter: dict[tuple[int, int], int] = defaultdict(default_factory=int)
-        for s in start_ops:
-            for e in end_ops:
-                if s.is_subop_of(e) and s != e:
-                    link_counter[(s.depth, e.depth)] += 1
-
-        #calculate links
-        for (startval, endval), thickess in link_counter.items():
-            start_node = next(n for n in graph.generation_nodes[-1] if n.label == str(startval))
-            end_node = next(n for n in new_graph_nodes if n.label == str(endval))
-            graph.links[(start_node, end_node)] = thickess
-
-        #............ HMMMMMM
-
-        graph.generation_nodes.append(new_graph_nodes) """
 
 
 def line_to_supernode(src: str) -> tuple[SuperNode, Operation]:
@@ -141,39 +125,30 @@ def line_to_supernode(src: str) -> tuple[SuperNode, Operation]:
 def display(graph: GraphData) -> None:
     import plotly.graph_objects as go
 
-    labels =  [node.label for node in chain.from_iterable(graph.generation_nodes)]
-    xs =  [node.x for node in chain.from_iterable(graph.generation_nodes)]
-    ys =  [node.y for node in chain.from_iterable(graph.generation_nodes)]
-    print(labels)
+    """
+    if graph.generation_nodes = [
+        [2,3,4],
+        [2,3],
+        [2,3,5,6]
+    ]
+    then xs should be
+        [1,1,1,2,2,3,3,3,3]
+    """
+    xs =  [[i] * len(series) for i, series in enumerate(graph.generation_nodes, start=1)]
+    xs = list(chain.from_iterable(xs))
+    ys =  list(int(node.label) if str.isnumeric(node.label) else 10 for node in chain.from_iterable(graph.generation_nodes))
+    text = [str(len(node.supernodes)) + f" of length {ys[i]}" if node.label != "Removed" else "" for i, node in enumerate(chain.from_iterable(graph.generation_nodes))]
+    marker_size = [len(node.supernodes) for nodelist in graph.generation_nodes for node in nodelist]
+
     print(xs)
     print(ys)
 
-    sources = []
-    targets = []
-    values = []
-
-    for
-
-    #sources = [n for n in range(len(list(chain.from_iterable(graph.generation_nodes))))]
-    #targets = [n for n in range(len(list(chain.from_iterable(graph.generation_nodes))))]
-    #values = [1 for _ in range(len(list(chain.from_iterable(graph.generation_nodes))))]
-
-    print(sources)
-    print(targets)
-    print(values)
-
-    fig = go.Figure(go.Sankey(
-        arrangement = "snap",
-        node = {
-            "label": labels,
-            "x": xs,
-            "y": ys,
-            'pad':10},  # 10 Pixels
-        link = {
-            "source": sources,
-            "target": targets,
-            "value": values,
-            }))
+    fig = go.Figure(data=[go.Scatter(
+        x=xs, y=ys,
+        text=text,
+        mode='markers',
+        marker_size=marker_size),
+    ])
 
     fig.show()
 
