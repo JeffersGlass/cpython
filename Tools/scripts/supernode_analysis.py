@@ -36,11 +36,24 @@ class SuperNode:
     def name(self):
         return self.SEP.join(self.uops)
 
+    @property
+    def depth(self):
+        return len(self.uops)
+
     def sum_form(self):
         return " + ".join(self.uops)
 
     def __hash__(self):
         return hash(self.name)
+
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def is_subop_of(self, other: typing.Self):
+        for index, _ in enumerate(other.uops):
+            if all(self.uops[i] == other.uops[index+i] for i in range(len(self.depth))): return True
+        return False
+
 
     @classmethod
     def from_supernode_names(cls, *args: str):
@@ -67,22 +80,24 @@ class DPrintMixin:
         self.dump = dump
 
     def dprint(self, level: int, *args, wrap=True, **kwargs):
-        if wrap:
-            text = [
-                textwrap.fill(
-                    "".join(str(a) for a in args),
-                    initial_indent="  " * level,
-                    subsequent_indent=("  " * level + "↳"),
-                )
-            ]
-        else:
-            text = ["  " * level, *args]
-
         if level <= self.verbose:
+            if wrap:
+                text = [
+                    textwrap.fill(
+                        "".join(str(a) for a in args),
+                        initial_indent="  " * level,
+                        subsequent_indent=("  " * level + "↳"),
+                    )
+                ]
+            else:
+                text = ["  " * level, *args]
+
             print(*text, **kwargs)
+
         if self.dump:
+            text = [*args]
             with open("./out.txt", "a+") as f:
-                f.write("".join(text) + "\n")
+                f.write("".join(str(a) for a in text) + "\n")
 
     def clear_dump_output(self):
         if self.dump:
@@ -155,7 +170,7 @@ class SuperNodeAnalysis(DPrintMixin):
             if (percent := (v / total_pair_count)) > THRESHHOLD_ADD_NEW:
                 messages.append(
                     (
-                        "ADDED Pair {0:<{1}}    {2}%".format(
+                        "ADDED {0:<{1}}    {2}%".format(
                             str(k), max_pair_str_length, round(percent * 100, 4)
                         ),
                         percent,
@@ -165,7 +180,7 @@ class SuperNodeAnalysis(DPrintMixin):
             else:
                 messages.append(
                     (
-                        "DECLINED Pair {0:<{1}}    {2}%".format(
+                        "DECLINED {0:<{1}}    {2}%".format(
                             str(k), max_pair_str_length, round(percent * 100, 4)
                         ),
                         percent,
@@ -176,7 +191,7 @@ class SuperNodeAnalysis(DPrintMixin):
             if (percent := (count / big_total)) > THRESHHOLD_RETAIN:
                 messages.append(
                     (
-                        "RETAINED old op {0:<{1}}    {2}%".format(
+                        "RETAINED {0:<{1}}    {2}%".format(
                             str(k), max_pair_str_length, round(percent * 100, 2)
                         ),
                         percent,
@@ -186,7 +201,7 @@ class SuperNodeAnalysis(DPrintMixin):
             else:
                 messages.append(
                     (
-                        "REMOVED old op  {0:<{1}}    {2}%".format(
+                        "REMOVED {0:<{1}}    {2}%".format(
                             str(k), max_pair_str_length, round(percent * 100, 2)
                         ),
                         percent,
@@ -215,9 +230,13 @@ class SuperNodeAnalysis(DPrintMixin):
             PairCount: _description_
         """
 
-        def is_subseq(x, y):
-            it = iter(y)
-            return all(c in it for c in x)
+        def is_subseq(x: typing.Iterable, y: typing.Iterable):
+            l = list(y)
+            for index, _ in enumerate(l):
+                if all(x[i] == l[index+i] for i in range(len(x))): return True
+            return False
+
+
 
         result = {}
         for k, v in pairs.items():
@@ -325,7 +344,7 @@ class SuperNodeEvolver(DPrintMixin):
             starting_supernodes = SuperNodeAnalysis.get_supernode_executor_cases()
             self.dprint(
                 2,
-                f"Starting supernodes:\n{'\n'.join(str(node) for node in starting_supernodes)}",
+                f"Starting supernodes: {','.join(str(node) for node in starting_supernodes)}",
             )
 
             self.build_and_generate_stats(starting_supernodes)
@@ -341,11 +360,11 @@ class SuperNodeEvolver(DPrintMixin):
                 # TODO Bail on specific failure types specified by args
         self.dprint(
             0,
-            f"Ending supernodes:\n{'\n'.join(str(node) for node in ending_supernodes)}",
+            f"Ending supernodes: {','.join(str(node) for node in ending_supernodes)}",
         )
         self.dprint(
             0,
-            f"Known bad supernodes:\n{'\n'.join(str(node) for node in self.known_bad_supernodes)}",
+            f"Known bad supernodes: {','.join(str(node) for node in self.known_bad_supernodes)}",
         )
 
     def _build_and_bisect(
@@ -399,7 +418,7 @@ class SuperNodeEvolver(DPrintMixin):
             self.dprint(1, f"{current_verb.capitalize()} FAILED, bisecting")
             self.dprint(
                 2,
-                f"Failed with {len(nodes)} nodes: \n{'\n'.join(node.name for node in nodes)}",
+                f"Failed with {len(nodes)} nodes: {','.join(node.name for node in nodes)}",
             )
             if len(nodes) == 1:
                 self.dprint(1, f"Identified bad node during {current_verb}: {nodes[0]}")
@@ -513,7 +532,7 @@ class SuperNodeEvolver(DPrintMixin):
         """
         supernodes = list(supernodes)
         self.dprint(1, "Updating supernodes.c")
-        self.dprint(2, f"Updating supernodes.c with nodes {supernodes}")
+        self.dprint(2, f"Updating supernodes.c with {len(supernodes)} nodes {supernodes}")
         new_supers = [f"super() = {node.sum_form()};" for node in supernodes]
 
         with open(DEFAULT_SUPERNODES_INPUT, "w") as f:
