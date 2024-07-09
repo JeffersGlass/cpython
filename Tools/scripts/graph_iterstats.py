@@ -21,10 +21,10 @@ def demo():
     import plotly.graph_objects as go
 
     fig = go.Figure(go.Sankey(
-        arrangement = "snap",
+        arrangement = "perpendicular",
         node = {
             "label": ["A", "B", "C", "D", "E", "F"],
-            "x": [0.2, 0.1, 0.5, 0.7, 0.3, 0.5],
+            "x": [0.3, 0.1, 0.5, 0.7, 0.3, 0.5],
             "y": [0.7, 0.5, 0.2, 0.4, 0.2, 0.3],
             'pad':10},  # 10 Pixels
         link = {
@@ -37,12 +37,21 @@ def demo():
 @dataclass(unsafe_hash=True, frozen=True)
 class GraphNode:
     label: str
+    supernodes: list[SuperNode]
     x: float
     y: float
 
 @dataclass
 class GraphData:
     generation_nodes: list[list[GraphNode]] = field(default_factory=list)
+
+    def flattened_index(self, generation: int, position: int) -> int:
+        index = 0
+        for gen in range(generation):
+            index += len(self.generation_nodes[gen])
+
+        return index + position
+
 
 # THIS IS BROKEN
 def parse_stat_dump(src: str) -> GraphData:
@@ -68,10 +77,10 @@ def parse_stat_dump(src: str) -> GraphData:
     for length in range(min_depth, max_depth+1):
         counts[length] = sum(1 if node.depth == length else 0 for node in end_ops)
 
-    first_gen_nodes = [GraphNode(label = length, x = 0, y = i * (1/len(counts))) for i, length in enumerate(counts.keys())]
+    first_gen_nodes = [GraphNode(label = str(length), supernodes = [e for e in end_ops if e.depth == length], x = 0, y = i * (1/len(counts))) for i, length in enumerate(counts.keys())]
     graph.generation_nodes.append(first_gen_nodes)
 
-    for igen, generation_bounds in enumerate(calc_lines):
+    for igen, generation_bounds in enumerate(calc_lines[1:]):
         gen_start, gen_end = generation_bounds
         nodes = [line_to_supernode(line) for line in lines[gen_start: gen_end]]
 
@@ -83,10 +92,11 @@ def parse_stat_dump(src: str) -> GraphData:
         counts = {}
         for length in range(min_depth, max_depth+1):
             counts[length] = sum(1 if node.depth == length else 0 for node in end_ops)
-        new_graph_nodes: list[GraphNode] = [GraphNode(label = str(length), x = igen * (1/num_generations), y = (i+1) * (1/(len(counts)+1))) for i, length in enumerate(counts.keys())]
-        new_graph_nodes.append(GraphNode(label='Removed', x = igen * (1/num_generations), y = 0))
+        new_graph_nodes: list[GraphNode] = [GraphNode(label = str(length), supernodes = [e for e in end_ops if e.depth == length], x = igen * (1/num_generations), y = (i+1) * (1/(len(counts)+1))) for i, length in enumerate(counts.keys())]
+        new_graph_nodes.append(GraphNode(label='Removed', supernodes = [n for n, op in nodes if op is Operation.REMOVED] x = igen * (1/num_generations), y = 0))
 
         graph.generation_nodes.append(new_graph_nodes)
+
 
     return graph
     """ #calculate link sizes
@@ -131,17 +141,39 @@ def line_to_supernode(src: str) -> tuple[SuperNode, Operation]:
 def display(graph: GraphData) -> None:
     import plotly.graph_objects as go
 
+    labels =  [node.label for node in chain.from_iterable(graph.generation_nodes)]
+    xs =  [node.x for node in chain.from_iterable(graph.generation_nodes)]
+    ys =  [node.y for node in chain.from_iterable(graph.generation_nodes)]
+    print(labels)
+    print(xs)
+    print(ys)
+
+    sources = []
+    targets = []
+    values = []
+
+    for
+
+    #sources = [n for n in range(len(list(chain.from_iterable(graph.generation_nodes))))]
+    #targets = [n for n in range(len(list(chain.from_iterable(graph.generation_nodes))))]
+    #values = [1 for _ in range(len(list(chain.from_iterable(graph.generation_nodes))))]
+
+    print(sources)
+    print(targets)
+    print(values)
+
     fig = go.Figure(go.Sankey(
-        arrangement = "freeform",
+        arrangement = "snap",
         node = {
-            "label": [node.label for node in chain.from_iterable(graph.generation_nodes)],
-            "x": [node.x for node in chain.from_iterable(graph.generation_nodes)],
-            "y": [node.y for node in chain.from_iterable(graph.generation_nodes)],
+            "label": labels,
+            "x": xs,
+            "y": ys,
             'pad':10},  # 10 Pixels
         link = {
-            "source": [n for n in range(len(list(chain.from_iterable(graph.generation_nodes)))-1)],
-            "target": [n+1 for n in range(len(list(chain.from_iterable(graph.generation_nodes))))],
-            "value": [1 for _ in range(len(list(chain.from_iterable(graph.generation_nodes)))-1)]}))
+            "source": sources,
+            "target": targets,
+            "value": values,
+            }))
 
     fig.show()
 
