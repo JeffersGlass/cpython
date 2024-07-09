@@ -3,6 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 import enum
 from functools import cache
+from itertools import chain
 import pathlib
 
 from supernode_analysis import SuperNode
@@ -42,22 +43,9 @@ class GraphNode:
 @dataclass
 class GraphData:
     generation_nodes: list[list[GraphNode]] = field(default_factory=list)
-    links: dict[tuple[GraphNode, GraphNode], int]
-
-    def flatten(self) -> list[tuple[int, int, int]]: #source, target, value
-        ...
-
-
-@dataclass
-class StatGeneration:
-    start_nodes: list[SuperNode]
-    end_nodes: list[SuperNode]
-
-    def max_depth(self):
-        return max(node.depth for node in self.nodes)
 
 # THIS IS BROKEN
-def parse_stat_dump(src: str):
+def parse_stat_dump(src: str) -> GraphData:
     lines = src.split('\n')
 
     #Find the lines in the dump file corresponding to the results of a stat run
@@ -80,7 +68,7 @@ def parse_stat_dump(src: str):
     for length in range(min_depth, max_depth+1):
         counts[length] = sum(1 if node.depth == length else 0 for node in end_ops)
 
-    first_gen_nodes = [GraphNode(label = length, x = 0, y = i * (1/len(end_ops))) for i, length in enumerate(counts.keys())]
+    first_gen_nodes = [GraphNode(label = length, x = 0, y = i * (1/len(counts))) for i, length in enumerate(counts.keys())]
     graph.generation_nodes.append(first_gen_nodes)
 
     for igen, generation_bounds in enumerate(calc_lines):
@@ -92,10 +80,16 @@ def parse_stat_dump(src: str):
         end_ops = [node for node, op in nodes if op in (Operation.ADDED, Operation.RETAINED)]
         min_depth = min(node.depth for node in end_ops)
         max_depth = max(node.depth for node in end_ops)
-        new_graph_nodes: list[GraphNode] = [GraphNode(label = str(length), x = igen * (1/num_generations), y = (i+1) * (1/len(end_ops+1))) for i, length in enumerate(counts.keys())]
-        new_graph_nodes += GraphNode(label='Removed', x = igen * (1/num_generations), y = 0)
+        counts = {}
+        for length in range(min_depth, max_depth+1):
+            counts[length] = sum(1 if node.depth == length else 0 for node in end_ops)
+        new_graph_nodes: list[GraphNode] = [GraphNode(label = str(length), x = igen * (1/num_generations), y = (i+1) * (1/(len(counts)+1))) for i, length in enumerate(counts.keys())]
+        new_graph_nodes.append(GraphNode(label='Removed', x = igen * (1/num_generations), y = 0))
 
-        #calculate link sizes
+        graph.generation_nodes.append(new_graph_nodes)
+
+    return graph
+    """ #calculate link sizes
         link_counter: dict[tuple[int, int], int] = defaultdict(default_factory=int)
         for s in start_ops:
             for e in end_ops:
@@ -110,7 +104,7 @@ def parse_stat_dump(src: str):
 
         #............ HMMMMMM
 
-        graph.generation_nodes.append(new_graph_nodes)
+        graph.generation_nodes.append(new_graph_nodes) """
 
 
 def line_to_supernode(src: str) -> tuple[SuperNode, Operation]:
@@ -134,9 +128,28 @@ def line_to_supernode(src: str) -> tuple[SuperNode, Operation]:
     op = src.strip().split(" ")[0]
     return node, Operation[op]
 
+def display(graph: GraphData) -> None:
+    import plotly.graph_objects as go
+
+    fig = go.Figure(go.Sankey(
+        arrangement = "freeform",
+        node = {
+            "label": [node.label for node in chain.from_iterable(graph.generation_nodes)],
+            "x": [node.x for node in chain.from_iterable(graph.generation_nodes)],
+            "y": [node.y for node in chain.from_iterable(graph.generation_nodes)],
+            'pad':10},  # 10 Pixels
+        link = {
+            "source": [n for n in range(len(list(chain.from_iterable(graph.generation_nodes)))-1)],
+            "target": [n+1 for n in range(len(list(chain.from_iterable(graph.generation_nodes))))],
+            "value": [1 for _ in range(len(list(chain.from_iterable(graph.generation_nodes)))-1)]}))
+
+    fig.show()
+
+
 def main(file) -> None:
     with open(file, "r") as f:
-        result = parse_stat_dump(f.read())
+        g = parse_stat_dump(f.read())
+        display(g)
 
 if __name__ == "__main__":
 
