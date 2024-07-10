@@ -22,6 +22,9 @@ THRESHHOLD_RETAIN = THRESHHOLD_ADD_NEW * 0.02
 FORBIDDEN = (
     ("_EXIT_TRACE",),
     ("_START_EXECUTOR", "_POP_TOP"),
+    ('_GUARD_NOT_EXHAUSTED_TUPLE', '_ITER_NEXT_TUPLE', '_STORE_FAST_4', '_BUILD_LIST'), #failed during docutils stat
+    ('_SET_IP', '_LOAD_ATTR', '_CHECK_VALIDITY'), #failed during docutils stat
+    ('_SET_IP', '_LOAD_ATTR', '_CHECK_VALIDITY_AND_SET_IP', '_LOAD_ATTR'), #failed during docutils stat
 )
 
 type PairCount = dict[tuple[str, str], int]
