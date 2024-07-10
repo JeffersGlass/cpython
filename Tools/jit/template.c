@@ -196,6 +196,32 @@ _JIT_ENTRY(_PyInterpreterFrame *frame, PyObject **stack_pointer, PyThreadState *
         }
     }
     
+    if (_JIT_LENGTH > 5){
+        int uopcode = uopcode_array[5];
+        UOP_STAT_INC(uopcode, execution_count);
+        if (uopcode == _JUMP_TO_TOP) {
+            PATCH_JUMP(_JIT_TOP);
+        }
+        switch (uopcode_array[5]) {
+#include "executor_cases.c.h"
+            default:
+                Py_UNREACHABLE();
+        }
+    }
+    
+    if (_JIT_LENGTH > 6){
+        int uopcode = uopcode_array[6];
+        UOP_STAT_INC(uopcode, execution_count);
+        if (uopcode == _JUMP_TO_TOP) {
+            PATCH_JUMP(_JIT_TOP);
+        }
+        switch (uopcode_array[6]) {
+#include "executor_cases.c.h"
+            default:
+                Py_UNREACHABLE();
+        }
+    }
+    
 
     // END SUPEROP HANDLERS //
 

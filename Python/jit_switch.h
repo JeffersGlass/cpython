@@ -11,8 +11,8 @@ typedef struct {
     const uint16_t length;
 } SuperNode;
 
-#define SUPERNODE_MAX_DEPTH 5
+#define SUPERNODE_MAX_DEPTH 7
 
-//This function must always be fed 5 uops
+//This function must always be fed 7 uops
 SuperNode
 _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index);

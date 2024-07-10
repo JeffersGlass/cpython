@@ -65,7 +65,7 @@ def parse_stat_dump(src: str) -> GraphData:
 
     graph = GraphData()
 
-    # bootstrap data for first generation
+    # bootstrap starting supernodes from first generation data
     gen_start, gen_end = calc_lines[0]
     nodes = [line_to_supernode(line) for line in lines[gen_start: gen_end]]
     end_ops: list[SuperNode] = [node for node, op in nodes if op in (Operation.REMOVED, Operation.RETAINED)]
@@ -80,13 +80,14 @@ def parse_stat_dump(src: str) -> GraphData:
     first_gen_nodes = [GraphNode(label = str(length), supernodes = [e for e in end_ops if e.depth == length], x = 0, y = i * (1/len(counts))) for i, length in enumerate(counts.keys())]
     graph.generation_nodes.append(first_gen_nodes)
 
+    # 
     for igen, generation_bounds in enumerate(calc_lines[1:]):
         gen_start, gen_end = generation_bounds
         nodes = [line_to_supernode(line) for line in lines[gen_start: gen_end]]
 
         # Generate new nodes for this gen
-        start_ops = end_ops
         end_ops = [node for node, op in nodes if op in (Operation.ADDED, Operation.RETAINED)]
+        rejected_ops = [node for node, op in nodes if op in (Operation.Rejecting,)]
         min_depth = min(node.depth for node in end_ops)
         max_depth = max(node.depth for node in end_ops)
         counts = {}

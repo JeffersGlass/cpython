@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 import dataclasses
 import os
 from pathlib import Path
@@ -7,6 +8,7 @@ import shutil
 import subprocess
 import textwrap
 import typing
+import warnings
 
 
 from summarize_stats import Stats, DEFAULT_DIR, load_raw_data
@@ -23,8 +25,8 @@ FORBIDDEN = (
     ("_EXIT_TRACE",),
     ("_START_EXECUTOR", "_POP_TOP"),
     ('_GUARD_NOT_EXHAUSTED_TUPLE', '_ITER_NEXT_TUPLE', '_STORE_FAST_4', '_BUILD_LIST'), #failed during docutils stat
-    ('_SET_IP', '_LOAD_ATTR', '_CHECK_VALIDITY'), #failed during docutils stat
-    ('_SET_IP', '_LOAD_ATTR', '_CHECK_VALIDITY_AND_SET_IP', '_LOAD_ATTR'), #failed during docutils stat
+    ('_SET_IP', '_LOAD_ATTR', '_CHECK_VALIDITY'),                                       #failed during docutils stat
+    ('_SET_IP', '_LOAD_ATTR', '_CHECK_VALIDITY_AND_SET_IP', '_LOAD_ATTR'),              #failed during docutils stat
 )
 
 type PairCount = dict[tuple[str, str], int]
@@ -283,6 +285,7 @@ class SuperNodeEvolver(DPrintMixin):
         "cwd": ROOT,
         "stdout": subprocess.PIPE,
         "stderr": subprocess.STDOUT,
+        "text": True
     }
 
     def __init__(
@@ -510,8 +513,6 @@ class SuperNodeEvolver(DPrintMixin):
 
         new_supers = analysis.calculate_new_supernodes([DEFAULT_DIR])
 
-        if any(s.uops[0] == "_" for s in new_supers):
-            breakpoint()
         self.dprint(
             2, f"Updating supernodes.c with {len(new_supers)} potential supernodes"
         )
@@ -527,7 +528,11 @@ class SuperNodeEvolver(DPrintMixin):
             ("make", "regen-executor-cases"),
             ("make", "regen-jit"),
         ]:
-            self.run_command(command)
+            #with warnings.catch_warnings(record=True) as caught_warnings:
+            #warnings.simplefilter("always")
+            self.run_command(command, print_warnings=True)
+            #for warning in caught_warnings:
+            #    self.dprint(1, f"Warning from `{' '.join(command)}` :", warning)
 
     def update_supernodes_c(self, supernodes: typing.Iterable[SuperNode]) -> None:
         """Given a list of supernodes, update `supernode.c` with properly formatted supernodes
@@ -577,12 +582,22 @@ class SuperNodeEvolver(DPrintMixin):
         self,
         command: list[str],
         raise_errors=False,
+        print_warnings=False,
         kwargs=None,
     ) -> subprocess.CompletedProcess[str]:
         self.dprint(2, f"Running {command=}")
         if kwargs == None:
             kwargs = self.default_kwargs
+        
+        if print_warnings:
+            kwargs |= {"capture_output": True}
+
         result: subprocess.CompletedProcess[str] = subprocess.run(command, **kwargs)
+
+        if print_warnings:
+            for line in result.stderr.split("\n"):
+                if line.strip():
+                    self.dprint(1, f"Warning from `{' '.join(command)}` :", line)
         if raise_errors and result.returncode:
             raise RuntimeError(
                 f"Command {command} exited with error code {result.returncode}"
