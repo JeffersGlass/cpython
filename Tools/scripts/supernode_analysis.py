@@ -230,10 +230,11 @@ class SuperNodeAnalysis(DPrintMixin):
             PairCount: _description_
         """
 
-        def is_subseq(x: typing.Iterable, y: typing.Iterable):
-            l = list(y)
-            for index, _ in enumerate(l):
-                if all(x[i] == l[index+i] for i in range(len(x))): return True
+        def is_subseq(x: typing.Iterable, y: typing.Iterable) -> bool:
+            if len(x) == 0 or len(y) == 0: return False
+            xlist, ylist = list(x), list(y)
+            for ystart in range(len(ylist)):
+                if all(((ystart + i) < len(ylist) and xlist[i] == ylist[ystart+i]) for i in range(len(xlist))): return True
             return False
 
 
@@ -476,9 +477,11 @@ class SuperNodeEvolver(DPrintMixin):
             if type(self.pyperf_command) == str:
                 self.pyperf_command = self.pyperf_command.split(" ")
 
+        directory = "/tmp/py_stats"
+        if not Path(directory).exists():
+            os.mkdir(directory)
         # delete old pystats
         try:
-            directory = "/tmp/py_stats"
             stats_files = os.listdir(directory)
             for file in stats_files:
                 os.remove(os.path.join(directory, file))
