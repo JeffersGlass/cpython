@@ -13,13 +13,14 @@ import warnings
 
 from summarize_stats import Stats, DEFAULT_DIR, load_raw_data
 from _bytecode_file_parts import PRE, POST
+from score_jit import configure_parser, get_sequences_from_files, get_sequences_from_string, output_scores
 
 ROOT = Path(__file__).parent.parent.parent
 DEFAULT_SUPERNODES_INPUT = (ROOT / "Python/supernodes.c").absolute().as_posix()
 SUPERNODE_CASES = (ROOT / "Python" / "supernodes_cases.c.h").absolute().as_posix()
 
-THRESHHOLD_ADD_NEW = 0.001
-THRESHHOLD_RETAIN = THRESHHOLD_ADD_NEW * 0.02
+THRESHHOLD_ADD_NEW = 0.0001
+THRESHHOLD_RETAIN = THRESHHOLD_ADD_NEW * 0.0
 
 FORBIDDEN = (
     ("_EXIT_TRACE",),
@@ -27,6 +28,7 @@ FORBIDDEN = (
     ('_GUARD_NOT_EXHAUSTED_TUPLE', '_ITER_NEXT_TUPLE', '_STORE_FAST_4', '_BUILD_LIST'), #failed during docutils stat
     ('_SET_IP', '_LOAD_ATTR', '_CHECK_VALIDITY'),                                       #failed during docutils stat
     ('_SET_IP', '_LOAD_ATTR', '_CHECK_VALIDITY_AND_SET_IP', '_LOAD_ATTR'),              #failed during docutils stat
+    ('_GUARD_NOT_EXHAUSTED_RANGE', '_ITER_NEXT_RANGE')                                  #failed during nbody stat
 )
 
 type PairCount = dict[tuple[str, str], int]
@@ -598,6 +600,7 @@ class SuperNodeEvolver(DPrintMixin):
             )
         return result
 
+
 ### Module-level functions:
 
 def update_supernodes_c(supernodes: typing.Iterable[SuperNode]) -> None:
@@ -652,6 +655,24 @@ def _prune(args: argparse.Namespace) -> None:
         nodes = good
 
     update_supernodes_c(nodes)
+
+def _score(args):
+    if args.string and args.inputs:
+        raise ValueError("Cannot provide both a -s string and file inputs")
+
+    if args.input:
+        input_func = get_sequences_from_files
+    elif args.string:\
+        input_func = get_sequences_from_string
+    else:
+        raise ValueError("Must provide at least one file input or -s string")
+
+    if args.output_mode and args.output_mode != "table" and args.table:
+        ValueError(f"Cannot provide --output_mode={args.output_mode}")
+    if not args.output_mode:
+        output_mode = "table" if args.table else "text"
+
+    output_scores(input_func(args.input), args.significance_factor, output_mode=args.output_mode or output_mode)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -759,6 +780,16 @@ def main():
     )
 
     iterate_parser.set_defaults(func=_iterate)
+
+    score_parser = subparsers.add_parser(
+        "score",
+        help="Generate scores for superinstructions",
+        parents=[parser],
+    )
+
+    configure_parser(score_parser)
+
+    score_parser.set_defaults(func=_score)
 
     args = parser.parse_args()
     args.func(args)
