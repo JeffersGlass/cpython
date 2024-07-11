@@ -217,42 +217,6 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
             }
             break;
-        case _CHECK_VALIDITY_AND_SET_IP:
-            switch (uops[start_index + 1].opcode) {
-                case _LOAD_ATTR:
-                    switch (uops[start_index + 2].opcode) {
-                        case _CHECK_VALIDITY_AND_SET_IP:
-                            switch (uops[start_index + 3].opcode) {
-                                case _BINARY_OP:
-                                    switch (uops[start_index + 4].opcode) {
-                                        case _CHECK_VALIDITY_AND_SET_IP:
-                                            switch (uops[start_index + 5].opcode) {
-                                                case _CHECK_FUNCTION_VERSION:
-                                                    return (SuperNode) {.index = _CHECK_VALIDITY_AND_SET_IP_PLUS__LOAD_ATTR_PLUS__CHECK_VALIDITY_AND_SET_IP_PLUS__BINARY_OP_PLUS__CHECK_VALIDITY_AND_SET_IP_PLUS__CHECK_FUNCTION_VERSION, .length = 6};
-                                                    break;
-                                                default:
-                                                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
-                                            }
-                                            break;
-                                        default:
-                                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
-                                    }
-                                    break;
-                                default:
-                                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
-                            }
-                            break;
-                        default:
-                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
-                    }
-                    break;
-                case _GET_ITER:
-                    return (SuperNode) {.index = _CHECK_VALIDITY_AND_SET_IP_PLUS__GET_ITER, .length = 2};
-                    break;
-                default:
-                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
-            }
-            break;
         case _BINARY_OP:
             switch (uops[start_index + 1].opcode) {
                 case _CHECK_VALIDITY_AND_SET_IP:
@@ -374,6 +338,36 @@ _JIT_INDEX(const _PyUOpInstruction *uops, uint16_t start_index) {
             switch (uops[start_index + 1].opcode) {
                 case _INIT_CALL_PY_EXACT_ARGS_1:
                     return (SuperNode) {.index = _CHECK_STACK_SPACE_PLUS__INIT_CALL_PY_EXACT_ARGS_1, .length = 2};
+                    break;
+                default:
+                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+            }
+            break;
+        case _CHECK_VALIDITY_AND_SET_IP:
+            switch (uops[start_index + 1].opcode) {
+                case _GET_ITER:
+                    return (SuperNode) {.index = _CHECK_VALIDITY_AND_SET_IP_PLUS__GET_ITER, .length = 2};
+                    break;
+                case _LOAD_ATTR:
+                    switch (uops[start_index + 2].opcode) {
+                        case _CHECK_VALIDITY_AND_SET_IP:
+                            switch (uops[start_index + 3].opcode) {
+                                case _BINARY_OP:
+                                    switch (uops[start_index + 4].opcode) {
+                                        case _CHECK_VALIDITY_AND_SET_IP:
+                                            return (SuperNode) {.index = _CHECK_VALIDITY_AND_SET_IP_PLUS__LOAD_ATTR_PLUS__CHECK_VALIDITY_AND_SET_IP_PLUS__BINARY_OP_PLUS__CHECK_VALIDITY_AND_SET_IP, .length = 5};
+                                            break;
+                                        default:
+                                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                                    }
+                                    break;
+                                default:
+                                    return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                            }
+                            break;
+                        default:
+                            return (SuperNode) {.index = uops[start_index].opcode, .length = 1};
+                    }
                     break;
                 default:
                     return (SuperNode) {.index = uops[start_index].opcode, .length = 1};

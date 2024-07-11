@@ -637,10 +637,21 @@ def _iterate(args: argparse.Namespace) -> None:
     )
     manager.iterate_supernodes()
 
-def _prune(*args: argparse.Namespace) -> None:
+def _prune(args: argparse.Namespace) -> None:
     nodes = SuperNodeAnalysis.get_supernode_executor_cases()
-    update_supernodes_c(nodes)
+    print(f"Found {len(nodes)} cases in supernode_cases.h")
 
+    if args.bisect_with:
+        e = SuperNodeEvolver(verbose = args.verbose, threads=args.jobs)
+        command = args.bisect_with
+        if type(command) == str:
+            command = command.split(" ")
+        good, bad = e._build_and_bisect(nodes, command, verb="prune-bisect", total_nodes=len(nodes))
+        print(f"Updating supernodes.c with {len(good)} good nodes and omitting {len(bad)} bad nodes")
+        print(f"Bad nodes: {','.join(bad)}")
+        nodes = good
+
+    update_supernodes_c(nodes)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -657,6 +668,15 @@ def main():
 
     parser.add_argument(
         "--dump-output", action="store_true", help="Dump stdout output to ./out.txt"
+    )
+
+
+    parser.add_argument(
+        "-j",
+        "--jobs",
+        type=int,
+        default=2,
+        help="Number of threads to run builds and tests with",
     )
 
     subparsers = parser.add_subparsers(help="Sub-command help")
@@ -687,8 +707,14 @@ def main():
 
     prune_parser = subparsers.add_parser(
         "prune",
-        help="Validate the current set of supernodes in supernodes.c",
+        help="Validate the current selection of sueprnodes in supernode_cases.h by bisecting, then update supernodes.c",
         parents=[parser],
+    )
+
+    prune_parser.add_argument(
+        "--bisect-with",
+        type=str,
+        help="The command to run to bisect the results, if any"
     )
 
     prune_parser.set_defaults(func=_prune)
@@ -711,14 +737,6 @@ def main():
 
     iterate_parser.add_argument(
         "--perf-command", type=str, help="Pyperf command to run to generate stats"
-    )
-
-    iterate_parser.add_argument(
-        "-j",
-        "--jobs",
-        type=int,
-        default=2,
-        help="Number of threads to run builds and tests with",
     )
 
     iterate_parser.add_argument(
