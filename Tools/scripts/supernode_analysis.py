@@ -541,15 +541,9 @@ class SuperNodeEvolver(DPrintMixin):
             supernodes (list[tuple[str, ...]]): The list of supernodes to add; each element of the inner tuple is
             either a uop or another supernode
         """
-        supernodes = list(supernodes)
         self.dprint(1, "Updating supernodes.c")
         self.dprint(2, f"Updating supernodes.c with {len(supernodes)} nodes {supernodes}")
-        new_supers = [f"super() = {node.sum_form()};" for node in supernodes]
-
-        with open(DEFAULT_SUPERNODES_INPUT, "w") as f:
-            f.writelines(PRE)
-            f.writelines("\t" + line + "\n" for line in new_supers)
-            f.writelines(POST)
+        update_supernodes_c(supernodes)
 
     def print_supernode_changes(
         self, start: typing.Iterable[str], end: typing.Iterable[str]
@@ -588,7 +582,7 @@ class SuperNodeEvolver(DPrintMixin):
         self.dprint(2, f"Running {command=}")
         if kwargs == None:
             kwargs = self.default_kwargs
-        
+
         if print_warnings:
             kwargs |= {"capture_output": True}
 
@@ -603,6 +597,23 @@ class SuperNodeEvolver(DPrintMixin):
                 f"Command {command} exited with error code {result.returncode}"
             )
         return result
+
+### Module-level functions:
+
+def update_supernodes_c(supernodes: typing.Iterable[SuperNode]) -> None:
+    """Given a list of supernodes, update `supernode.c` with properly formatted supernodes
+
+    Args:
+        supernodes (list[tuple[str, ...]]): The list of supernodes to add; each element of the inner tuple is
+        either a uop or another supernode
+    """
+    supernodes = list(supernodes)
+    new_supers = [f"super() = {node.sum_form()};" for node in supernodes]
+
+    with open(DEFAULT_SUPERNODES_INPUT, "w") as f:
+        f.writelines(PRE)
+        f.writelines("\t" + line + "\n" for line in new_supers)
+        f.writelines(POST)
 
 
 ### argparse functions:
@@ -625,6 +636,10 @@ def _iterate(args: argparse.Namespace) -> None:
         dump=args.dump_output,
     )
     manager.iterate_supernodes()
+
+def _prune(*args: argparse.Namespace) -> None:
+    nodes = SuperNodeAnalysis.get_supernode_executor_cases()
+    update_supernodes_c(nodes)
 
 
 def main():
@@ -667,6 +682,16 @@ def main():
     )
 
     update_parser.set_defaults(func=_calculate_new)
+
+    # -- Prune --
+
+    prune_parser = subparsers.add_parser(
+        "prune",
+        help="Validate the current set of supernodes in supernodes.c",
+        parents=[parser],
+    )
+
+    prune_parser.set_defaults(func=_prune)
 
     # -- Iterate --
 
