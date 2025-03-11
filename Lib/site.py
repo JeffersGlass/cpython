@@ -464,6 +464,7 @@ def setcopyright():
         "license",
         "See https://www.python.org/psf/license/",
         files, dirs)
+    builtins.__frank__ = _sitebuiltins._Printer("__frank__", "Frankenstein, by Mary Shelley", ["frank.txt"], dirs)
 
 
 def sethelper():

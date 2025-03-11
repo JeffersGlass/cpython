@@ -40,6 +40,7 @@ class _Printer(object):
         self.__filenames = [os.path.join(dir, filename)
                             for dir in dirs
                             for filename in files]
+        
 
     def __setup(self):
         if self.__lines:
@@ -63,6 +64,15 @@ class _Printer(object):
             return "\n".join(self.__lines)
         else:
             return "Type %s() to see the full %s text" % ((self.__name,)*2)
+        
+
+    def __str__(self):
+        self.__setup()
+        if self.__name == "__frank__":
+            return "\n".join(self.__lines)
+        else:
+            return self.__repr__()
+
 
     def __call__(self):
         self.__setup()
@@ -83,7 +93,6 @@ class _Printer(object):
                         key = None
                 if key == 'q':
                     break
-
 
 class _Helper(object):
     """Define the builtin 'help'.
