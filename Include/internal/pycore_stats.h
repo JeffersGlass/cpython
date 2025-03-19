@@ -15,35 +15,37 @@ extern "C" {
 
 #include "pycore_bitutils.h"  // _Py_bit_length
 
-#define STAT_INC_COND(stat, cond) \
+#define STAT_INC_COND(cond, stat) \
     do { if (_Py_stats && cond) _Py_stats->stat++; } while (0)
+#define STAT_INC(stat) \
+    do { STAT_INC_COND(true, stat); } while (0)
 
-#define CALL_STAT_INC(name) do { STAT_INC_COND(call_stats.name, true); } while (0)
+#define CALL_STAT_INC(name) do { STAT_INC_ALWAYS(call_stats.name); } while (0)
 //#define CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.name++; } while (0)
-#define OBJECT_STAT_INC(name) do { STAT_INC_COND(object_stats.name, true); } while (0)
+#define OBJECT_STAT_INC(name) do { STAT_INC_ALWAYS(object_stats.name); } while (0)
 //#define OBJECT_STAT_INC(name) do { if (_Py_stats) _Py_stats->object_stats.name++; } while (0)
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
-    do { STAT_INC_COND(call_stats.eval_calls[name], PyFunction_Check(callable)); } while (0)
+    do { STAT_INC_COND(PyFunction_Check(callable), call_stats.eval_calls[name]); } while (0)
     //do { if (_Py_stats && PyFunction_Check(callable)) _Py_stats->call_stats.eval_calls[name]++; } while (0)
 #define OBJECT_STAT_INC_COND(name, cond) \
-    do { STAT_INC_COND(object_stats.name, cond); } while (0)
+    do { STAT_INC_COND(cond, object_stats.name); } while (0)
     //do { if (_Py_stats) _Py_stats->object_stats.name++; } while (0)
-#define EVAL_CALL_STAT_INC(name) do { STAT_INC_COND(call_stats.eval_calls[name], true); } while (0)
+#define EVAL_CALL_STAT_INC(name) do { STAT_INC_ALWAYS(call_stats.eval_calls[name]); } while (0)
 //#define EVAL_CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.eval_calls[name]++; } while (0)
-#define OPT_STAT_INC(name) do { STAT_INC_COND(optimization_stats.name, true); } while (0)
+#define OPT_STAT_INC(name) do { STAT_INC_ALWAYS(optimization_stats.name); } while (0)
 //#define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
-#define RARE_EVENT_STAT_INC(name) do { STAT_INC_COND(rare_event_stats.name, true) ; } while (0)
+#define RARE_EVENT_STAT_INC(name) do { STAT_INC_ALWAYS(rare_event_stats.name) ; } while (0)
 //#define RARE_EVENT_STAT_INC(name) do { if (_Py_stats) _Py_stats->rare_event_stats.name++; } while (0)
-#define OPCODE_EXE_INC(opname) do { STAT_INC_COND(opcode_stats[opname].execution_count, true); } while (0)
+#define OPCODE_EXE_INC(opname) do { STAT_INC_ALWAYS(opcode_stats[opname].execution_count); } while (0)
 //#define OPCODE_EXE_INC(opname) do { if (_Py_stats) _Py_stats->opcode_stats[opname].execution_count++; } while (0)
-#define OPT_UNSUPPORTED_OPCODE(opname) do {STAT_INC_COND(optimization_stats.unsupported_opcode[opname], true); } while (0)
+#define OPT_UNSUPPORTED_OPCODE(opname) do {STAT_INC_ALWAYS(optimization_stats.unsupported_opcode[opname]); } while (0)
 //#define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
-#define OPT_ERROR_IN_OPCODE(opname) do { STAT_INC_COND(optimization_stats.error_in_opcode[opname], true); } while (0)
+#define OPT_ERROR_IN_OPCODE(opname) do { STAT_INC_ALWAYS(optimization_stats.error_in_opcode[opname]); } while (0)
 //#define OPT_ERROR_IN_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.error_in_opcode[opname]++; } while (0)
 
 
-#define STAT_INC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name++; } while (0)
-#define STAT_DEC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name--; } while (0)
+#define _STAT_INC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name++; } while (0)
+#define _STAT_DEC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name--; } while (0)
 
 #define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
 #define OPT_STAT_ADD(name, n) do { if (_Py_stats) _Py_stats->optimization_stats.name += (n); } while (0)
