@@ -15,6 +15,8 @@ extern "C" {
 
 #include "pycore_bitutils.h"  // _Py_bit_length
 
+// NEW STATS MACROS
+
 #define STAT_INC_COND(cond, stat) \
     do { if (_Py_stats && cond) _Py_stats->stat++; } while (0)
 #define STAT_INC(stat) \
@@ -43,6 +45,8 @@ extern "C" {
 #define OPT_ERROR_IN_OPCODE(opname) do { STAT_INC(optimization_stats.error_in_opcode[opname]); } while (0)
 //#define OPT_ERROR_IN_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.error_in_opcode[opname]++; } while (0)
 
+
+//// STATS MACROS yet to be changed:
 
 #define SPEC_STAT_INC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name++; } while (0)
 #define SPEC_STAT_DEC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name--; } while (0)
