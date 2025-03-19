@@ -502,9 +502,9 @@ to eliminate the branches.
 
 Finally, take care that stats are gathered correctly.
 After the last `DEOPT_IF` has passed, a hit should be recorded with
-`STAT_INC(BASE_INSTRUCTION, hit)`.
+`SPEC_STAT_INC(BASE_INSTRUCTION, hit)`.
 After an optimization has been deferred in the adaptive instruction,
-that should be recorded with `STAT_INC(BASE_INSTRUCTION, deferred)`.
+that should be recorded with `SPEC_STAT_INC(BASE_INSTRUCTION, deferred)`.
 
 
 Additional resources

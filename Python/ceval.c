@@ -1062,8 +1062,8 @@ enter_tier_two:
 
 #ifdef Py_STATS
 // Disable these macros that apply to Tier 1 stats when we are in Tier 2
-#undef STAT_INC
-#define STAT_INC(opname, name) ((void)0)
+#undef _STAT_INC
+#define _STAT_INC(opname, name) ((void)0)
 #undef STAT_DEC
 #define STAT_DEC(opname, name) ((void)0)
 #endif

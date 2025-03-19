@@ -721,12 +721,12 @@ specialize(_Py_CODEUNIT *instr, uint8_t specialized_opcode)
 {
     assert(!PyErr_Occurred());
     if (!set_opcode(instr, specialized_opcode)) {
-        STAT_INC(_PyOpcode_Deopt[specialized_opcode], failure);
+        SPEC_STAT_INC(_PyOpcode_Deopt[specialized_opcode], failure);
         SPECIALIZATION_FAIL(_PyOpcode_Deopt[specialized_opcode],
                             SPEC_FAIL_OTHER);
         return;
     }
-    STAT_INC(_PyOpcode_Deopt[specialized_opcode], success);
+    SPEC_STAT_INC(_PyOpcode_Deopt[specialized_opcode], success);
     set_counter((_Py_BackoffCounter *)instr + 1, adaptive_counter_cooldown());
 }
 
@@ -736,7 +736,7 @@ unspecialize(_Py_CODEUNIT *instr)
     assert(!PyErr_Occurred());
     uint8_t opcode = FT_ATOMIC_LOAD_UINT8_RELAXED(instr->op.code);
     uint8_t generic_opcode = _PyOpcode_Deopt[opcode];
-    STAT_INC(generic_opcode, failure);
+    SPEC_STAT_INC(generic_opcode, failure);
     if (!set_opcode(instr, generic_opcode)) {
         SPECIALIZATION_FAIL(generic_opcode, SPEC_FAIL_OTHER);
         return;

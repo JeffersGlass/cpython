@@ -253,11 +253,11 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #ifdef Py_STATS
 #define UPDATE_MISS_STATS(INSTNAME)                              \
     do {                                                         \
-        STAT_INC(opcode, miss);                                  \
-        STAT_INC((INSTNAME), miss);                              \
+        SPEC_STAT_INC(opcode, miss);                                  \
+        SPEC_STAT_INC((INSTNAME), miss);                              \
         /* The counter is always the first cache entry: */       \
         if (ADAPTIVE_COUNTER_TRIGGERS(next_instr->cache)) {       \
-            STAT_INC((INSTNAME), deopt);                         \
+            SPEC_STAT_INC((INSTNAME), deopt);                         \
         }                                                        \
     } while (0)
 #else
