@@ -17,6 +17,9 @@ extern "C" {
 
 // NEW STATS MACROS
 
+#define STAT_INC_COND_MULTI(cond, stat, ...) \
+    do {fprintf(stdout, __VA_ARGS__);} while (0)
+
 #define STAT_INC_COND(cond, stat) \
     do { if (_Py_stats && cond) _Py_stats->stat++; } while (0)
 #define STAT_INC(stat) \
@@ -87,6 +90,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define UOP_PAIR_INC(uopcode, lastuop) ((void)0)
 #define RARE_EVENT_STAT_INC(name) ((void)0)
 #define OPCODE_DEFERRED_INC(opname) ((void)0)
+#define STAT_INC_COND_MULTI(cond, stat, ...)  ((void)0)
 
 #define STAT_DEC(opname, name) ((void)0)
 
