@@ -78,7 +78,10 @@ extern "C" {
 PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 
 #else
-#define STAT_INC(opname, name) ((void)0)
+#define STAT_INC_COND_MULTI(cond, stat, ...)  ((void)0)
+#define STAT_INC_COND(cond, stat)  ((void)0)
+#define STAT_INC(stat)  ((void)0)
+#define SPEC_STAT_INC(opname, name) ((void)0)
 #define OPCODE_EXE_INC(opname) ((void)0)
 #define CALL_STAT_INC(name) ((void)0)
 #define OBJECT_STAT_INC(name) ((void)0)
@@ -90,9 +93,8 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define UOP_PAIR_INC(uopcode, lastuop) ((void)0)
 #define RARE_EVENT_STAT_INC(name) ((void)0)
 #define OPCODE_DEFERRED_INC(opname) ((void)0)
-#define STAT_INC_COND_MULTI(cond, stat, ...)  ((void)0)
 
-#define STAT_DEC(opname, name) ((void)0)
+#define SPEC_STAT_DEC(opname, name) ((void)0)
 
 #define OPT_STAT_ADD(name, n) ((void)0)
 #define GC_STAT_ADD(gen, name, n) ((void)0)
