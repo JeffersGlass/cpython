@@ -476,6 +476,7 @@ PYTHON_OBJS=	\
 		Python/parking_lot.o \
 		Python/pathconfig.o \
 		Python/preconfig.o \
+		Python/print_stats.o \
 		Python/pyarena.o \
 		Python/pyctype.o \
 		Python/pyfpe.o \
