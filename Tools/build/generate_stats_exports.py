@@ -4,6 +4,7 @@ import re
 from typing import Self, Generator, Union
 
 DEFUALT_ROOT_NAME = "PyStats"
+CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
 
 @dataclass
 class Stat:
@@ -82,29 +83,43 @@ def analyze_contents(contents: str, root_name = DEFUALT_ROOT_NAME) -> Struct:
     return root
 
 def generate_print_statements_from_struct(s: Struct, path: list[Stat] | None = None, loop_index=0) -> Generator[str]:
+    #print(f"Generating print statements from struct {s} and path {path}")
     assert not s.unresolved_members
     if path is None: path = []
-    for member in s.members.values():
+    for name, member in s.members.items():
+        #print(f">Examining member {name} : {member}")
         if member._type == "uint64_t":
-            generate_print_from_path(path + [s])
-        if member.array_size:
-            loop_var = chr(loop_index + 65)
-            yield f"for (int {loop_var} = 0; {loop_var} < {member.array_size}; {loop_var}++){{"
-            yield generate_print_from_path(path + [s])
-            yield "}"
+            if not member.array_size:
+                #print(">>member is simple uint64 and has no array size")
+                yield generate_print_from_path(path + [name])
+            else:
+                loop_var = chr(loop_index + ord('i'))
+                yield f"for (int {loop_var} = 0; {loop_var} < {member.array_size}; {loop_var}++){{"
+                yield generate_print_from_path(path + [name], loop_var)
+                yield "}"
+        else: # Sub-struct
+            if not member.array_size:
+                yield from generate_print_statements_from_struct(member, path + [name], loop_var)
+            else: #array of structs
+                loop_var = chr(loop_index + ord('i'))
+                yield f"for (int {loop_var} = 0; {loop_var} < {member.array_size}; {loop_var}++){{"
+                generate_print_statements_from_struct(member, path + [name], loop_var)
+                yield "}"
     ## TODO Working here
 
 
     #"""fprintf(out, foo.bar": %" PRIu64 "\\n", stats->foo->bar);"""
 
-def generate_print_from_path(path: list[Stat], index=None) -> str:
+def generate_print_from_path(path: list[Stat], index: str | None =None) -> str:
+    #print(f">>printing from path {path}")
     index_string = f"[{index}]" if index else ""
-    return f"""fprintf(out, {'.'.join(p.name for p in path)}": %" PRIu64 "\\n", stats->{'->'.join(p.name for p in path)});"""
+    namer = lambda x: x.name if hasattr(x, 'name') else x
+    return f"""fprintf(out, {'.'.join((namer(p) if namer(p) != "PyStats" else "stats") for p in path)}{index_string}": %" PRIu64 "\\n", {'->'.join((namer(p) if namer(p) != "PyStats" else "stats") for p in path)}{index_string});"""
 
 def main():
-    root = analyze_file("Include/CPython/pystats.h")
+    root = analyze_file(CPYTHON_ROOT_DIR / "Include/cpython/pystats.h")
     with open("print_stat.c or something", "w+") as f:
-        for line in generate_print_statements_from_struct(root):
+        for line in generate_print_statements_from_struct(root, [root]):
             f.write(line)
 
 if __name__ == "__main__":
@@ -201,7 +216,7 @@ class Tests:
     def test_generate_print_statements_from_struct(self):
         a = """\
             typedef struct _foo {
-                uint64_t a;
+                uint64_t foo_a;
             } Foo;
 
             #define _Py_UOP_HIST_SIZE 32
@@ -228,4 +243,21 @@ class Tests:
             } PyStats;"""
 
         result = analyze_contents(a)
-        lines = list(generate_print_statements_from_struct(result))
+        lines = list(generate_print_statements_from_struct(result, [result]))
+        
+        for l in lines:
+            print(l)
+
+        # The stats which are single variables in PyStats, or arrays in PyStats,
+        # Only have one print statement associated with them
+        for solo in ['attempts', 'unsupported_opcode', 'dummy_hist', 'trace_length_hist']:
+            assert sum((1 if solo in line else 0) for line in lines) == 1
+
+        
+
+        # There is only one copy of the Foo struct, so it's stats should only be printed once
+        for foostat in ['foo_a']:
+            assert sum([(1 if foostat in line else 0) for line in lines]) == 1
+
+        # TODO continue fleshing out these tests, and get arrays of structs printing
+        
