@@ -5,6 +5,7 @@ from typing import Self, Generator, Union
 
 DEFUALT_ROOT_NAME = "PyStats"
 CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
+PYSTATS_FILE = CPYTHON_ROOT_DIR / "Include" / "cpython" / "pystats.h"
 
 @dataclass
 class Stat:
@@ -86,6 +87,7 @@ def generate_print_statements_from_struct(s: Struct, path: list[Stat] | None = N
     #print(f"Generating print statements from struct {s} and path {path}")
     assert not s.unresolved_members
     if path is None: path = []
+    loop_var = chr(loop_index + ord('i'))
     for name, member in s.members.items():
         #print(f">Examining member {name} : {member}")
         if member._type == "uint64_t":
@@ -93,17 +95,15 @@ def generate_print_statements_from_struct(s: Struct, path: list[Stat] | None = N
                 #print(">>member is simple uint64 and has no array size")
                 yield generate_print_from_path(path + [name])
             else:
-                loop_var = chr(loop_index + ord('i'))
                 yield f"for (int {loop_var} = 0; {loop_var} < {member.array_size}; {loop_var}++){{"
                 yield generate_print_from_path(path + [name], loop_var)
                 yield "}"
         else: # Sub-struct
             if not member.array_size:
-                yield from generate_print_statements_from_struct(member, path + [name], loop_var)
+                yield from generate_print_statements_from_struct(member, path + [name], loop_index + 1)
             else: #array of structs
-                loop_var = chr(loop_index + ord('i'))
                 yield f"for (int {loop_var} = 0; {loop_var} < {member.array_size}; {loop_var}++){{"
-                generate_print_statements_from_struct(member, path + [name], loop_var)
+                yield from generate_print_statements_from_struct(member, path + [name + f"[{loop_var}]"], loop_index + 1)
                 yield "}"
     ## TODO Working here
 
@@ -114,7 +114,7 @@ def generate_print_from_path(path: list[Stat], index: str | None =None) -> str:
     #print(f">>printing from path {path}")
     index_string = f"[{index}]" if index else ""
     namer = lambda x: x.name if hasattr(x, 'name') else x
-    return f"""fprintf(out, {'.'.join((namer(p) if namer(p) != "PyStats" else "stats") for p in path)}{index_string}": %" PRIu64 "\\n", {'->'.join((namer(p) if namer(p) != "PyStats" else "stats") for p in path)}{index_string});"""
+    return f"""\tfprintf(out, {'.'.join((namer(p) if namer(p) != "PyStats" else "stats") for p in path)}{index_string}": %" PRIu64 "\\n", {'->'.join((namer(p) if namer(p) != "PyStats" else "stats") for p in path)}{index_string});"""
 
 def main():
     root = analyze_file(CPYTHON_ROOT_DIR / "Include/cpython/pystats.h")
@@ -198,20 +198,20 @@ class Tests:
                 uint64_t trace_length_hist[_Py_UOP_HIST_SIZE]
             } PyStats;"""
 
-        result = analyze_contents(a)
-        assert type(result) == Struct
-        assert result._type == "PyStats"
-        assert result.name == "PyStats"
-        assert len(result.members) == 6
-        assert not result.unresolved_members
+        root = analyze_contents(a)
+        assert type(root) == Struct
+        assert root._type == "PyStats"
+        assert root.name == "PyStats"
+        assert len(root.members) == 6
+        assert not root.unresolved_members
 
         #for r in result.members.values():
         #    print(r)
 
-        assert sum(1 for m in result.members.values() if m._type == "uint64_t") == 4
-        assert sum(1 for m in result.members.values() if m._type == "UOpStats") == 1
-        assert sum(1 for m in result.members.values() if m._type == "Foo") == 1
-        assert sum(1 for m in result.members.values() if m.array_size) == 4
+        assert sum(1 for m in root.members.values() if m._type == "uint64_t") == 4
+        assert sum(1 for m in root.members.values() if m._type == "UOpStats") == 1
+        assert sum(1 for m in root.members.values() if m._type == "Foo") == 1
+        assert sum(1 for m in root.members.values() if m.array_size) == 4
 
     def test_generate_print_statements_from_struct(self):
         a = """\
@@ -244,20 +244,19 @@ class Tests:
 
         result = analyze_contents(a)
         lines = list(generate_print_statements_from_struct(result, [result]))
-        
-        for l in lines:
-            print(l)
+
+        #for l in lines:
+        #    print(l)
 
         # The stats which are single variables in PyStats, or arrays in PyStats,
         # Only have one print statement associated with them
-        for solo in ['attempts', 'unsupported_opcode', 'dummy_hist', 'trace_length_hist']:
-            assert sum((1 if solo in line else 0) for line in lines) == 1
-
-        
+        for name in ['attempts', 'unsupported_opcode', 'dummy_hist', 'trace_length_hist']:
+            assert sum((1 if name in line else 0) for line in lines) == 1
 
         # There is only one copy of the Foo struct, so it's stats should only be printed once
-        for foostat in ['foo_a']:
-            assert sum([(1 if foostat in line else 0) for line in lines]) == 1
+        for foo in ['foo_a']:
+            assert sum([(1 if foo in line else 0) for line in lines]) == 1
 
-        # TODO continue fleshing out these tests, and get arrays of structs printing
-        
+        ## Check that attributes of structs, and attribute sof structs that are arrays, do print
+        assert sum((1 if """fprintf(out, stats.opcode[i].d": %" PRIu64 "\\n", stats->opcode[i]->d);""" in line else 0) for line in lines) == 1
+        assert sum((1 if """fprintf(out, stats.opcode[i].f[j]": %" PRIu64 "\\n", stats->opcode[i]->f[j]);""" in line else 0) for line in lines) == 1
