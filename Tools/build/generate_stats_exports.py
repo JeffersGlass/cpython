@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 from pathlib import Path
 import re
-from typing import Self, Generator, Union
+from typing import Self, Generator, Union, Literal, cast, NamedTuple
+from enum import Enum
 
 DEFUALT_ROOT_NAME = "PyStats"
 CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
@@ -12,41 +13,52 @@ class Stat:
     _type: str
     array_size: str = ""
 
+class LinkType(Enum):
+    pointer = 1
+    attribute = 2
+
 @dataclass
 class Unresolved:
     _type: str
     name: str
+    link_type: LinkType
     array_size: str = ""
+
+
+Link = NamedTuple("Link", (('link_type', LinkType), ('points_to', Union[Stat, "Struct"])))
 
 @dataclass
 class Struct(Stat):
     name: str = ""
-    members: dict[str, Stat | Self] = field(default_factory=dict)
-    unresolved_members: list[Unresolved] = field(default_factory=list)
+    members: dict[str, Link] = field(default_factory=dict)
+    unresolved_links: list[Unresolved] = field(default_factory=list)
 
 def text_to_struct(text: str, root=False) -> Struct | None:
     lines = [line.strip() for line in text.split("\n")] # remove blank links
-    if not re.match(r"typedef struct [_a-zA-Z]+ {", lines[0]): return
-    if not (m := re.match(r"} (?P<type>[_a-zA-Z]+)", lines[-1])): return
+    if not re.match(r"typedef struct [_a-zA-Z]+ {", lines[0]): return None
+    if not (m := re.match(r"} (?P<type>[_a-zA-Z]+)", lines[-1])): return None
     struct_type = m.group("type")
 
-    members: dict[str, Stat | Struct] = {}
+    members: dict[str, Link] = {}
     unresolved: list[Unresolved] = []
 
     for line in lines[1:-1]:
-        m = re.match(r"(?P<type>[_a-zA-Z0-9*]+) (?P<name>[_a-zA-Z0-9*]+)(\[(?P<array>[a-zA-Z_ +0-9]+)\])?", line)
+        m = re.match(r"(?P<type>[_a-zA-Z0-9]+)(?P<pointer1>)? (?P<pointer2>)?(?P<name>[_a-zA-Z0-9)]+)(\[(?P<array>[a-zA-Z_ +0-9]+)\])?", line)
         if not m: continue
-        _type, _name = m.group("type"), m.group("name")
+        _type, _name = m.group("type").replace("*", ""), m.group("name").replace("*", "")
+
+        if m.group('pointer1') or m.group('pointer2'): link_type = LinkType.pointer
+        else: link_type = LinkType.attribute
 
         if a:= m.group("array"): # Some kind of array or histogram type
             array_size = a
         if _type == "uint64_t":
-            members[_name] = Stat(_type=_type)
-            if a: members[_name].array_size = a
+            members[_name] = Link(link_type=link_type, points_to=Stat(_type=_type))
+            if a: members[_name].points_to.array_size = a
         else:
-            unresolved.append(Unresolved(_type=_type, name=_name, array_size=a if a else ""))
+            unresolved.append(Unresolved(_type=_type, name=_name, array_size=a if a else "", link_type=link_type))
 
-    return Struct(_type=struct_type, members=members, unresolved_members=unresolved)
+    return Struct(_type=struct_type, members=members, unresolved_links=unresolved)
 
 def analyze_file(p: str | Path) -> Struct:
     with open(p, "r") as f:
@@ -66,61 +78,60 @@ def analyze_contents(contents: str, root_name = DEFUALT_ROOT_NAME) -> Struct:
 
     process_list = [root]
     while process_list:
-        #print("===========")
-        #print(f"{process_list=}")
         working_on = process_list.pop()
-        #print(f"{working_on=}")
-        for un in working_on.unresolved_members:
-            #print(f"{un=}")
+        for un in working_on.unresolved_links:
             matching_struct_list = [t for t in structs if t._type == un._type]
             if not matching_struct_list: raise ValueError(f"No known structs of type {un._type}")
             assert len(matching_struct_list) == 1, f"Struct {un._type} was defined multiple times"
             m = matching_struct_list[0]
-            working_on.members[un.name] = m
-            if un.array_size: working_on.members[un.name].array_size = un.array_size
-            if working_on.members[un.name].unresolved_members: process_list.append(working_on.members[un.name])
-        working_on.unresolved_members = []
+            working_on.members[un.name] = Link(link_type=un.link_type, points_to=m)
+            if un.array_size: working_on.members[un.name].points_to.array_size = un.array_size
+            if type(working_on.members[un.name].points_to) == Struct:
+                if working_on.members[un.name].points_to.unresolved_links: process_list.append(working_on.members[un.name])  #type: ignore[arg-type, union-attr, attr-defined]
+        working_on.unresolved_links = []
 
     return root
 
-def generate_print_statements_from_struct(s: Struct, path: list[Stat] | None = None, loop_index=0) -> Generator[str]:
+def generate_print_statements_from_struct(s: Link, path: list[str | Stat] | None = None, loop_index=0) -> Generator[str]:
     #print(f"Generating print statements from struct {s} and path {path}")
-    assert not s.unresolved_members
+    assert type(s.points_to) == Stat or not s.points_to.unresolved_links
     if path is None: path = []
     loop_var = chr(loop_index + ord('i'))
-    for name, member in s.members.items():
+    for name, link in s.points_to.members.items():
         #print(f">Examining member {name} : {member}")
-        if member._type == "uint64_t":
-            if not member.array_size:
+        if link.points_to._type == "uint64_t":
+            if not link.points_to.array_size:
                 #print(">>member is simple uint64 and has no array size")
                 yield generate_print_from_path(path + [name])
             else:
-                yield f"for (int {loop_var} = 0; {loop_var} < {member.array_size}; {loop_var}++){{"
+                yield f"for (int {loop_var} = 0; {loop_var} < {link.points_to.array_size}; {loop_var}++){{"
                 yield generate_print_from_path(path + [name], loop_var)
                 yield "}"
-        else: # Sub-struct
-            if not member.array_size:
-                yield from generate_print_statements_from_struct(member, path + [name], loop_index + 1)
+        else:
+            if not link.points_to.array_size:
+                yield from generate_print_statements_from_struct(link, path + [name], loop_index + 1)
             else: #array of structs
-                yield f"for (int {loop_var} = 0; {loop_var} < {member.array_size}; {loop_var}++){{"
-                yield from generate_print_statements_from_struct(member, path + [name + f"[{loop_var}]"], loop_index + 1)
+                yield f"for (int {loop_var} = 0; {loop_var} < {link.points_to.array_size}; {loop_var}++){{"
+                yield from generate_print_statements_from_struct(link, path + [name + f"[{loop_var}]"], loop_index + 1)
                 yield "}"
-    ## TODO Working here
 
+    ## TODO only partly through re-categorizing things from Structs to Links
+    ## Maybe there's a better way to do this as a single pass through the input...
+    ## pushing and popping IDs from a stack...
 
     #"""fprintf(out, foo.bar": %" PRIu64 "\\n", stats->foo->bar);"""
 
-def generate_print_from_path(path: list[Stat], index: str | None =None) -> str:
+def generate_print_from_path(path: list[str | Stat], index: str | None =None) -> str:
     #print(f">>printing from path {path}")
     index_string = f"[{index}]" if index else ""
     namer = lambda x: x.name if hasattr(x, 'name') else x
-    return f"""\tfprintf(out, {'.'.join((namer(p) if namer(p) != "PyStats" else "stats") for p in path)}{index_string}": %" PRIu64 "\\n", {'->'.join((namer(p) if namer(p) != "PyStats" else "stats") for p in path)}{index_string});"""
+    return f"""\tfprintf(out, "{'.'.join((namer(p) if namer(p) != "PyStats" else "stats") for p in path)}{index_string}: %" PRIu64 "\\n", {'.'.join((namer(p) if namer(p) != "PyStats" else "stats") for p in path)}{index_string});"""
 
 def main():
-    root = analyze_file(CPYTHON_ROOT_DIR / "Include/cpython/pystats.h")
-    with open("print_stat.c or something", "w+") as f:
+    root = analyze_file(PYSTATS_FILE)
+    with open(CPYTHON_ROOT_DIR / "data.txt", "w+") as f:
         for line in generate_print_statements_from_struct(root, [root]):
-            f.write(line)
+            f.write(line + "\n")
 
 if __name__ == "__main__":
     main()
@@ -145,7 +156,7 @@ class Tests:
         assert len(result.members) == 5
         assert all(type(member) == Stat for member in result.members.values())
 
-        assert not result.unresolved_members
+        assert not result.unresolved_links
 
     def test_complex_text_to_struct(self):
         a = """\
@@ -164,8 +175,8 @@ class Tests:
         assert len(result.members) == 4
         assert all(isinstance(member, Stat) for member in result.members.values())
 
-        assert len(result.unresolved_members) == 1
-        assert type(r := result.unresolved_members[0]) == Unresolved
+        assert len(result.unresolved_links) == 1
+        assert type(r := result.unresolved_links[0]) == Unresolved
         assert r._type == "UOpStats"
         assert r.name == "opcode"
 
@@ -203,7 +214,7 @@ class Tests:
         assert root._type == "PyStats"
         assert root.name == "PyStats"
         assert len(root.members) == 6
-        assert not root.unresolved_members
+        assert not root.unresolved_links
 
         #for r in result.members.values():
         #    print(r)
@@ -271,4 +282,4 @@ class Tests:
         assert root._type == "PyStats"
         assert root.name == "PyStats"
         assert len(root.members) == 6
-        assert not root.unresolved_members
+        assert not root.unresolved_links
