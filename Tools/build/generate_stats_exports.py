@@ -34,7 +34,7 @@ def text_to_struct(text: str, root=False) -> Struct | None:
     unresolved: list[Unresolved] = []
 
     for line in lines[1:-1]:
-        m = re.match(r"(?P<type>[_a-zA-Z0-9]+) (?P<name>[_a-zA-Z0-9]+)(\[(?P<array>[a-zA-Z_ +0-9]+)\])?", line)
+        m = re.match(r"(?P<type>[_a-zA-Z0-9*]+) (?P<name>[_a-zA-Z0-9*]+)(\[(?P<array>[a-zA-Z_ +0-9]+)\])?", line)
         if not m: continue
         _type, _name = m.group("type"), m.group("name")
 
@@ -260,3 +260,15 @@ class Tests:
         ## Check that attributes of structs, and attribute sof structs that are arrays, do print
         assert sum((1 if """fprintf(out, stats.opcode[i].d": %" PRIu64 "\\n", stats->opcode[i]->d);""" in line else 0) for line in lines) == 1
         assert sum((1 if """fprintf(out, stats.opcode[i].f[j]": %" PRIu64 "\\n", stats->opcode[i]->f[j]);""" in line else 0) for line in lines) == 1
+
+    def test_parse_pystat_h(self):
+        with open(PYSTATS_FILE, "r") as f:
+            data = f.read()
+
+        root = analyze_contents(data)
+
+        assert type(root) == Struct
+        assert root._type == "PyStats"
+        assert root.name == "PyStats"
+        assert len(root.members) == 6
+        assert not root.unresolved_members
