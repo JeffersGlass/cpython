@@ -323,114 +323,115 @@ static void
 print_tmp(FILE *out, PyStats *stats){
 // stats
 for (int i = 0; i < 256; i++){
-    NONZERO_PRINT(stats.opcode_stats.specialization.success, stats->opcode_stats[i].specialization.success)
-    NONZERO_PRINT(stats.opcode_stats.specialization.failure, stats->opcode_stats[i].specialization.failure)
-    NONZERO_PRINT(stats.opcode_stats.specialization.hit, stats->opcode_stats[i].specialization.hit)
-    NONZERO_PRINT(stats.opcode_stats.specialization.deferred, stats->opcode_stats[i].specialization.deferred)
-    NONZERO_PRINT(stats.opcode_stats.specialization.miss, stats->opcode_stats[i].specialization.miss)
-    NONZERO_PRINT(stats.opcode_stats.specialization.deopt, stats->opcode_stats[i].specialization.deopt)
+    if (stats->opcode_stats[i].specialization.success != 0) {fprintf(out, "stats.opcode_stats[%d].specialization.success: %" PRIu64 "\n", i, stats->opcode_stats[i].specialization.success);}
+    if (stats->opcode_stats[i].specialization.failure != 0) {fprintf(out, "stats.opcode_stats[%d].specialization.failure: %" PRIu64 "\n", i, stats->opcode_stats[i].specialization.failure);}
+    if (stats->opcode_stats[i].specialization.hit != 0) {fprintf(out, "stats.opcode_stats[%d].specialization.hit: %" PRIu64 "\n", i, stats->opcode_stats[i].specialization.hit);}
+    if (stats->opcode_stats[i].specialization.deferred != 0) {fprintf(out, "stats.opcode_stats[%d].specialization.deferred: %" PRIu64 "\n", i, stats->opcode_stats[i].specialization.deferred);}
+    if (stats->opcode_stats[i].specialization.miss != 0) {fprintf(out, "stats.opcode_stats[%d].specialization.miss: %" PRIu64 "\n", i, stats->opcode_stats[i].specialization.miss);}
+    if (stats->opcode_stats[i].specialization.deopt != 0) {fprintf(out, "stats.opcode_stats[%d].specialization.deopt: %" PRIu64 "\n", i, stats->opcode_stats[i].specialization.deopt);}
         for (int k = 0; k < SPECIALIZATION_FAILURE_KINDS; k++){
-    NONZERO_PRINT(stats.opcode_stats.specialization.failure_kinds, stats->opcode_stats[i].specialization.failure_kinds[k])
+    if (stats->opcode_stats[i].specialization.failure_kinds[k] != 0) {fprintf(out, "stats.opcode_stats[%d].specialization.failure_kinds[%d]: %" PRIu64 "\n", i,k, stats->opcode_stats[i].specialization.failure_kinds[k]);}
         }
-    NONZERO_PRINT(stats.opcode_stats.execution_count, stats->opcode_stats[i].execution_count)
+    if (stats->opcode_stats[i].execution_count != 0) {fprintf(out, "stats.opcode_stats[%d].execution_count: %" PRIu64 "\n", i, stats->opcode_stats[i].execution_count);}
       for (int j = 0; j < 256; j++){
-    NONZERO_PRINT(stats.opcode_stats.pair_count, stats->opcode_stats[i].pair_count[j])
+    if (stats->opcode_stats[i].pair_count[j] != 0) {fprintf(out, "stats.opcode_stats[%d].pair_count[%d]: %" PRIu64 "\n", i,j, stats->opcode_stats[i].pair_count[j]);}
       }
     }
-    NONZERO_PRINT(stats.call_stats.inlined_py_calls, stats->call_stats.inlined_py_calls)
-    NONZERO_PRINT(stats.call_stats.pyeval_calls, stats->call_stats.pyeval_calls)
-    NONZERO_PRINT(stats.call_stats.frames_pushed, stats->call_stats.frames_pushed)
-    NONZERO_PRINT(stats.call_stats.frame_objects_created, stats->call_stats.frame_objects_created)
+    if (stats->call_stats.inlined_py_calls != 0) {fprintf(out, "stats.call_stats.inlined_py_calls: %" PRIu64 "\n",  stats->call_stats.inlined_py_calls);}
+    if (stats->call_stats.pyeval_calls != 0) {fprintf(out, "stats.call_stats.pyeval_calls: %" PRIu64 "\n",  stats->call_stats.pyeval_calls);}
+    if (stats->call_stats.frames_pushed != 0) {fprintf(out, "stats.call_stats.frames_pushed: %" PRIu64 "\n",  stats->call_stats.frames_pushed);}
+    if (stats->call_stats.frame_objects_created != 0) {fprintf(out, "stats.call_stats.frame_objects_created: %" PRIu64 "\n",  stats->call_stats.frame_objects_created);}
       for (int j = 0; j < EVAL_CALL_KINDS; j++){
-    NONZERO_PRINT(stats.call_stats.eval_calls, stats->call_stats.eval_calls[j])
+    if (stats->call_stats.eval_calls[j] != 0) {fprintf(out, "stats.call_stats.eval_calls[%d]: %" PRIu64 "\n", j, stats->call_stats.eval_calls[j]);}
       }
-    NONZERO_PRINT(stats.object_stats.increfs, stats->object_stats.increfs)
-    NONZERO_PRINT(stats.object_stats.decrefs, stats->object_stats.decrefs)
-    NONZERO_PRINT(stats.object_stats.interpreter_increfs, stats->object_stats.interpreter_increfs)
-    NONZERO_PRINT(stats.object_stats.interpreter_decrefs, stats->object_stats.interpreter_decrefs)
-    NONZERO_PRINT(stats.object_stats.immortal_increfs, stats->object_stats.immortal_increfs)
-    NONZERO_PRINT(stats.object_stats.immortal_decrefs, stats->object_stats.immortal_decrefs)
-    NONZERO_PRINT(stats.object_stats.interpreter_immortal_increfs, stats->object_stats.interpreter_immortal_increfs)
-    NONZERO_PRINT(stats.object_stats.interpreter_immortal_decrefs, stats->object_stats.interpreter_immortal_decrefs)
-    NONZERO_PRINT(stats.object_stats.allocations, stats->object_stats.allocations)
-    NONZERO_PRINT(stats.object_stats.allocations512, stats->object_stats.allocations512)
-    NONZERO_PRINT(stats.object_stats.allocations4k, stats->object_stats.allocations4k)
-    NONZERO_PRINT(stats.object_stats.allocations_big, stats->object_stats.allocations_big)
-    NONZERO_PRINT(stats.object_stats.frees, stats->object_stats.frees)
-    NONZERO_PRINT(stats.object_stats.to_freelist, stats->object_stats.to_freelist)
-    NONZERO_PRINT(stats.object_stats.from_freelist, stats->object_stats.from_freelist)
-    NONZERO_PRINT(stats.object_stats.inline_values, stats->object_stats.inline_values)
-    NONZERO_PRINT(stats.object_stats.dict_materialized_on_request, stats->object_stats.dict_materialized_on_request)
-    NONZERO_PRINT(stats.object_stats.dict_materialized_new_key, stats->object_stats.dict_materialized_new_key)
-    NONZERO_PRINT(stats.object_stats.dict_materialized_too_big, stats->object_stats.dict_materialized_too_big)
-    NONZERO_PRINT(stats.object_stats.dict_materialized_str_subclass, stats->object_stats.dict_materialized_str_subclass)
-    NONZERO_PRINT(stats.object_stats.type_cache_hits, stats->object_stats.type_cache_hits)
-    NONZERO_PRINT(stats.object_stats.type_cache_misses, stats->object_stats.type_cache_misses)
-    NONZERO_PRINT(stats.object_stats.type_cache_dunder_hits, stats->object_stats.type_cache_dunder_hits)
-    NONZERO_PRINT(stats.object_stats.type_cache_dunder_misses, stats->object_stats.type_cache_dunder_misses)
-    NONZERO_PRINT(stats.object_stats.type_cache_collisions, stats->object_stats.type_cache_collisions)
-    NONZERO_PRINT(stats.object_stats.object_visits, stats->object_stats.object_visits)
-    NONZERO_PRINT(stats.optimization_stats.attempts, stats->optimization_stats.attempts)
-    NONZERO_PRINT(stats.optimization_stats.traces_created, stats->optimization_stats.traces_created)
-    NONZERO_PRINT(stats.optimization_stats.traces_executed, stats->optimization_stats.traces_executed)
-    NONZERO_PRINT(stats.optimization_stats.uops_executed, stats->optimization_stats.uops_executed)
-    NONZERO_PRINT(stats.optimization_stats.trace_stack_overflow, stats->optimization_stats.trace_stack_overflow)
-    NONZERO_PRINT(stats.optimization_stats.trace_stack_underflow, stats->optimization_stats.trace_stack_underflow)
-    NONZERO_PRINT(stats.optimization_stats.trace_too_long, stats->optimization_stats.trace_too_long)
-    NONZERO_PRINT(stats.optimization_stats.trace_too_short, stats->optimization_stats.trace_too_short)
-    NONZERO_PRINT(stats.optimization_stats.inner_loop, stats->optimization_stats.inner_loop)
-    NONZERO_PRINT(stats.optimization_stats.recursive_call, stats->optimization_stats.recursive_call)
-    NONZERO_PRINT(stats.optimization_stats.low_confidence, stats->optimization_stats.low_confidence)
-    NONZERO_PRINT(stats.optimization_stats.unknown_callee, stats->optimization_stats.unknown_callee)
-    NONZERO_PRINT(stats.optimization_stats.executors_invalidated, stats->optimization_stats.executors_invalidated)
+    if (stats->object_stats.increfs != 0) {fprintf(out, "stats.object_stats.increfs: %" PRIu64 "\n",  stats->object_stats.increfs);}
+    if (stats->object_stats.decrefs != 0) {fprintf(out, "stats.object_stats.decrefs: %" PRIu64 "\n",  stats->object_stats.decrefs);}
+    if (stats->object_stats.interpreter_increfs != 0) {fprintf(out, "stats.object_stats.interpreter_increfs: %" PRIu64 "\n",  stats->object_stats.interpreter_increfs);}
+    if (stats->object_stats.interpreter_decrefs != 0) {fprintf(out, "stats.object_stats.interpreter_decrefs: %" PRIu64 "\n",  stats->object_stats.interpreter_decrefs);}
+    if (stats->object_stats.immortal_increfs != 0) {fprintf(out, "stats.object_stats.immortal_increfs: %" PRIu64 "\n",  stats->object_stats.immortal_increfs);}
+    if (stats->object_stats.immortal_decrefs != 0) {fprintf(out, "stats.object_stats.immortal_decrefs: %" PRIu64 "\n",  stats->object_stats.immortal_decrefs);}
+    if (stats->object_stats.interpreter_immortal_increfs != 0) {fprintf(out, "stats.object_stats.interpreter_immortal_increfs: %" PRIu64 "\n",  stats->object_stats.interpreter_immortal_increfs);}
+    if (stats->object_stats.interpreter_immortal_decrefs != 0) {fprintf(out, "stats.object_stats.interpreter_immortal_decrefs: %" PRIu64 "\n",  stats->object_stats.interpreter_immortal_decrefs);}
+    if (stats->object_stats.allocations != 0) {fprintf(out, "stats.object_stats.allocations: %" PRIu64 "\n",  stats->object_stats.allocations);}
+    if (stats->object_stats.allocations512 != 0) {fprintf(out, "stats.object_stats.allocations512: %" PRIu64 "\n",  stats->object_stats.allocations512);}
+    if (stats->object_stats.allocations4k != 0) {fprintf(out, "stats.object_stats.allocations4k: %" PRIu64 "\n",  stats->object_stats.allocations4k);}
+    if (stats->object_stats.allocations_big != 0) {fprintf(out, "stats.object_stats.allocations_big: %" PRIu64 "\n",  stats->object_stats.allocations_big);}
+    if (stats->object_stats.frees != 0) {fprintf(out, "stats.object_stats.frees: %" PRIu64 "\n",  stats->object_stats.frees);}
+    if (stats->object_stats.to_freelist != 0) {fprintf(out, "stats.object_stats.to_freelist: %" PRIu64 "\n",  stats->object_stats.to_freelist);}
+    if (stats->object_stats.from_freelist != 0) {fprintf(out, "stats.object_stats.from_freelist: %" PRIu64 "\n",  stats->object_stats.from_freelist);}
+    if (stats->object_stats.inline_values != 0) {fprintf(out, "stats.object_stats.inline_values: %" PRIu64 "\n",  stats->object_stats.inline_values);}
+    if (stats->object_stats.dict_materialized_on_request != 0) {fprintf(out, "stats.object_stats.dict_materialized_on_request: %" PRIu64 "\n",  stats->object_stats.dict_materialized_on_request);}
+    if (stats->object_stats.dict_materialized_new_key != 0) {fprintf(out, "stats.object_stats.dict_materialized_new_key: %" PRIu64 "\n",  stats->object_stats.dict_materialized_new_key);}
+    if (stats->object_stats.dict_materialized_too_big != 0) {fprintf(out, "stats.object_stats.dict_materialized_too_big: %" PRIu64 "\n",  stats->object_stats.dict_materialized_too_big);}
+    if (stats->object_stats.dict_materialized_str_subclass != 0) {fprintf(out, "stats.object_stats.dict_materialized_str_subclass: %" PRIu64 "\n",  stats->object_stats.dict_materialized_str_subclass);}
+    if (stats->object_stats.type_cache_hits != 0) {fprintf(out, "stats.object_stats.type_cache_hits: %" PRIu64 "\n",  stats->object_stats.type_cache_hits);}
+    if (stats->object_stats.type_cache_misses != 0) {fprintf(out, "stats.object_stats.type_cache_misses: %" PRIu64 "\n",  stats->object_stats.type_cache_misses);}
+    if (stats->object_stats.type_cache_dunder_hits != 0) {fprintf(out, "stats.object_stats.type_cache_dunder_hits: %" PRIu64 "\n",  stats->object_stats.type_cache_dunder_hits);}
+    if (stats->object_stats.type_cache_dunder_misses != 0) {fprintf(out, "stats.object_stats.type_cache_dunder_misses: %" PRIu64 "\n",  stats->object_stats.type_cache_dunder_misses);}
+    if (stats->object_stats.type_cache_collisions != 0) {fprintf(out, "stats.object_stats.type_cache_collisions: %" PRIu64 "\n",  stats->object_stats.type_cache_collisions);}
+    if (stats->object_stats.object_visits != 0) {fprintf(out, "stats.object_stats.object_visits: %" PRIu64 "\n",  stats->object_stats.object_visits);}
+    if (stats->optimization_stats.attempts != 0) {fprintf(out, "stats.optimization_stats.attempts: %" PRIu64 "\n",  stats->optimization_stats.attempts);}
+    if (stats->optimization_stats.traces_created != 0) {fprintf(out, "stats.optimization_stats.traces_created: %" PRIu64 "\n",  stats->optimization_stats.traces_created);}
+    if (stats->optimization_stats.traces_executed != 0) {fprintf(out, "stats.optimization_stats.traces_executed: %" PRIu64 "\n",  stats->optimization_stats.traces_executed);}
+    if (stats->optimization_stats.uops_executed != 0) {fprintf(out, "stats.optimization_stats.uops_executed: %" PRIu64 "\n",  stats->optimization_stats.uops_executed);}
+    if (stats->optimization_stats.trace_stack_overflow != 0) {fprintf(out, "stats.optimization_stats.trace_stack_overflow: %" PRIu64 "\n",  stats->optimization_stats.trace_stack_overflow);}
+    if (stats->optimization_stats.trace_stack_underflow != 0) {fprintf(out, "stats.optimization_stats.trace_stack_underflow: %" PRIu64 "\n",  stats->optimization_stats.trace_stack_underflow);}
+    if (stats->optimization_stats.trace_too_long != 0) {fprintf(out, "stats.optimization_stats.trace_too_long: %" PRIu64 "\n",  stats->optimization_stats.trace_too_long);}
+    if (stats->optimization_stats.trace_too_short != 0) {fprintf(out, "stats.optimization_stats.trace_too_short: %" PRIu64 "\n",  stats->optimization_stats.trace_too_short);}
+    if (stats->optimization_stats.inner_loop != 0) {fprintf(out, "stats.optimization_stats.inner_loop: %" PRIu64 "\n",  stats->optimization_stats.inner_loop);}
+    if (stats->optimization_stats.recursive_call != 0) {fprintf(out, "stats.optimization_stats.recursive_call: %" PRIu64 "\n",  stats->optimization_stats.recursive_call);}
+    if (stats->optimization_stats.low_confidence != 0) {fprintf(out, "stats.optimization_stats.low_confidence: %" PRIu64 "\n",  stats->optimization_stats.low_confidence);}
+    if (stats->optimization_stats.unknown_callee != 0) {fprintf(out, "stats.optimization_stats.unknown_callee: %" PRIu64 "\n",  stats->optimization_stats.unknown_callee);}
+    if (stats->optimization_stats.executors_invalidated != 0) {fprintf(out, "stats.optimization_stats.executors_invalidated: %" PRIu64 "\n",  stats->optimization_stats.executors_invalidated);}
       for (int j = 0; j < PYSTATS_MAX_UOP_ID + 1; j++){
-    NONZERO_PRINT(stats.optimization_stats.opcode.execution_count, stats->optimization_stats.opcode[j].execution_count)
-    NONZERO_PRINT(stats.optimization_stats.opcode.miss, stats->optimization_stats.opcode[j].miss)
+    if (stats->optimization_stats.opcode[j].execution_count != 0) {fprintf(out, "stats.optimization_stats.opcode[%d].execution_count: %" PRIu64 "\n", j, stats->optimization_stats.opcode[j].execution_count);}
+    if (stats->optimization_stats.opcode[j].miss != 0) {fprintf(out, "stats.optimization_stats.opcode[%d].miss: %" PRIu64 "\n", j, stats->optimization_stats.opcode[j].miss);}
         for (int k = 0; k < PYSTATS_MAX_UOP_ID + 1; k++){
-    NONZERO_PRINT(stats.optimization_stats.opcode.pair_count, stats->optimization_stats.opcode[j].pair_count[k])
+    if (stats->optimization_stats.opcode[j].pair_count[k] != 0) {fprintf(out, "stats.optimization_stats.opcode[%d].pair_count[%d]: %" PRIu64 "\n", j,k, stats->optimization_stats.opcode[j].pair_count[k]);}
         }
       }
       for (int j = 0; j < 256; j++){
-    NONZERO_PRINT(stats.optimization_stats.unsupported_opcode, stats->optimization_stats.unsupported_opcode[j])
+    if (stats->optimization_stats.unsupported_opcode[j] != 0) {fprintf(out, "stats.optimization_stats.unsupported_opcode[%d]: %" PRIu64 "\n", j, stats->optimization_stats.unsupported_opcode[j]);}
       }
       for (int j = 0; j < _Py_UOP_HIST_SIZE; j++){
-    NONZERO_PRINT(stats.optimization_stats.trace_length_hist, stats->optimization_stats.trace_length_hist[j])
+    if (stats->optimization_stats.trace_length_hist[j] != 0) {fprintf(out, "stats.optimization_stats.trace_length_hist[%d]: %" PRIu64 "\n", j, stats->optimization_stats.trace_length_hist[j]);}
       }
       for (int j = 0; j < _Py_UOP_HIST_SIZE; j++){
-    NONZERO_PRINT(stats.optimization_stats.trace_run_length_hist, stats->optimization_stats.trace_run_length_hist[j])
+    if (stats->optimization_stats.trace_run_length_hist[j] != 0) {fprintf(out, "stats.optimization_stats.trace_run_length_hist[%d]: %" PRIu64 "\n", j, stats->optimization_stats.trace_run_length_hist[j]);}
       }
       for (int j = 0; j < _Py_UOP_HIST_SIZE; j++){
-    NONZERO_PRINT(stats.optimization_stats.optimized_trace_length_hist, stats->optimization_stats.optimized_trace_length_hist[j])
+    if (stats->optimization_stats.optimized_trace_length_hist[j] != 0) {fprintf(out, "stats.optimization_stats.optimized_trace_length_hist[%d]: %" PRIu64 "\n", j, stats->optimization_stats.optimized_trace_length_hist[j]);}
       }
-    NONZERO_PRINT(stats.optimization_stats.optimizer_attempts, stats->optimization_stats.optimizer_attempts)
-    NONZERO_PRINT(stats.optimization_stats.optimizer_successes, stats->optimization_stats.optimizer_successes)
-    NONZERO_PRINT(stats.optimization_stats.optimizer_failure_reason_no_memory, stats->optimization_stats.optimizer_failure_reason_no_memory)
-    NONZERO_PRINT(stats.optimization_stats.remove_globals_builtins_changed, stats->optimization_stats.remove_globals_builtins_changed)
-    NONZERO_PRINT(stats.optimization_stats.remove_globals_incorrect_keys, stats->optimization_stats.remove_globals_incorrect_keys)
+    if (stats->optimization_stats.optimizer_attempts != 0) {fprintf(out, "stats.optimization_stats.optimizer_attempts: %" PRIu64 "\n",  stats->optimization_stats.optimizer_attempts);}
+    if (stats->optimization_stats.optimizer_successes != 0) {fprintf(out, "stats.optimization_stats.optimizer_successes: %" PRIu64 "\n",  stats->optimization_stats.optimizer_successes);}
+    if (stats->optimization_stats.optimizer_failure_reason_no_memory != 0) {fprintf(out, "stats.optimization_stats.optimizer_failure_reason_no_memory: %" PRIu64 "\n",  stats->optimization_stats.optimizer_failure_reason_no_memory);}
+    if (stats->optimization_stats.remove_globals_builtins_changed != 0) {fprintf(out, "stats.optimization_stats.remove_globals_builtins_changed: %" PRIu64 "\n",  stats->optimization_stats.remove_globals_builtins_changed);}
+    if (stats->optimization_stats.remove_globals_incorrect_keys != 0) {fprintf(out, "stats.optimization_stats.remove_globals_incorrect_keys: %" PRIu64 "\n",  stats->optimization_stats.remove_globals_incorrect_keys);}
       for (int j = 0; j < PYSTATS_MAX_UOP_ID + 1; j++){
-    NONZERO_PRINT(stats.optimization_stats.error_in_opcode, stats->optimization_stats.error_in_opcode[j])
+    if (stats->optimization_stats.error_in_opcode[j] != 0) {fprintf(out, "stats.optimization_stats.error_in_opcode[%d]: %" PRIu64 "\n", j, stats->optimization_stats.error_in_opcode[j]);}
       }
-    NONZERO_PRINT(stats.optimization_stats.jit_total_memory_size, stats->optimization_stats.jit_total_memory_size)
-    NONZERO_PRINT(stats.optimization_stats.jit_code_size, stats->optimization_stats.jit_code_size)
-    NONZERO_PRINT(stats.optimization_stats.jit_trampoline_size, stats->optimization_stats.jit_trampoline_size)
-    NONZERO_PRINT(stats.optimization_stats.jit_data_size, stats->optimization_stats.jit_data_size)
-    NONZERO_PRINT(stats.optimization_stats.jit_padding_size, stats->optimization_stats.jit_padding_size)
-    NONZERO_PRINT(stats.optimization_stats.jit_freed_memory_size, stats->optimization_stats.jit_freed_memory_size)
+    if (stats->optimization_stats.jit_total_memory_size != 0) {fprintf(out, "stats.optimization_stats.jit_total_memory_size: %" PRIu64 "\n",  stats->optimization_stats.jit_total_memory_size);}
+    if (stats->optimization_stats.jit_code_size != 0) {fprintf(out, "stats.optimization_stats.jit_code_size: %" PRIu64 "\n",  stats->optimization_stats.jit_code_size);}
+    if (stats->optimization_stats.jit_trampoline_size != 0) {fprintf(out, "stats.optimization_stats.jit_trampoline_size: %" PRIu64 "\n",  stats->optimization_stats.jit_trampoline_size);}
+    if (stats->optimization_stats.jit_data_size != 0) {fprintf(out, "stats.optimization_stats.jit_data_size: %" PRIu64 "\n",  stats->optimization_stats.jit_data_size);}
+    if (stats->optimization_stats.jit_padding_size != 0) {fprintf(out, "stats.optimization_stats.jit_padding_size: %" PRIu64 "\n",  stats->optimization_stats.jit_padding_size);}
+    if (stats->optimization_stats.jit_freed_memory_size != 0) {fprintf(out, "stats.optimization_stats.jit_freed_memory_size: %" PRIu64 "\n",  stats->optimization_stats.jit_freed_memory_size);}
       for (int j = 0; j < _Py_UOP_HIST_SIZE; j++){
-    NONZERO_PRINT(stats.optimization_stats.trace_total_memory_hist, stats->optimization_stats.trace_total_memory_hist[j])
+    if (stats->optimization_stats.trace_total_memory_hist[j] != 0) {fprintf(out, "stats.optimization_stats.trace_total_memory_hist[%d]: %" PRIu64 "\n", j, stats->optimization_stats.trace_total_memory_hist[j]);}
       }
-    NONZERO_PRINT(stats.rare_event_stats.set_class, stats->rare_event_stats.set_class)
-    NONZERO_PRINT(stats.rare_event_stats.set_bases, stats->rare_event_stats.set_bases)
-    NONZERO_PRINT(stats.rare_event_stats.set_eval_frame_func, stats->rare_event_stats.set_eval_frame_func)
-    NONZERO_PRINT(stats.rare_event_stats.builtin_dict, stats->rare_event_stats.builtin_dict)
-    NONZERO_PRINT(stats.rare_event_stats.func_modification, stats->rare_event_stats.func_modification)
-    NONZERO_PRINT(stats.rare_event_stats.watched_dict_modification, stats->rare_event_stats.watched_dict_modification)
-    NONZERO_PRINT(stats.rare_event_stats.watched_globals_modification, stats->rare_event_stats.watched_globals_modification)
-    NONZERO_PRINT(stats.gc_stats.collections, stats->gc_stats->collections)
-    NONZERO_PRINT(stats.gc_stats.object_visits, stats->gc_stats->object_visits)
-    NONZERO_PRINT(stats.gc_stats.objects_collected, stats->gc_stats->objects_collected)
-    NONZERO_PRINT(stats.gc_stats.objects_transitively_reachable, stats->gc_stats->objects_transitively_reachable)
-    NONZERO_PRINT(stats.gc_stats.objects_not_transitively_reachable, stats->gc_stats->objects_not_transitively_reachable)
+    if (stats->rare_event_stats.set_class != 0) {fprintf(out, "stats.rare_event_stats.set_class: %" PRIu64 "\n",  stats->rare_event_stats.set_class);}
+    if (stats->rare_event_stats.set_bases != 0) {fprintf(out, "stats.rare_event_stats.set_bases: %" PRIu64 "\n",  stats->rare_event_stats.set_bases);}
+    if (stats->rare_event_stats.set_eval_frame_func != 0) {fprintf(out, "stats.rare_event_stats.set_eval_frame_func: %" PRIu64 "\n",  stats->rare_event_stats.set_eval_frame_func);}
+    if (stats->rare_event_stats.builtin_dict != 0) {fprintf(out, "stats.rare_event_stats.builtin_dict: %" PRIu64 "\n",  stats->rare_event_stats.builtin_dict);}
+    if (stats->rare_event_stats.func_modification != 0) {fprintf(out, "stats.rare_event_stats.func_modification: %" PRIu64 "\n",  stats->rare_event_stats.func_modification);}
+    if (stats->rare_event_stats.watched_dict_modification != 0) {fprintf(out, "stats.rare_event_stats.watched_dict_modification: %" PRIu64 "\n",  stats->rare_event_stats.watched_dict_modification);}
+    if (stats->rare_event_stats.watched_globals_modification != 0) {fprintf(out, "stats.rare_event_stats.watched_globals_modification: %" PRIu64 "\n",  stats->rare_event_stats.watched_globals_modification);}
+    if (stats->gc_stats->collections != 0) {fprintf(out, "stats.gc_stats.collections: %" PRIu64 "\n",  stats->gc_stats->collections);}
+    if (stats->gc_stats->object_visits != 0) {fprintf(out, "stats.gc_stats.object_visits: %" PRIu64 "\n",  stats->gc_stats->object_visits);}
+    if (stats->gc_stats->objects_collected != 0) {fprintf(out, "stats.gc_stats.objects_collected: %" PRIu64 "\n",  stats->gc_stats->objects_collected);}
+    if (stats->gc_stats->objects_transitively_reachable != 0) {fprintf(out, "stats.gc_stats.objects_transitively_reachable: %" PRIu64 "\n",  stats->gc_stats->objects_transitively_reachable);}
+    if (stats->gc_stats->objects_not_transitively_reachable != 0) {fprintf(out, "stats.gc_stats.objects_not_transitively_reachable: %" PRIu64 "\n",  stats->gc_stats->objects_not_transitively_reachable);}
+        
     
 }
 

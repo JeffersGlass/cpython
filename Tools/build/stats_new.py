@@ -121,6 +121,8 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
 
 def generate_print_from_path(field_path: List[Field], loop_index:int=0) -> str:
     stat_path = field_path[0].name
+    stat_name = field_path[0].name
+    loop_vars: list[str] = []
     for i, field in enumerate(field_path[1:]):
         previous_field_name = field_path[i-1+1].name
         if "*" in previous_field_name or previous_field_name == 'stats':
@@ -128,8 +130,16 @@ def generate_print_from_path(field_path: List[Field], loop_index:int=0) -> str:
         else:
             stat_path += "."
         stat_path += field.name.strip("*")
-        if field.array_size: stat_path += f"[{loop_var(i)}]"
-    return f"NONZERO_PRINT({stat_path.replace("->", ".")}, {stat_path})"
+        stat_name += "." + field.name.strip("*")
+
+        if field.array_size: 
+            stat_path += f"[{loop_var(i)}]"
+            stat_name += f"[%d]"
+            loop_vars.append(loop_var(i))
+
+    #fprintf(out, "GC[%d] objects reachable from roots: %" PRIu64 "\n", i, stats[i].objects_transitively_reachable);
+    return f"""if ({stat_path} != 0) {{fprintf(out, \"{stat_name}: %" PRIu64 "\\n", {",".join(loop_vars) + "," if loop_vars else ""} {stat_path});}}"""
+    return f"NONZERO_PRINT({stat_path.replace("->", ".")}, {stat_path});"
 
 def main():
     # Read the header file
