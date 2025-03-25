@@ -1,3 +1,4 @@
+from os import stat_result
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -7,7 +8,8 @@ DEFUALT_ROOT_NAME = "PyStats"
 CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
 PYSTATS_FILE = CPYTHON_ROOT_DIR / "Include" / "cpython" / "pystats.h"
 
-loop_var = "XXX"
+def loop_var(index: int) -> str:
+    return chr(ord('i') + index)
 
 @dataclass
 class Field:
@@ -46,7 +48,7 @@ def parse_structs(content: str) -> List[Struct]:
             field_def = line.rstrip(';').strip()
 
             # Handle array fields
-            array_match = re.match(r'(.+?)\s+(\w+)\s*\[([\d\w]+)\]', field_def)
+            array_match = re.match(r'(.+?)\s+(\w+)\s*\[([\d\w\s+_]+)\]', field_def)
             if array_match:
                 field_type = array_match.group(1).strip()
                 field_name = array_match.group(2)
@@ -73,7 +75,7 @@ def print_struct(struct: Struct):
         else:
             print(f"{indent}{field.type} {field.name}")
 
-def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[Set[str]] = None, parent_path: List[Field] | None = None) -> Generator[str]:
+def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[Set[str]] = None, parent_path: List[Field] | None = None, loop_index = 0) -> Generator[str]:
     """
     Recursively traverse a struct and all its nested structs, yielding each field.
 
@@ -86,6 +88,7 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
     Yields:
         Tuple[str, Field]: A tuple containing (path_to_field, field)
     """
+    if loop_index == 0: yield f"// {struct_name}"
     if visited is None:
         visited = set()
 
@@ -100,9 +103,9 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
     if not target_struct:
         raise ValueError(f"Could not find struct with name {struct_name}")
 
-
+    
     for field in target_struct.fields:
-        if field.array_size: yield f"for (int {loop_var} = 0; {loop_var} < {field.array_size}; {loop_var}++){{"
+        if field.array_size: yield f"{"  " * loop_index}for (int {loop_var(loop_index)} = 0; {loop_var(loop_index)} < {field.array_size}; {loop_var(loop_index)}++){{"
         # Create the path to this field
         field_path = parent_path + [field] if parent_path else [field]
 
@@ -110,15 +113,30 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
         field_type = field.type.strip()
         if field_type in [s.name for s in structs]:
             # For nested structs, yield their fields with updated path
-            yield from traverse_struct(field_type, structs, visited=visited, parent_path=field_path)
+            yield from traverse_struct(field_type, structs, visited=visited, parent_path=field_path, loop_index=loop_index+1)
         else:
-            yield generate_print_from_path(field_path)
+            yield generate_print_from_path(field_path, loop_index + 1)
 
-        if field.array_size: yield "}"
+        if field.array_size: yield f"{"  " * loop_index}}}"
+    if loop_index == 0: yield ""
 
-def generate_print_from_path(field_path: List[Struct]) -> str:
-    return f"{"^".join(path.name for path in field_path)}"
-    return """fprintf(out, foo.bar": %" PRIu64 "\\n", stats->foo->bar);"""
+def generate_print_from_path(field_path: List[Field], loop_index:int=0) -> str:
+    ## fprintf(out, "JIT total memory size: %" PRIu64 "\n", stats->jit_total_memory_size);
+
+
+    stat_name = f"""{".".join(f.name.strip("*") for f in field_path)}"""
+
+    # Object path
+    stat_path = field_path[0].name
+    for i, field in enumerate(field_path[1:]):
+        previous_field_name = field_path[i-1+1].name
+        if "*" in previous_field_name or previous_field_name == 'stats':
+            stat_path += "->"
+        else:
+            stat_path += "."
+        stat_path += field.name.strip("*")
+        if field.array_size: stat_path += f"[{loop_var(i)}]"
+    return f"NONZERO_PRINT({stat_name}, {stat_path})"
 
 def main():
     # Read the header file
@@ -127,9 +145,18 @@ def main():
 
     # Parse structs
     structs = parse_structs(content)
+    root = next(s for s in structs if s.name == "PyStats")
+    assert root
+    root.name = "stats"
+
+    # for s in structs:
+    #     print(f"{s.name= }")
+    #     for f in s.fields:
+    #         print(f"{f.name=} {f.type=} {f.array_size=}")
+    # return
 
     # Example: traverse the PyStats struct and print results
-    for line in traverse_struct("PyStats", structs, set(), list()):
+    for line in traverse_struct("stats", structs, set(), [root]):
         print(line)
     return
     for path, field in traverse_struct("PyStats", structs, ):

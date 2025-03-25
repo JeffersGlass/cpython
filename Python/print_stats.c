@@ -316,9 +316,129 @@ print_rare_event_stats(FILE *out, RareEventStats *stats)
     fprintf(out, "Rare event (watched_globals_modification): %" PRIu64 "\n", stats->watched_globals_modification);
 }
 
+#define NONZERO_PRINT(name, path) \
+    do { if (path != 0) {fprintf(out, #name ": %" PRIu64 "\n", path);}} while (0);
+
+static void
+print_tmp(FILE *out, PyStats *stats){
+// stats
+for (int i = 0; i < 256; i++){
+    NONZERO_PRINT(stats.opcode_stats.specialization.success, stats->opcode_stats[i].specialization.success)
+    NONZERO_PRINT(stats.opcode_stats.specialization.failure, stats->opcode_stats[i].specialization.failure)
+    NONZERO_PRINT(stats.opcode_stats.specialization.hit, stats->opcode_stats[i].specialization.hit)
+    NONZERO_PRINT(stats.opcode_stats.specialization.deferred, stats->opcode_stats[i].specialization.deferred)
+    NONZERO_PRINT(stats.opcode_stats.specialization.miss, stats->opcode_stats[i].specialization.miss)
+    NONZERO_PRINT(stats.opcode_stats.specialization.deopt, stats->opcode_stats[i].specialization.deopt)
+        for (int k = 0; k < SPECIALIZATION_FAILURE_KINDS; k++){
+    NONZERO_PRINT(stats.opcode_stats.specialization.failure_kinds, stats->opcode_stats[i].specialization.failure_kinds[k])
+        }
+    NONZERO_PRINT(stats.opcode_stats.execution_count, stats->opcode_stats[i].execution_count)
+      for (int j = 0; j < 256; j++){
+    NONZERO_PRINT(stats.opcode_stats.pair_count, stats->opcode_stats[i].pair_count[j])
+      }
+    }
+    NONZERO_PRINT(stats.call_stats.inlined_py_calls, stats->call_stats.inlined_py_calls)
+    NONZERO_PRINT(stats.call_stats.pyeval_calls, stats->call_stats.pyeval_calls)
+    NONZERO_PRINT(stats.call_stats.frames_pushed, stats->call_stats.frames_pushed)
+    NONZERO_PRINT(stats.call_stats.frame_objects_created, stats->call_stats.frame_objects_created)
+      for (int j = 0; j < EVAL_CALL_KINDS; j++){
+    NONZERO_PRINT(stats.call_stats.eval_calls, stats->call_stats.eval_calls[j])
+      }
+    NONZERO_PRINT(stats.object_stats.increfs, stats->object_stats.increfs)
+    NONZERO_PRINT(stats.object_stats.decrefs, stats->object_stats.decrefs)
+    NONZERO_PRINT(stats.object_stats.interpreter_increfs, stats->object_stats.interpreter_increfs)
+    NONZERO_PRINT(stats.object_stats.interpreter_decrefs, stats->object_stats.interpreter_decrefs)
+    NONZERO_PRINT(stats.object_stats.immortal_increfs, stats->object_stats.immortal_increfs)
+    NONZERO_PRINT(stats.object_stats.immortal_decrefs, stats->object_stats.immortal_decrefs)
+    NONZERO_PRINT(stats.object_stats.interpreter_immortal_increfs, stats->object_stats.interpreter_immortal_increfs)
+    NONZERO_PRINT(stats.object_stats.interpreter_immortal_decrefs, stats->object_stats.interpreter_immortal_decrefs)
+    NONZERO_PRINT(stats.object_stats.allocations, stats->object_stats.allocations)
+    NONZERO_PRINT(stats.object_stats.allocations512, stats->object_stats.allocations512)
+    NONZERO_PRINT(stats.object_stats.allocations4k, stats->object_stats.allocations4k)
+    NONZERO_PRINT(stats.object_stats.allocations_big, stats->object_stats.allocations_big)
+    NONZERO_PRINT(stats.object_stats.frees, stats->object_stats.frees)
+    NONZERO_PRINT(stats.object_stats.to_freelist, stats->object_stats.to_freelist)
+    NONZERO_PRINT(stats.object_stats.from_freelist, stats->object_stats.from_freelist)
+    NONZERO_PRINT(stats.object_stats.inline_values, stats->object_stats.inline_values)
+    NONZERO_PRINT(stats.object_stats.dict_materialized_on_request, stats->object_stats.dict_materialized_on_request)
+    NONZERO_PRINT(stats.object_stats.dict_materialized_new_key, stats->object_stats.dict_materialized_new_key)
+    NONZERO_PRINT(stats.object_stats.dict_materialized_too_big, stats->object_stats.dict_materialized_too_big)
+    NONZERO_PRINT(stats.object_stats.dict_materialized_str_subclass, stats->object_stats.dict_materialized_str_subclass)
+    NONZERO_PRINT(stats.object_stats.type_cache_hits, stats->object_stats.type_cache_hits)
+    NONZERO_PRINT(stats.object_stats.type_cache_misses, stats->object_stats.type_cache_misses)
+    NONZERO_PRINT(stats.object_stats.type_cache_dunder_hits, stats->object_stats.type_cache_dunder_hits)
+    NONZERO_PRINT(stats.object_stats.type_cache_dunder_misses, stats->object_stats.type_cache_dunder_misses)
+    NONZERO_PRINT(stats.object_stats.type_cache_collisions, stats->object_stats.type_cache_collisions)
+    NONZERO_PRINT(stats.object_stats.object_visits, stats->object_stats.object_visits)
+    NONZERO_PRINT(stats.optimization_stats.attempts, stats->optimization_stats.attempts)
+    NONZERO_PRINT(stats.optimization_stats.traces_created, stats->optimization_stats.traces_created)
+    NONZERO_PRINT(stats.optimization_stats.traces_executed, stats->optimization_stats.traces_executed)
+    NONZERO_PRINT(stats.optimization_stats.uops_executed, stats->optimization_stats.uops_executed)
+    NONZERO_PRINT(stats.optimization_stats.trace_stack_overflow, stats->optimization_stats.trace_stack_overflow)
+    NONZERO_PRINT(stats.optimization_stats.trace_stack_underflow, stats->optimization_stats.trace_stack_underflow)
+    NONZERO_PRINT(stats.optimization_stats.trace_too_long, stats->optimization_stats.trace_too_long)
+    NONZERO_PRINT(stats.optimization_stats.trace_too_short, stats->optimization_stats.trace_too_short)
+    NONZERO_PRINT(stats.optimization_stats.inner_loop, stats->optimization_stats.inner_loop)
+    NONZERO_PRINT(stats.optimization_stats.recursive_call, stats->optimization_stats.recursive_call)
+    NONZERO_PRINT(stats.optimization_stats.low_confidence, stats->optimization_stats.low_confidence)
+    NONZERO_PRINT(stats.optimization_stats.unknown_callee, stats->optimization_stats.unknown_callee)
+    NONZERO_PRINT(stats.optimization_stats.executors_invalidated, stats->optimization_stats.executors_invalidated)
+      for (int j = 0; j < PYSTATS_MAX_UOP_ID + 1; j++){
+    NONZERO_PRINT(stats.optimization_stats.opcode.execution_count, stats->optimization_stats.opcode[j].execution_count)
+    NONZERO_PRINT(stats.optimization_stats.opcode.miss, stats->optimization_stats.opcode[j].miss)
+        for (int k = 0; k < PYSTATS_MAX_UOP_ID + 1; k++){
+    NONZERO_PRINT(stats.optimization_stats.opcode.pair_count, stats->optimization_stats.opcode[j].pair_count[k])
+        }
+      }
+      for (int j = 0; j < 256; j++){
+    NONZERO_PRINT(stats.optimization_stats.unsupported_opcode, stats->optimization_stats.unsupported_opcode[j])
+      }
+      for (int j = 0; j < _Py_UOP_HIST_SIZE; j++){
+    NONZERO_PRINT(stats.optimization_stats.trace_length_hist, stats->optimization_stats.trace_length_hist[j])
+      }
+      for (int j = 0; j < _Py_UOP_HIST_SIZE; j++){
+    NONZERO_PRINT(stats.optimization_stats.trace_run_length_hist, stats->optimization_stats.trace_run_length_hist[j])
+      }
+      for (int j = 0; j < _Py_UOP_HIST_SIZE; j++){
+    NONZERO_PRINT(stats.optimization_stats.optimized_trace_length_hist, stats->optimization_stats.optimized_trace_length_hist[j])
+      }
+    NONZERO_PRINT(stats.optimization_stats.optimizer_attempts, stats->optimization_stats.optimizer_attempts)
+    NONZERO_PRINT(stats.optimization_stats.optimizer_successes, stats->optimization_stats.optimizer_successes)
+    NONZERO_PRINT(stats.optimization_stats.optimizer_failure_reason_no_memory, stats->optimization_stats.optimizer_failure_reason_no_memory)
+    NONZERO_PRINT(stats.optimization_stats.remove_globals_builtins_changed, stats->optimization_stats.remove_globals_builtins_changed)
+    NONZERO_PRINT(stats.optimization_stats.remove_globals_incorrect_keys, stats->optimization_stats.remove_globals_incorrect_keys)
+      for (int j = 0; j < PYSTATS_MAX_UOP_ID + 1; j++){
+    NONZERO_PRINT(stats.optimization_stats.error_in_opcode, stats->optimization_stats.error_in_opcode[j])
+      }
+    NONZERO_PRINT(stats.optimization_stats.jit_total_memory_size, stats->optimization_stats.jit_total_memory_size)
+    NONZERO_PRINT(stats.optimization_stats.jit_code_size, stats->optimization_stats.jit_code_size)
+    NONZERO_PRINT(stats.optimization_stats.jit_trampoline_size, stats->optimization_stats.jit_trampoline_size)
+    NONZERO_PRINT(stats.optimization_stats.jit_data_size, stats->optimization_stats.jit_data_size)
+    NONZERO_PRINT(stats.optimization_stats.jit_padding_size, stats->optimization_stats.jit_padding_size)
+    NONZERO_PRINT(stats.optimization_stats.jit_freed_memory_size, stats->optimization_stats.jit_freed_memory_size)
+      for (int j = 0; j < _Py_UOP_HIST_SIZE; j++){
+    NONZERO_PRINT(stats.optimization_stats.trace_total_memory_hist, stats->optimization_stats.trace_total_memory_hist[j])
+      }
+    NONZERO_PRINT(stats.rare_event_stats.set_class, stats->rare_event_stats.set_class)
+    NONZERO_PRINT(stats.rare_event_stats.set_bases, stats->rare_event_stats.set_bases)
+    NONZERO_PRINT(stats.rare_event_stats.set_eval_frame_func, stats->rare_event_stats.set_eval_frame_func)
+    NONZERO_PRINT(stats.rare_event_stats.builtin_dict, stats->rare_event_stats.builtin_dict)
+    NONZERO_PRINT(stats.rare_event_stats.func_modification, stats->rare_event_stats.func_modification)
+    NONZERO_PRINT(stats.rare_event_stats.watched_dict_modification, stats->rare_event_stats.watched_dict_modification)
+    NONZERO_PRINT(stats.rare_event_stats.watched_globals_modification, stats->rare_event_stats.watched_globals_modification)
+    NONZERO_PRINT(stats.gc_stats.collections, stats->gc_stats->collections)
+    NONZERO_PRINT(stats.gc_stats.object_visits, stats->gc_stats->object_visits)
+    NONZERO_PRINT(stats.gc_stats.objects_collected, stats->gc_stats->objects_collected)
+    NONZERO_PRINT(stats.gc_stats.objects_transitively_reachable, stats->gc_stats->objects_transitively_reachable)
+    NONZERO_PRINT(stats.gc_stats.objects_not_transitively_reachable, stats->gc_stats->objects_not_transitively_reachable)
+    
+}
+
 static void
 print_stats(FILE *out, PyStats *stats)
 {
+    print_tmp(out, stats);
+    return;
     print_spec_stats(out, stats->opcode_stats);
     print_call_stats(out, &stats->call_stats);
     print_object_stats(out, &stats->object_stats);
