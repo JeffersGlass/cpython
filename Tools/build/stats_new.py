@@ -1,3 +1,4 @@
+import array
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -8,14 +9,16 @@ CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
 PYSTATS_FILE = CPYTHON_ROOT_DIR / "Include" / "cpython" / "pystats.h"
 
 @dataclass
-class Field:
-    type: str
+class HasName:
     name: str
+
+@dataclass
+class Field(HasName):
+    type: str
     array_size: Optional[str] = None
 
 @dataclass
-class Struct:
-    name: str
+class Struct(HasName):
     fields: List[Field]
 
 def parse_structs(content: str) -> List[Struct]:
@@ -49,14 +52,14 @@ def parse_structs(content: str) -> List[Struct]:
                 field_type = array_match.group(1).strip()
                 field_name = array_match.group(2)
                 array_size = array_match.group(3)
-                fields.append(Field(field_type, field_name, array_size))
+                fields.append(Field(name=field_name, type=field_type, array_size=array_size))
             else:
                 # Regular field
                 parts = field_def.rsplit(' ', 1)
                 if len(parts) == 2:
                     field_type = parts[0].strip()
                     field_name = parts[1]
-                    fields.append(Field(field_type, field_name))
+                    fields.append(Field(type=field_type, name=field_name))
 
         structs.append(Struct(struct_name, fields))
 
@@ -74,7 +77,7 @@ def print_struct(struct: Struct) -> None:
 def loop_var(index: int) -> str:
     return chr(ord('i') + index)
 
-def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[Set[str]] = None, parent_path: List[Field] | None = None, loop_index:int = 0) -> Generator[str]:
+def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[Set[str]] = None, parent_path: List[HasName] | None = None, loop_index:int = 0) -> Generator[str]:
     """
     Recursively traverse a struct and all its nested structs, yielding each field.
 
@@ -87,7 +90,6 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
     Yields:
         Tuple[str, Field]: A tuple containing (path_to_field, field)
     """
-    if loop_index == 0: yield f"// {struct_name}"
     if visited is None:
         visited = set()
 
@@ -119,7 +121,7 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
         if field.array_size: yield f"{"  " * loop_index}}}"
     if loop_index == 0: yield ""
 
-def generate_print_from_path(field_path: List[Field], loop_index:int=0) -> str:
+def generate_print_from_path(field_path: List[HasName], loop_index:int=0) -> str:
     """Given a list of Fields in the order they are nested within Structs,
     Generate the appropriate print statement
     """  
@@ -135,14 +137,13 @@ def generate_print_from_path(field_path: List[Field], loop_index:int=0) -> str:
         stat_path += field.name.strip("*")
         stat_name += "." + field.name.strip("*")
 
-        if field.array_size: 
+        if isinstance(field, Field) and field.array_size: 
             stat_path += f"[{loop_var(i)}]"
             stat_name += f"[%d]"
             loop_vars.append(loop_var(i))
 
     #fprintf(out, "GC[%d] objects reachable from roots: %" PRIu64 "\n", i, stats[i].objects_transitively_reachable);
     return f"""if ({stat_path} != 0) {{fprintf(out, \"{stat_name}: %" PRIu64 "\\n", {",".join(loop_vars) + "," if loop_vars else ""} {stat_path});}}"""
-    return f"NONZERO_PRINT({stat_path.replace("->", ".")}, {stat_path});"
 
 def main():
     # Read the header file
