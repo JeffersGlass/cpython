@@ -1,15 +1,11 @@
-from os import stat_result
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Set, Generator, Tuple
+from typing import List, Optional, Set, Generator
 
 DEFUALT_ROOT_NAME = "PyStats"
 CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
 PYSTATS_FILE = CPYTHON_ROOT_DIR / "Include" / "cpython" / "pystats.h"
-
-def loop_var(index: int) -> str:
-    return chr(ord('i') + index)
 
 @dataclass
 class Field:
@@ -28,16 +24,16 @@ def parse_structs(content: str) -> List[Struct]:
     content = re.sub(r'//.*$', '', content, flags=re.MULTILINE)
 
     # Find all struct definitions
-    struct_pattern = r'typedef\s+struct\s+_(\w+)\s*{(?P<content>[^}]+)}\s+(?P<name>\w+)'
+    struct_pattern = r'typedef\s+struct\s+_(?P<name>\w+)\s*{(?P<content>[^}]+)}\s+(?P<alias>\w+)'
     structs = []
 
     for match in re.finditer(struct_pattern, content):
-        struct_name = match.group("name")
+        struct_name = match.group("alias")
         fields_content = match.group("content")
 
         # Parse fields
-        fields = []
-        field_lines = [line.strip() for line in fields_content.split('\n') if line.strip()]
+        fields: list[Field] = []
+        field_lines: list[str] = [line.strip() for line in fields_content.split('\n') if line.strip()]
 
         for line in field_lines:
             # Skip empty lines and lines without semicolons
@@ -66,7 +62,7 @@ def parse_structs(content: str) -> List[Struct]:
 
     return structs
 
-def print_struct(struct: Struct):
+def print_struct(struct: Struct) -> None:
     indent = "  "
     print(f"Struct: {struct.name}")
     for field in struct.fields:
@@ -75,7 +71,10 @@ def print_struct(struct: Struct):
         else:
             print(f"{indent}{field.type} {field.name}")
 
-def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[Set[str]] = None, parent_path: List[Field] | None = None, loop_index = 0) -> Generator[str]:
+def loop_var(index: int) -> str:
+    return chr(ord('i') + index)
+
+def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[Set[str]] = None, parent_path: List[Field] | None = None, loop_index:int = 0) -> Generator[str]:
     """
     Recursively traverse a struct and all its nested structs, yielding each field.
 
@@ -121,12 +120,6 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
     if loop_index == 0: yield ""
 
 def generate_print_from_path(field_path: List[Field], loop_index:int=0) -> str:
-    ## fprintf(out, "JIT total memory size: %" PRIu64 "\n", stats->jit_total_memory_size);
-
-
-    stat_name = f"""{".".join(f.name.strip("*") for f in field_path)}"""
-
-    # Object path
     stat_path = field_path[0].name
     for i, field in enumerate(field_path[1:]):
         previous_field_name = field_path[i-1+1].name
@@ -136,7 +129,7 @@ def generate_print_from_path(field_path: List[Field], loop_index:int=0) -> str:
             stat_path += "."
         stat_path += field.name.strip("*")
         if field.array_size: stat_path += f"[{loop_var(i)}]"
-    return f"NONZERO_PRINT({stat_name}, {stat_path})"
+    return f"NONZERO_PRINT({stat_path.replace("->", ".")}, {stat_path})"
 
 def main():
     # Read the header file
@@ -145,25 +138,12 @@ def main():
 
     # Parse structs
     structs = parse_structs(content)
-    root = next(s for s in structs if s.name == "PyStats")
+    root = next(s for s in structs if s.name == DEFUALT_ROOT_NAME)
     assert root
-    root.name = "stats"
+    root.name = "stats" # need to refer to the 
 
-    # for s in structs:
-    #     print(f"{s.name= }")
-    #     for f in s.fields:
-    #         print(f"{f.name=} {f.type=} {f.array_size=}")
-    # return
-
-    # Example: traverse the PyStats struct and print results
-    for line in traverse_struct("stats", structs, set(), [root]):
+    for line in traverse_struct("stats", structs,  parent_path=[root]):
         print(line)
-    return
-    for path, field in traverse_struct("PyStats", structs, ):
-        field_str = f"{path}: {field.type}"
-        if field.array_size is not None:
-            field_str += f"[{field.array_size}]"
-        print(field_str)
 
 if __name__ == "__main__":
     main()
