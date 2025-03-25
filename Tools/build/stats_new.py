@@ -120,11 +120,14 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
     if loop_index == 0: yield ""
 
 def generate_print_from_path(field_path: List[Field], loop_index:int=0) -> str:
+    """Given a list of Fields in the order they are nested within Structs,
+    Generate the appropriate print statement
+    """  
     stat_path = field_path[0].name
     stat_name = field_path[0].name
     loop_vars: list[str] = []
     for i, field in enumerate(field_path[1:]):
-        previous_field_name = field_path[i-1+1].name
+        previous_field_name = field_path[i].name
         if "*" in previous_field_name or previous_field_name == 'stats':
             stat_path += "->"
         else:

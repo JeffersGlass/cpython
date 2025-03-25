@@ -316,9 +316,6 @@ print_rare_event_stats(FILE *out, RareEventStats *stats)
     fprintf(out, "Rare event (watched_globals_modification): %" PRIu64 "\n", stats->watched_globals_modification);
 }
 
-#define NONZERO_PRINT(name, path) \
-    do { if (path != 0) {fprintf(out, #name ": %" PRIu64 "\n", path);}} while (0);
-
 static void
 print_tmp(FILE *out, PyStats *stats){
 // stats
@@ -390,6 +387,7 @@ for (int i = 0; i < 256; i++){
     if (stats->optimization_stats.opcode[j].pair_count[k] != 0) {fprintf(out, "stats.optimization_stats.opcode[%d].pair_count[%d]: %" PRIu64 "\n", j,k, stats->optimization_stats.opcode[j].pair_count[k]);}
         }
       }
+    if (stats->optimization_stats.foo != 0) {fprintf(out, "stats.optimization_stats.foo: %" PRIu64 "\n",  stats->optimization_stats.foo);}
       for (int j = 0; j < 256; j++){
     if (stats->optimization_stats.unsupported_opcode[j] != 0) {fprintf(out, "stats.optimization_stats.unsupported_opcode[%d]: %" PRIu64 "\n", j, stats->optimization_stats.unsupported_opcode[j]);}
       }
@@ -431,7 +429,9 @@ for (int i = 0; i < 256; i++){
     if (stats->gc_stats->objects_collected != 0) {fprintf(out, "stats.gc_stats.objects_collected: %" PRIu64 "\n",  stats->gc_stats->objects_collected);}
     if (stats->gc_stats->objects_transitively_reachable != 0) {fprintf(out, "stats.gc_stats.objects_transitively_reachable: %" PRIu64 "\n",  stats->gc_stats->objects_transitively_reachable);}
     if (stats->gc_stats->objects_not_transitively_reachable != 0) {fprintf(out, "stats.gc_stats.objects_not_transitively_reachable: %" PRIu64 "\n",  stats->gc_stats->objects_not_transitively_reachable);}
-        
+    
+    
+    
     
 }
 
