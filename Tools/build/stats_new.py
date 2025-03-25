@@ -1,0 +1,142 @@
+import re
+from dataclasses import dataclass
+from pathlib import Path
+from typing import List, Optional, Set, Generator, Tuple
+
+DEFUALT_ROOT_NAME = "PyStats"
+CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
+PYSTATS_FILE = CPYTHON_ROOT_DIR / "Include" / "cpython" / "pystats.h"
+
+loop_var = "XXX"
+
+@dataclass
+class Field:
+    type: str
+    name: str
+    array_size: Optional[str] = None
+
+@dataclass
+class Struct:
+    name: str
+    fields: List[Field]
+
+def parse_structs(content: str) -> List[Struct]:
+    # Remove comments
+    content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
+    content = re.sub(r'//.*$', '', content, flags=re.MULTILINE)
+
+    # Find all struct definitions
+    struct_pattern = r'typedef\s+struct\s+_(\w+)\s*{(?P<content>[^}]+)}\s+(?P<name>\w+)'
+    structs = []
+
+    for match in re.finditer(struct_pattern, content):
+        struct_name = match.group("name")
+        fields_content = match.group("content")
+
+        # Parse fields
+        fields = []
+        field_lines = [line.strip() for line in fields_content.split('\n') if line.strip()]
+
+        for line in field_lines:
+            # Skip empty lines and lines without semicolons
+            if not line or ';' not in line:
+                continue
+
+            # Remove semicolon and split into type and name
+            field_def = line.rstrip(';').strip()
+
+            # Handle array fields
+            array_match = re.match(r'(.+?)\s+(\w+)\s*\[([\d\w]+)\]', field_def)
+            if array_match:
+                field_type = array_match.group(1).strip()
+                field_name = array_match.group(2)
+                array_size = array_match.group(3)
+                fields.append(Field(field_type, field_name, array_size))
+            else:
+                # Regular field
+                parts = field_def.rsplit(' ', 1)
+                if len(parts) == 2:
+                    field_type = parts[0].strip()
+                    field_name = parts[1]
+                    fields.append(Field(field_type, field_name))
+
+        structs.append(Struct(struct_name, fields))
+
+    return structs
+
+def print_struct(struct: Struct):
+    indent = "  "
+    print(f"Struct: {struct.name}")
+    for field in struct.fields:
+        if field.array_size is not None:
+            print(f"{indent}{field.type} {field.name}[{field.array_size}]")
+        else:
+            print(f"{indent}{field.type} {field.name}")
+
+def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[Set[str]] = None, parent_path: List[Field] | None = None) -> Generator[str]:
+    """
+    Recursively traverse a struct and all its nested structs, yielding each field.
+
+    Args:
+        struct_name: Name of the struct to traverse
+        structs: List of all available structs
+        visited: Set of already visited struct names to prevent cycles
+        parent_path: Path to the current field (for nested structs)
+
+    Yields:
+        Tuple[str, Field]: A tuple containing (path_to_field, field)
+    """
+    if visited is None:
+        visited = set()
+
+    # Prevent infinite recursion in case of circular references
+    if struct_name in visited:
+        return
+
+    visited.add(struct_name)
+
+    # Find the named struct
+    target_struct = next((s for s in structs if s.name == struct_name), None)
+    if not target_struct:
+        raise ValueError(f"Could not find struct with name {struct_name}")
+
+
+    for field in target_struct.fields:
+        if field.array_size: yield f"for (int {loop_var} = 0; {loop_var} < {field.array_size}; {loop_var}++){{"
+        # Create the path to this field
+        field_path = parent_path + [field] if parent_path else [field]
+
+        # Check if field type is another struct
+        field_type = field.type.strip()
+        if field_type in [s.name for s in structs]:
+            # For nested structs, yield their fields with updated path
+            yield from traverse_struct(field_type, structs, visited=visited, parent_path=field_path)
+        else:
+            yield generate_print_from_path(field_path)
+
+        if field.array_size: yield "}"
+
+def generate_print_from_path(field_path: List[Struct]) -> str:
+    return f"{"^".join(path.name for path in field_path)}"
+    return """fprintf(out, foo.bar": %" PRIu64 "\\n", stats->foo->bar);"""
+
+def main():
+    # Read the header file
+    with open(PYSTATS_FILE, 'r') as f:
+        content = f.read()
+
+    # Parse structs
+    structs = parse_structs(content)
+
+    # Example: traverse the PyStats struct and print results
+    for line in traverse_struct("PyStats", structs, set(), list()):
+        print(line)
+    return
+    for path, field in traverse_struct("PyStats", structs, ):
+        field_str = f"{path}: {field.type}"
+        if field.array_size is not None:
+            field_str += f"[{field.array_size}]"
+        print(field_str)
+
+if __name__ == "__main__":
+    main()
