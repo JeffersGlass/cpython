@@ -1,7 +1,8 @@
+from collections.abc import Callable, Iterable, Generator
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Set, Generator, Protocol
+from typing import List, Optional, Set, Protocol
 
 DEFUALT_ROOT_NAME = "PyStats"
 CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
@@ -15,6 +16,7 @@ class Field:
     name: str
     type: str
     array_size: Optional[str] = None
+    array_index_name: Optional[str] = None
 
 @dataclass
 class Struct:
@@ -24,7 +26,7 @@ class Struct:
 def parse_structs(content: str) -> List[Struct]:
     # Remove comments
     content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
-    content = re.sub(r'//.*$', '', content, flags=re.MULTILINE)
+    #content = re.sub(r'//.*$', '', content, flags=re.MULTILINE)
 
     # Find all struct definitions
     struct_pattern = r'typedef\s+struct\s+_(?P<name>\w+)\s*{(?P<content>[^}]+)}\s+(?P<alias>\w+)'
@@ -43,19 +45,18 @@ def parse_structs(content: str) -> List[Struct]:
             if not line or ';' not in line:
                 continue
 
-            # Remove semicolon and split into type and name
-            field_def = line.rstrip(';').strip()
-
-            # Handle array fields
-            array_match = re.match(r'(.+?)\s+(\w+)\s*\[([\d\w\s+_]+)\]', field_def)
-            if array_match:
-                field_type = array_match.group(1).strip()
-                field_name = array_match.group(2)
-                array_size = array_match.group(3)
-                fields.append(Field(name=field_name, type=field_type, array_size=array_size))
+            # match field type, name, array size (if any), and index namer (if any)
+            parts_pattern = re.compile(r"(?P<type>.+?)\s+(?P<name>[*\w]+)\s*(\[(?P<array_size>[\d\w\s+_]+)\])?;(\s*//\s*indexname:\s*(?P<indexname>\w+))?")
+            parts_match = re.search(parts_pattern, line)
+            if not parts_match: continue
+            if array_match:= parts_match.group("array_size"):
+                field_type = parts_match.group("type").strip()
+                field_name = parts_match.group("name")
+                array_size = array_match
+                fields.append(Field(name=field_name, type=field_type, array_size=array_size, array_index_name=parts_match.group("indexname")))
             else:
                 # Regular field
-                parts = field_def.rsplit(' ', 1)
+                parts = parts_match.group("type"), parts_match.group("name")
                 if len(parts) == 2:
                     field_type = parts[0].strip()
                     field_name = parts[1]
@@ -70,7 +71,8 @@ def print_struct(struct: Struct) -> None:
     print(f"Struct: {struct.name}")
     for field in struct.fields:
         if field.array_size is not None:
-            print(f"{indent}{field.type} {field.name}[{field.array_size}]")
+            indexname:str = field.array_index_name if field.array_index_name else ""
+            print(f"{indent}{field.type} {field.name}[{indexname}{"(" if indexname else ""}{field.array_size}{")" if indexname else ""}]")
         else:
             print(f"{indent}{field.type} {field.name}")
 

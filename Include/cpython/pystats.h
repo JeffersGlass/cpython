@@ -132,7 +132,7 @@ typedef struct _optimization_stats {
     uint64_t unknown_callee;
     uint64_t executors_invalidated;
     UOpStats opcode[PYSTATS_MAX_UOP_ID + 1];
-    uint64_t unsupported_opcode[256];
+    uint64_t unsupported_opcode[256]; //indexname: _PyOpcode_OpName
     uint64_t trace_length_hist[_Py_UOP_HIST_SIZE];
     uint64_t trace_run_length_hist[_Py_UOP_HIST_SIZE];
     uint64_t optimized_trace_length_hist[_Py_UOP_HIST_SIZE];
