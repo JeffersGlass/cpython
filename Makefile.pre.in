@@ -470,6 +470,7 @@ PYTHON_OBJS=	\
 		Python/mysnprintf.o \
 		Python/mystrtoul.o \
 		Python/object_stack.o \
+		Python/output_stats.o \
 		Python/optimizer.o \
 		Python/optimizer_analysis.o \
 		Python/optimizer_symbols.o \
