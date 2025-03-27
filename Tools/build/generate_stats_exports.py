@@ -1,24 +1,24 @@
-import array
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Set, Generator
+from typing import List, Optional, Set, Generator, Protocol
 
 DEFUALT_ROOT_NAME = "PyStats"
 CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
 PYSTATS_FILE = CPYTHON_ROOT_DIR / "Include" / "cpython" / "pystats.h"
 
-@dataclass
-class HasName:
+class HasName(Protocol):
     name: str
 
 @dataclass
-class Field(HasName):
+class Field:
+    name: str
     type: str
     array_size: Optional[str] = None
 
 @dataclass
-class Struct(HasName):
+class Struct:
+    name: str
     fields: List[Field]
 
 def parse_structs(content: str) -> List[Struct]:
@@ -104,7 +104,7 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
     if not target_struct:
         raise ValueError(f"Could not find struct with name {struct_name}")
 
-    
+
     for field in target_struct.fields:
         if field.array_size: yield f"{"  " * loop_index}for (int {loop_var(loop_index)} = 0; {loop_var(loop_index)} < {field.array_size}; {loop_var(loop_index)}++){{"
         # Create the path to this field
@@ -124,7 +124,7 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
 def generate_print_from_path(field_path: List[HasName], loop_index:int=0) -> str:
     """Given a list of Fields in the order they are nested within Structs,
     Generate the appropriate print statement
-    """  
+    """
     stat_path = field_path[0].name
     stat_name = field_path[0].name
     loop_vars: list[str] = []
@@ -137,7 +137,7 @@ def generate_print_from_path(field_path: List[HasName], loop_index:int=0) -> str
         stat_path += field.name.strip("*")
         stat_name += "." + field.name.strip("*")
 
-        if isinstance(field, Field) and field.array_size: 
+        if isinstance(field, Field) and field.array_size:
             stat_path += f"[{loop_var(i)}]"
             stat_name += f"[%d]"
             loop_vars.append(loop_var(i))
