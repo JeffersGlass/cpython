@@ -46,7 +46,7 @@ def parse_structs(content: str) -> List[Struct]:
                 continue
 
             # match field type, name, array size (if any), and index namer (if any)
-            parts_pattern = re.compile(r"(?P<type>.+?)\s+(?P<name>[*\w]+)\s*(\[(?P<array_size>[\d\w\s+_]+)\])?;(\s*//\s*indexname:\s*(?P<indexname>\w+))?")
+            parts_pattern = re.compile(r"(?P<type>.+?)\s+(?P<name>[*\w]+)\s*(\[(?P<array_size>[\d\w\s+_]+)\])?;(\s*//\s*index:\s*(?P<indexname>\w+))?")
             parts_match = re.search(parts_pattern, line)
             if not parts_match: continue
             if array_match:= parts_match.group("array_size"):
@@ -79,7 +79,7 @@ def print_struct(struct: Struct) -> None:
 def loop_var(index: int) -> str:
     return chr(ord('i') + index)
 
-def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[Set[str]] = None, parent_path: List[HasName] | None = None, loop_index:int = 0) -> Generator[str]:
+def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[Set[str]] = None, parent_path: List[HasName] | None = None, loop_index:int = 0, loop_name_funcs: Iterable[str] | None = None) -> Generator[str]:
     """
     Recursively traverse a struct and all its nested structs, yielding each field.
 
@@ -101,11 +101,13 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
 
     visited.add(struct_name)
 
+    if loop_name_funcs is None:
+        loop_name_funcs = []
+
     # Find the named struct
     target_struct = next((s for s in structs if s.name == struct_name), None)
     if not target_struct:
         raise ValueError(f"Could not find struct with name {struct_name}")
-
 
     for field in target_struct.fields:
         if field.array_size: yield f"{"  " * loop_index}for (int {loop_var(loop_index)} = 0; {loop_var(loop_index)} < {field.array_size}; {loop_var(loop_index)}++){{"
@@ -116,14 +118,14 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
         field_type = field.type.strip()
         if field_type in [s.name for s in structs]:
             # For nested structs, yield their fields with updated path
-            yield from traverse_struct(field_type, structs, visited=visited, parent_path=field_path, loop_index=loop_index+1)
+            yield from traverse_struct(field_type, structs, visited=visited, parent_path=field_path, loop_index=loop_index+1, loop_name_funcs=loop_name_funcs + [field.array_index_name])
         else:
-            yield generate_print_from_path(field_path, loop_index + 1)
+            yield generate_print_from_path(field_path, loop_index + 1, loop_name_funcs + [field.array_index_name])
 
-        if field.array_size: yield f"{"  " * loop_index}}}"
-    if loop_index == 0: yield ""
+        if field.array_size: yield f"{"  " * loop_index}}}" # Closing } for loop
+    if loop_index == 0: yield "" # Put empty lines between top-level Structs
 
-def generate_print_from_path(field_path: List[HasName], loop_index:int=0) -> str:
+def generate_print_from_path(field_path: List[HasName], loop_index:int=0, loop_name_funcs: Iterable[str] | None = None) -> str:
     """Given a list of Fields in the order they are nested within Structs,
     Generate the appropriate print statement
     """
@@ -141,10 +143,15 @@ def generate_print_from_path(field_path: List[HasName], loop_index:int=0) -> str
 
         if isinstance(field, Field) and field.array_size:
             stat_path += f"[{loop_var(i)}]"
-            stat_name += f"[%d]"
-            loop_vars.append(loop_var(i))
-
+            if loop_name_funcs[i]: # Look up indices by name
+                stat_name += "[%s]"
+                loop_vars.append(f"{loop_name_funcs[i]}[{loop_var(i)}]")
+            else:
+                stat_name += f"[%d]"
+                loop_vars.append(loop_var(i))
+    # if (stats->optimization_stats.unsupported_opcode[j] != 0) {fprintf(out, "[%s]: %" PRIu64 "\n", _PyOpcode_Name(j), stats->optimization_stats.unsupported_opcode[j]);}
     return f"""if ({stat_path} != 0) {{fprintf(out, \"{stat_name}: %" PRIu64 "\\n", {",".join(loop_vars) + "," if loop_vars else ""} {stat_path});}}"""
+
 
 def main():
     with open(PYSTATS_FILE, 'r') as f:

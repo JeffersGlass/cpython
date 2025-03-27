@@ -60,7 +60,7 @@ typedef struct _specialization_stats {
 typedef struct _opcode_stats {
     SpecializationStats specialization;
     uint64_t execution_count;
-    uint64_t pair_count[256];
+    uint64_t pair_count[256]; //index: _PyOpcode_OpName[]
 } OpcodeStats;
 
 typedef struct _call_stats {
@@ -112,36 +112,36 @@ typedef struct _gc_stats {
 typedef struct _uop_stats {
     uint64_t execution_count;
     uint64_t miss;
-    uint64_t pair_count[PYSTATS_MAX_UOP_ID + 1];
+    uint64_t pair_count[PYSTATS_MAX_UOP_ID + 1]; // index: _PyOpcode_uop_name
 } UOpStats;
 
 #define _Py_UOP_HIST_SIZE 32
 
 typedef struct _optimization_stats {
-    uint64_t attempts;
-    uint64_t traces_created;
-    uint64_t traces_executed;
-    uint64_t uops_executed;
-    uint64_t trace_stack_overflow;
-    uint64_t trace_stack_underflow;
-    uint64_t trace_too_long;
-    uint64_t trace_too_short;
-    uint64_t inner_loop;
-    uint64_t recursive_call;
-    uint64_t low_confidence;
-    uint64_t unknown_callee;
-    uint64_t executors_invalidated;
-    UOpStats opcode[PYSTATS_MAX_UOP_ID + 1];
-    uint64_t unsupported_opcode[256]; //indexname: _PyOpcode_OpName
-    uint64_t trace_length_hist[_Py_UOP_HIST_SIZE];
-    uint64_t trace_run_length_hist[_Py_UOP_HIST_SIZE];
-    uint64_t optimized_trace_length_hist[_Py_UOP_HIST_SIZE];
-    uint64_t optimizer_attempts;
-    uint64_t optimizer_successes;
-    uint64_t optimizer_failure_reason_no_memory;
-    uint64_t remove_globals_builtins_changed;
-    uint64_t remove_globals_incorrect_keys;
-    uint64_t error_in_opcode[PYSTATS_MAX_UOP_ID + 1];
+        uint64_t attempts;
+        uint64_t traces_created;
+        uint64_t traces_executed;
+        uint64_t uops_executed;
+        uint64_t trace_stack_overflow;
+        uint64_t trace_stack_underflow;
+        uint64_t trace_too_long;
+        uint64_t trace_too_short;
+        uint64_t inner_loop;
+        uint64_t recursive_call;
+        uint64_t low_confidence;
+        uint64_t unknown_callee;
+        uint64_t executors_invalidated;
+        UOpStats opcode[PYSTATS_MAX_UOP_ID + 1]; //index: _PyOpcode_uop_name
+        uint64_t unsupported_opcode[256]; //index: _PyOpcode_OpName
+        uint64_t trace_length_hist[_Py_UOP_HIST_SIZE];
+        uint64_t trace_run_length_hist[_Py_UOP_HIST_SIZE];
+        uint64_t optimized_trace_length_hist[_Py_UOP_HIST_SIZE];
+        uint64_t optimizer_attempts;
+        uint64_t optimizer_successes;
+        uint64_t optimizer_failure_reason_no_memory;
+        uint64_t remove_globals_builtins_changed;
+        uint64_t remove_globals_incorrect_keys;
+        uint64_t error_in_opcode[PYSTATS_MAX_UOP_ID + 1]; // index: _PyOpcode_uop_name
     // JIT memory stats
     uint64_t jit_total_memory_size;
     uint64_t jit_code_size;
@@ -169,7 +169,7 @@ typedef struct _rare_event_stats {
 } RareEventStats;
 
 typedef struct _stats {
-    OpcodeStats opcode_stats[256];
+    OpcodeStats opcode_stats[256]; //index: _PyOpcode_OpName
     CallStats call_stats;
     ObjectStats object_stats;
     OptimizationStats optimization_stats;
