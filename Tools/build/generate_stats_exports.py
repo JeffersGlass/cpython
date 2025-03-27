@@ -1,12 +1,25 @@
-from collections.abc import Callable, Iterable, Generator
+from collections.abc import Generator
 import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Set, Protocol
 
-DEFUALT_ROOT_NAME = "PyStats"
+DEFAULT_ROOT_NAME = "PyStats"
 CPYTHON_ROOT_DIR = Path(__file__).parent.parent.parent
 PYSTATS_FILE = CPYTHON_ROOT_DIR / "Include" / "cpython" / "pystats.h"
+OUTPUT_FILE = CPYTHON_ROOT_DIR / "Python" / "output_stats.c"
+
+PREAMBLE =  """\
+#include "Python.h"
+
+#include "pycore_opcode_metadata.h" // _PyOpcode_Caches
+#include "pycore_uop_metadata.h"    // _PyOpcode_uop_name
+
+const void
+_Output_Stats(FILE *out, PyStats *PyStats){"""
+
+POSTAMBLE = """\
+}"""
 
 class HasName(Protocol):
     name: str
@@ -24,9 +37,8 @@ class Struct:
     fields: List[Field]
 
 def parse_structs(content: str) -> List[Struct]:
-    # Remove comments
+    # Remove multiline comments comments
     content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
-    #content = re.sub(r'//.*$', '', content, flags=re.MULTILINE)
 
     # Find all struct definitions
     struct_pattern = r'typedef\s+struct\s+_(?P<name>\w+)\s*{(?P<content>[^}]+)}\s+(?P<alias>\w+)'
@@ -56,11 +68,9 @@ def parse_structs(content: str) -> List[Struct]:
                 fields.append(Field(name=field_name, type=field_type, array_size=array_size, array_index_name=parts_match.group("indexname")))
             else:
                 # Regular field
-                parts = parts_match.group("type"), parts_match.group("name")
-                if len(parts) == 2:
-                    field_type = parts[0].strip()
-                    field_name = parts[1]
-                    fields.append(Field(type=field_type, name=field_name))
+                field_type = parts_match.group("type")
+                field_name = parts_match.group("name")
+                fields.append(Field(type=field_type, name=field_name))
 
         structs.append(Struct(struct_name, fields))
 
@@ -79,9 +89,10 @@ def print_struct(struct: Struct) -> None:
 def loop_var(index: int) -> str:
     return chr(ord('i') + index)
 
-def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[Set[str]] = None, parent_path: List[HasName] | None = None, loop_index:int = 0, loop_name_funcs: Iterable[str] | None = None) -> Generator[str]:
+def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[Set[str]] = None, parent_path: List[HasName] | None = None, loop_index:int = 0, loop_name_funcs: List[str] | None = None) -> Generator[str]:
     """
-    Recursively traverse a struct and all its nested structs, yielding each field.
+    Recursively traverse a struct and all its nested structs, yielding print statements
+    to export each nonzero field.
 
     Args:
         struct_name: Name of the struct to traverse
@@ -125,7 +136,7 @@ def traverse_struct(struct_name: str, structs: List[Struct], visited: Optional[S
         if field.array_size: yield f"{"  " * loop_index}}}" # Closing } for loop
     if loop_index == 0: yield "" # Put empty lines between top-level Structs
 
-def generate_print_from_path(field_path: List[HasName], loop_index:int=0, loop_name_funcs: Iterable[str] | None = None) -> str:
+def generate_print_from_path(field_path: List[HasName], loop_index:int=0, loop_name_funcs: List[str] | None = None) -> str:
     """Given a list of Fields in the order they are nested within Structs,
     Generate the appropriate print statement
     """
@@ -134,7 +145,7 @@ def generate_print_from_path(field_path: List[HasName], loop_index:int=0, loop_n
     loop_vars: list[str] = []
     for i, field in enumerate(field_path[1:]):
         previous_field_name = field_path[i].name
-        if "*" in previous_field_name or previous_field_name == 'stats':
+        if "*" in previous_field_name or previous_field_name == DEFAULT_ROOT_NAME:
             stat_path += "->"
         else:
             stat_path += "."
@@ -149,21 +160,23 @@ def generate_print_from_path(field_path: List[HasName], loop_index:int=0, loop_n
             else:
                 stat_name += f"[%d]"
                 loop_vars.append(loop_var(i))
-    # if (stats->optimization_stats.unsupported_opcode[j] != 0) {fprintf(out, "[%s]: %" PRIu64 "\n", _PyOpcode_Name(j), stats->optimization_stats.unsupported_opcode[j]);}
     return f"""if ({stat_path} != 0) {{fprintf(out, \"{stat_name}: %" PRIu64 "\\n", {",".join(loop_vars) + "," if loop_vars else ""} {stat_path});}}"""
-
 
 def main():
     with open(PYSTATS_FILE, 'r') as f:
         content = f.read()
 
     structs = parse_structs(content)
-    root = next(s for s in structs if s.name == DEFUALT_ROOT_NAME)
+    root = next(s for s in structs if s.name == DEFAULT_ROOT_NAME)
     assert root
-    root.name = "stats" # use the name that's bound in print_tmp()
 
-    for line in traverse_struct("stats", structs,  parent_path=[root]):
-        print(line)
+    with open(OUTPUT_FILE, "w+") as f:
+        f.write(PREAMBLE + "\n")
+        for line in traverse_struct(DEFAULT_ROOT_NAME, structs,  parent_path=[root]):
+            f.write(line + "\n")
+        f.write(POSTAMBLE)
 
 if __name__ == "__main__":
+    # TODO implement some argument parsing to allow different
+    # input and output files, while maintaining the defaults
     main()
