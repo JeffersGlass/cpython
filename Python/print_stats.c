@@ -8,6 +8,7 @@
 
 
 extern const char *_PyUOpName(int index);
+extern const void _Output_Stats(FILE *out, PyStats *stats);
 
 #ifdef Py_STATS
 GCStats _py_gc_stats[NUM_GENERATIONS] = { 0 };
@@ -115,18 +116,16 @@ _Py_GetSpecializationStats(void) {
 }
 
 
-#define PRINT_STAT(i, field) \
-    if (stats[i].field) { \
-        fprintf(out, "    opcode[%s]." #field " : %" PRIu64 "\n", _PyOpcode_OpName[i], stats[i].field); \
-    }
-
 static void
-print_spec_stats(FILE *out, OpcodeStats *stats)
+_fudge_stats(FILE *out, PyStats *stats)
 {
+    /* All fudging done to statistics - lies, renamings, etc,
+     * should be done here. */
+
     /* Mark some opcodes as specializable for stats,
      * even though we don't specialize them yet. */
-    fprintf(out, "opcode[BINARY_SLICE].specializable : 1\n");
-    fprintf(out, "opcode[STORE_SLICE].specializable : 1\n");
+    fprintf(out, "PyStats.opcode[BINARY_SLICE].specializable : 1\n");
+    fprintf(out, "PyStats.opcode[STORE_SLICE].specializable : 1\n");
     for (int i = 0; i < 256; i++) {
         if (_PyOpcode_Caches[i]) {
             /* Ignore jumps as they cannot be specialized */
@@ -138,195 +137,17 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
                 case JUMP_BACKWARD:
                     break;
                 default:
-                    fprintf(out, "opcode[%s].specializable : 1\n", _PyOpcode_OpName[i]);
-            }
-        }
-        PRINT_STAT(i, specialization.success);
-        PRINT_STAT(i, specialization.failure);
-        PRINT_STAT(i, specialization.hit);
-        PRINT_STAT(i, specialization.deferred);
-        PRINT_STAT(i, specialization.miss);
-        PRINT_STAT(i, specialization.deopt);
-        PRINT_STAT(i, execution_count);
-        for (int j = 0; j < SPECIALIZATION_FAILURE_KINDS; j++) {
-            uint64_t val = stats[i].specialization.failure_kinds[j];
-            if (val) {
-                fprintf(out, "    opcode[%s].specialization.failure_kinds[%d] : %"
-                    PRIu64 "\n", _PyOpcode_OpName[i], j, val);
-            }
-        }
-        for (int j = 0; j < 256; j++) {
-            if (stats[i].pair_count[j]) {
-                fprintf(out, "opcode[%s].pair_count[%s] : %" PRIu64 "\n",
-                        _PyOpcode_OpName[i], _PyOpcode_OpName[j], stats[i].pair_count[j]);
+                    fprintf(out, "PyStats.opcode_stats[%s].specializable : 1\n", _PyOpcode_OpName[i]);
             }
         }
     }
-}
-#undef PRINT_STAT
-
-
-static void
-print_call_stats(FILE *out, CallStats *stats)
-{
-    fprintf(out, "Calls to PyEval_EvalDefault: %" PRIu64 "\n", stats->pyeval_calls);
-    fprintf(out, "Calls to Python functions inlined: %" PRIu64 "\n", stats->inlined_py_calls);
-    fprintf(out, "Frames pushed: %" PRIu64 "\n", stats->frames_pushed);
-    fprintf(out, "Frame objects created: %" PRIu64 "\n", stats->frame_objects_created);
-    for (int i = 0; i < EVAL_CALL_KINDS; i++) {
-        fprintf(out, "Calls via PyEval_EvalFrame[%d] : %" PRIu64 "\n", i, stats->eval_calls[i]);
-    }
-}
-
-static void
-print_object_stats(FILE *out, ObjectStats *stats)
-{
-    fprintf(out, "Object allocations from freelist: %" PRIu64 "\n", stats->from_freelist);
-    fprintf(out, "Object frees to freelist: %" PRIu64 "\n", stats->to_freelist);
-    fprintf(out, "Object allocations: %" PRIu64 "\n", stats->allocations);
-    fprintf(out, "Object allocations to 512 bytes: %" PRIu64 "\n", stats->allocations512);
-    fprintf(out, "Object allocations to 4 kbytes: %" PRIu64 "\n", stats->allocations4k);
-    fprintf(out, "Object allocations over 4 kbytes: %" PRIu64 "\n", stats->allocations_big);
-    fprintf(out, "Object frees: %" PRIu64 "\n", stats->frees);
-    fprintf(out, "Object inline values: %" PRIu64 "\n", stats->inline_values);
-    fprintf(out, "Object interpreter mortal increfs: %" PRIu64 "\n", stats->interpreter_increfs);
-    fprintf(out, "Object interpreter mortal decrefs: %" PRIu64 "\n", stats->interpreter_decrefs);
-    fprintf(out, "Object mortal increfs: %" PRIu64 "\n", stats->increfs);
-    fprintf(out, "Object mortal decrefs: %" PRIu64 "\n", stats->decrefs);
-    fprintf(out, "Object interpreter immortal increfs: %" PRIu64 "\n", stats->interpreter_immortal_increfs);
-    fprintf(out, "Object interpreter immortal decrefs: %" PRIu64 "\n", stats->interpreter_immortal_decrefs);
-    fprintf(out, "Object immortal increfs: %" PRIu64 "\n", stats->immortal_increfs);
-    fprintf(out, "Object immortal decrefs: %" PRIu64 "\n", stats->immortal_decrefs);
-    fprintf(out, "Object materialize dict (on request): %" PRIu64 "\n", stats->dict_materialized_on_request);
-    fprintf(out, "Object materialize dict (new key): %" PRIu64 "\n", stats->dict_materialized_new_key);
-    fprintf(out, "Object materialize dict (too big): %" PRIu64 "\n", stats->dict_materialized_too_big);
-    fprintf(out, "Object materialize dict (str subclass): %" PRIu64 "\n", stats->dict_materialized_str_subclass);
-    fprintf(out, "Object method cache hits: %" PRIu64 "\n", stats->type_cache_hits);
-    fprintf(out, "Object method cache misses: %" PRIu64 "\n", stats->type_cache_misses);
-    fprintf(out, "Object method cache collisions: %" PRIu64 "\n", stats->type_cache_collisions);
-    fprintf(out, "Object method cache dunder hits: %" PRIu64 "\n", stats->type_cache_dunder_hits);
-    fprintf(out, "Object method cache dunder misses: %" PRIu64 "\n", stats->type_cache_dunder_misses);
-}
-
-static void
-print_gc_stats(FILE *out, GCStats *stats)
-{
-    for (int i = 0; i < NUM_GENERATIONS; i++) {
-        fprintf(out, "GC[%d] collections: %" PRIu64 "\n", i, stats[i].collections);
-        fprintf(out, "GC[%d] object visits: %" PRIu64 "\n", i, stats[i].object_visits);
-        fprintf(out, "GC[%d] objects collected: %" PRIu64 "\n", i, stats[i].objects_collected);
-        fprintf(out, "GC[%d] objects reachable from roots: %" PRIu64 "\n", i, stats[i].objects_transitively_reachable);
-        fprintf(out, "GC[%d] objects not reachable from roots: %" PRIu64 "\n", i, stats[i].objects_not_transitively_reachable);
-    }
-}
-
-#ifdef _Py_TIER2
-static void
-print_histogram(FILE *out, const char *name, uint64_t hist[_Py_UOP_HIST_SIZE])
-{
-    for (int i = 0; i < _Py_UOP_HIST_SIZE; i++) {
-        fprintf(out, "%s[%" PRIu64"]: %" PRIu64 "\n", name, (uint64_t)1 << i, hist[i]);
-    }
-}
-
-static void
-print_optimization_stats(FILE *out, OptimizationStats *stats)
-{
-    fprintf(out, "Optimization attempts: %" PRIu64 "\n", stats->attempts);
-    fprintf(out, "Optimization traces created: %" PRIu64 "\n", stats->traces_created);
-    fprintf(out, "Optimization traces executed: %" PRIu64 "\n", stats->traces_executed);
-    fprintf(out, "Optimization uops executed: %" PRIu64 "\n", stats->uops_executed);
-    fprintf(out, "Optimization trace stack overflow: %" PRIu64 "\n", stats->trace_stack_overflow);
-    fprintf(out, "Optimization trace stack underflow: %" PRIu64 "\n", stats->trace_stack_underflow);
-    fprintf(out, "Optimization trace too long: %" PRIu64 "\n", stats->trace_too_long);
-    fprintf(out, "Optimization trace too short: %" PRIu64 "\n", stats->trace_too_short);
-    fprintf(out, "Optimization inner loop: %" PRIu64 "\n", stats->inner_loop);
-    fprintf(out, "Optimization recursive call: %" PRIu64 "\n", stats->recursive_call);
-    fprintf(out, "Optimization low confidence: %" PRIu64 "\n", stats->low_confidence);
-    fprintf(out, "Optimization unknown callee: %" PRIu64 "\n", stats->unknown_callee);
-    fprintf(out, "Executors invalidated: %" PRIu64 "\n", stats->executors_invalidated);
-
-    print_histogram(out, "Trace length", stats->trace_length_hist);
-    print_histogram(out, "Trace run length", stats->trace_run_length_hist);
-    print_histogram(out, "Optimized trace length", stats->optimized_trace_length_hist);
-
-    fprintf(out, "Optimization optimizer attempts: %" PRIu64 "\n", stats->optimizer_attempts);
-    fprintf(out, "Optimization optimizer successes: %" PRIu64 "\n", stats->optimizer_successes);
-    fprintf(out, "Optimization optimizer failure no memory: %" PRIu64 "\n",
-            stats->optimizer_failure_reason_no_memory);
-    fprintf(out, "Optimizer remove globals builtins changed: %" PRIu64 "\n", stats->remove_globals_builtins_changed);
-    fprintf(out, "Optimizer remove globals incorrect keys: %" PRIu64 "\n", stats->remove_globals_incorrect_keys);
-    for (int i = 0; i <= MAX_UOP_ID; i++) {
-        if (stats->opcode[i].execution_count) {
-            fprintf(out, "uops[%s].execution_count : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].execution_count);
-        }
-        if (stats->opcode[i].miss) {
-            fprintf(out, "uops[%s].specialization.miss : %" PRIu64 "\n", _PyUOpName(i), stats->opcode[i].miss);
-        }
-    }
-    for (int i = 0; i < 256; i++) {
-        if (stats->unsupported_opcode[i]) {
-            fprintf(
-                out,
-                "unsupported_opcode[%s].count : %" PRIu64 "\n",
-                _PyOpcode_OpName[i],
-                stats->unsupported_opcode[i]
-            );
-        }
-    }
-
-    for (int i = 1; i <= MAX_UOP_ID; i++){
-        for (int j = 1; j <= MAX_UOP_ID; j++) {
-            if (stats->opcode[i].pair_count[j]) {
-                fprintf(out, "uop[%s].pair_count[%s] : %" PRIu64 "\n",
-                        _PyOpcode_uop_name[i], _PyOpcode_uop_name[j], stats->opcode[i].pair_count[j]);
-            }
-        }
-    }
-    for (int i = 0; i < MAX_UOP_ID; i++) {
-        if (stats->error_in_opcode[i]) {
-            fprintf(
-                out,
-                "error_in_opcode[%s].count : %" PRIu64 "\n",
-                _PyUOpName(i),
-                stats->error_in_opcode[i]
-            );
-        }
-    }
-    fprintf(out, "JIT total memory size: %" PRIu64 "\n", stats->jit_total_memory_size);
-    fprintf(out, "JIT code size: %" PRIu64 "\n", stats->jit_code_size);
-    fprintf(out, "JIT trampoline size: %" PRIu64 "\n", stats->jit_trampoline_size);
-    fprintf(out, "JIT data size: %" PRIu64 "\n", stats->jit_data_size);
-    fprintf(out, "JIT padding size: %" PRIu64 "\n", stats->jit_padding_size);
-    fprintf(out, "JIT freed memory size: %" PRIu64 "\n", stats->jit_freed_memory_size);
-
-    print_histogram(out, "Trace total memory size", stats->trace_total_memory_hist);
-}
-#endif
-
-static void
-print_rare_event_stats(FILE *out, RareEventStats *stats)
-{
-    fprintf(out, "Rare event (set_class): %" PRIu64 "\n", stats->set_class);
-    fprintf(out, "Rare event (set_bases): %" PRIu64 "\n", stats->set_bases);
-    fprintf(out, "Rare event (set_eval_frame_func): %" PRIu64 "\n", stats->set_eval_frame_func);
-    fprintf(out, "Rare event (builtin_dict): %" PRIu64 "\n", stats->builtin_dict);
-    fprintf(out, "Rare event (func_modification): %" PRIu64 "\n", stats->func_modification);
-    fprintf(out, "Rare event (watched_dict_modification): %" PRIu64 "\n", stats->watched_dict_modification);
-    fprintf(out, "Rare event (watched_globals_modification): %" PRIu64 "\n", stats->watched_globals_modification);
 }
 
 static void
 print_stats(FILE *out, PyStats *stats)
 {
-    print_spec_stats(out, stats->opcode_stats);
-    print_call_stats(out, &stats->call_stats);
-    print_object_stats(out, &stats->object_stats);
-    print_gc_stats(out, stats->gc_stats);
-#ifdef _Py_TIER2
-    print_optimization_stats(out, &stats->optimization_stats);
-#endif
-    print_rare_event_stats(out, &stats->rare_event_stats);
+    _fudge_stats(out, stats);
+    _Output_Stats(out, stats);
 }
 
 void
