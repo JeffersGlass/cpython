@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+from collections import defaultdict
 from collections.abc import KeysView
 from dataclasses import dataclass
 from datetime import date
@@ -23,14 +24,16 @@ from pathlib import Path
 import re
 import sys
 import textwrap
-from typing import Any, Callable, TextIO, TypeAlias
+from typing import Any, Callable, TextIO, TypeAlias, Self
+
+from test.test_email.test_parser import default
 
 
 RawData: TypeAlias = dict[str, Any]
 Rows: TypeAlias = list[tuple]
 Columns: TypeAlias = tuple[str, ...]
 RowCalculator: TypeAlias = Callable[["Stats"], Rows]
-
+type RawDataStructured = defaultdict[str, int | Self]
 
 # TODO: Check for parity
 
@@ -77,8 +80,55 @@ def _load_metadata_from_source():
         "_defines": get_defines(Path("Python") / "specialize.c"),
     }
 
+def load_raw_data(input: Path) -> RawDataStructured:
+    if input.is_file():
+        with open(input, "r") as fd:
+            data = json.load(fd)
 
-def load_raw_data(input: Path) -> RawData:
+        data["_stats_defines"] = {int(k): v for k, v in data["_stats_defines"].items()}
+        data["_defines"] = {int(k): v for k, v in data["_defines"].items()}
+
+        return data
+
+    elif input.is_dir():
+        default_dicter = lambda : functools.partial(defaultdict, default_dicter)()
+        stats: RawDataStructured = default_dicter()
+
+        # TODO add compatibility mode for old stats files?
+
+        for filename in (path for path in input.iterdir() if path.is_file()):
+            with open(filename) as fd:
+                for line in fd:
+                    try:
+                        keys, value = line.split(":")
+                        keys = keys.split(".")
+                    except ValueError:
+                        print(
+                            f"Unparsable line: '{line.strip()}' in {filename}",
+                            file=sys.stderr,
+                        )
+                        continue
+                    search_dict = stats
+                    for key in keys[:-1]:
+                        search_dict = search_dict[key]
+                    if keys[-1] in search_dict: search_dict[keys[-1]] += int(value.strip())
+                    else: search_dict[keys[-1]] = int(value.strip())
+
+            if not "__nfiles__" in stats:
+                stats["__nfiles__"] = 0
+            stats["__nfiles__"] += 1
+
+        data = dict(stats)
+        data.update(_load_metadata_from_source())
+        #print(data.keys())
+        #print(data["PyStats"]["optimization_stats"].keys())
+        return data
+
+    else:
+        raise ValueError(f"{input} is not a file or directory path")
+
+
+def load_raw_data_old(input: Path) -> RawData:
     if input.is_file():
         with open(input, "r") as fd:
             data = json.load(fd)
@@ -356,11 +406,28 @@ class OpcodeStats:
 
 
 class Stats:
-    def __init__(self, data: RawData):
+    def __init__(self, data: RawDataStructured):
         self._data = data
 
-    def get(self, key: str) -> int:
-        return self._data.get(key, 0)
+    def get(self, keys: str | collections.Iterable[str]) -> int:
+        """Given a list of nested keys, retrieve the appropriate value from internal data
+
+        Args:
+            keys (str | collections.Iterable[str]): The nested list of keys to search.
+                Currently also takes a str and checks it using isinstance(), so that
+                old calls using just a single string don't error
+        """
+        if isinstance(keys, str):
+            if '.' in keys: keys = keys.split(".")
+            else: keys = [keys] # TODO A hack, until all calls to get() are converted to take iterables
+
+        search_dict = self._data
+        for k in keys:
+            val = search_dict.get(k, 0)
+            if not search_dict:
+                raise KeyError(f"{k} not in _data. Full keys list was {keys}")
+            if type(val) == int: return val
+            search_dict = val
 
     @functools.cache
     def get_opcode_stats(self, prefix: str) -> OpcodeStats:
@@ -443,24 +510,24 @@ class Stats:
         return gc_stats
 
     def get_optimization_stats(self) -> dict[str, tuple[int, int | None]]:
-        if "Optimization attempts" not in self._data:
+        if not self.get("PyStats.optimization_stats.attempts"):
             return {}
 
-        attempts = self._data["Optimization attempts"]
-        created = self._data["Optimization traces created"]
-        executed = self._data["Optimization traces executed"]
-        uops = self._data["Optimization uops executed"]
-        trace_stack_overflow = self._data["Optimization trace stack overflow"]
-        trace_stack_underflow = self._data["Optimization trace stack underflow"]
-        trace_too_long = self._data["Optimization trace too long"]
-        trace_too_short = self._data["Optimization trace too short"]
-        inner_loop = self._data["Optimization inner loop"]
-        recursive_call = self._data["Optimization recursive call"]
-        low_confidence = self._data["Optimization low confidence"]
-        unknown_callee = self._data["Optimization unknown callee"]
-        executors_invalidated = self._data["Executors invalidated"]
+        attempts = self.get("PyStats.optimization_stats.attempts")
+        created = self.get("PyStats.optimization_stats.traces_created")
+        executed = self.get("PyStats.optimization_stats.traces_executed")
+        uops = self.get("PyStats.optimization_stats.uops_executed")
+        trace_stack_overflow = self.get("PyStats.optimization_stats.trace_stack_overflow")
+        trace_stack_underflow = self.get("PyStats.optimization_stats.trace_stack_underflow")
+        trace_too_long = self.get("PyStats.optimization_stats.trace_too_long")
+        trace_too_short = self.get("PyStats.optimization_stats.trace_too_short")
+        inner_loop = self.get("PyStats.optimization_stats.inner_loop")
+        recursive_call = self.get("PyStats.optimization_stats.recursive_call")
+        low_confidence = self.get("PyStats.optimization_stats.low_confidence")
+        unknown_callee = self.get("PyStats.optimization_stats.unknown_callee")
+        executors_invalidated = self.get("PyStats.optimization_stats.executors_invalidated")
 
-        return {
+        _ = {
             Doc(
                 "Optimization attempts",
                 "The number of times a potential trace is identified.  Specifically, this "
@@ -519,13 +586,15 @@ class Stats:
                 executed,
             ),
         }
+        print(_)
+        return _
 
     def get_optimizer_stats(self) -> dict[str, tuple[int, int | None]]:
-        attempts = self._data["Optimization optimizer attempts"]
-        successes = self._data["Optimization optimizer successes"]
-        no_memory = self._data["Optimization optimizer failure no memory"]
-        builtins_changed = self._data["Optimizer remove globals builtins changed"]
-        incorrect_keys = self._data["Optimizer remove globals incorrect keys"]
+        attempts = self.get("PyStats.optization_stats.optimizer_attempts") #self._data["Optimization optimizer attempts"]
+        successes = self.get("PyStats.optization_stats.optimizer_successes") #self._data["Optimization optimizer successes"]
+        no_memory = self.get("PyStats.optization_stats.optimizer_failure_reason_no_memory") #self._data["Optimization optimizer failure no memory"]
+        builtins_changed = self.get("PyStats.optization_stats.remove_globals_builtins_changed") #self._data["Optimizer remove globals builtins changed"]
+        incorrect_keys = self.get("PyStats.optization_stats.remove_globals_incorrect_keys") #self._data["Optimizer remove globals incorrect keys"]
 
         return {
             Doc(
@@ -551,12 +620,12 @@ class Stats:
         }
 
     def get_jit_memory_stats(self) -> dict[Doc, tuple[int, int | None]]:
-        jit_total_memory_size = self._data["JIT total memory size"]
-        jit_code_size = self._data["JIT code size"]
-        jit_trampoline_size = self._data["JIT trampoline size"]
-        jit_data_size = self._data["JIT data size"]
-        jit_padding_size = self._data["JIT padding size"]
-        jit_freed_memory_size = self._data["JIT freed memory size"]
+        jit_total_memory_size = self.get("PyStats.optimization_stats.jit_total_memory_size") #self._data["JIT total memory size"]
+        jit_code_size = self.get("PyStats.optimization_stats.jit_code_size") #self._data["JIT code size"]
+        jit_trampoline_size = self.get("PyStats.optimization_stats.jit_data_size") #self._data["JIT trampoline size"]
+        jit_data_size = self.get("PyStats.optimization_stats.jit_padding_size") #self._data["JIT data size"]
+        jit_padding_size = self.get("PyStats.optimization_stats.jit_freed_memory_size") #self._data["JIT padding size"]
+        jit_freed_memory_size = self.get("PyStats.optimization_stats.trace_total_memory_hist[15") #self._data["JIT freed memory size"]
 
         return {
             Doc(
@@ -1388,17 +1457,17 @@ def meta_stats_section() -> Section:
 
 
 LAYOUT = [
-    execution_count_section(),
-    pair_count_section("opcode"),
-    pre_succ_pairs_section(),
-    specialization_section(),
-    specialization_effectiveness_section(),
-    call_stats_section(),
-    object_stats_section(),
-    gc_stats_section(),
+    #execution_count_section(),
+    #pair_count_section("opcode"),
+    #pre_succ_pairs_section(),
+    ##specialization_section(),
+    #specialization_effectiveness_section(),
+    #call_stats_section(),
+    #object_stats_section(),
+    #gc_stats_section(),
     optimization_section(),
-    rare_event_section(),
-    meta_stats_section(),
+    #rare_event_section(),
+    #meta_stats_section(),
 ]
 
 
@@ -1493,6 +1562,7 @@ def output_stats(inputs: list[Path], json_output=str | None):
                 with open(json_output, "w", encoding="utf-8") as f:
                     save_raw_data(data, f)  # type: ignore
             stats = Stats(data)
+            #print(f"{stats.get("PyStats.optimization_stats.attempts")=}")
             output_markdown(sys.stdout, LAYOUT, stats)
         case 2:
             if json_output is not None:
