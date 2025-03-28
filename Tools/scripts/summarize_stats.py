@@ -1273,18 +1273,20 @@ def object_stats_section() -> Section:
 
 def gc_stats_section() -> Section:
     def calc_gc_stats(stats: Stats) -> Rows:
-        gc_stats = stats.get_gc_stats()
+        gc_stats = stats.get_dict("PyStats")
+        generations = [i for i in range(1000) if f"gc_stats[{i}]" in gc_stats]
 
         return [
             (
                 Count(i),
-                Count(gen["collections"]),
-                Count(gen["objects collected"]),
-                Count(gen["object visits"]),
-                Count(gen["objects reachable from roots"]),
-                Count(gen["objects not reachable from roots"]),
+                Count(stats.get(f"PyStats.gc_stats[{i}].collections", mark_seen=True)),
+                Count(stats.get(f"PyStats.gc_stats[{i}].objects_collected", mark_seen=True)),
+                Count(stats.get(f"PyStats.gc_stats[{i}].object_visits", mark_seen=True)),
+                Count(stats.get(f"PyStats.gc_stats[{i}].objects_transitively_reachable", mark_seen=True)),
+                Count(stats.get(f"PyStats.gc_stats[{i}].objects_not_transitively_reachable", mark_seen=True)),
             )
-            for (i, gen) in enumerate(gc_stats)
+            for i in generations
+
         ]
 
     return Section(
@@ -1525,7 +1527,7 @@ LAYOUT = [
     #specialization_effectiveness_section(),
     #call_stats_section(),
     #object_stats_section(),
-    #gc_stats_section(),
+    gc_stats_section(),
     optimization_section(),
     rare_event_section(),
     meta_stats_section(),

@@ -109,10 +109,12 @@ if (PyStats->rare_event_stats.builtin_dict != 0) {fprintf(out, "PyStats.rare_eve
 if (PyStats->rare_event_stats.func_modification != 0) {fprintf(out, "PyStats.rare_event_stats.func_modification: %" PRIu64 "\n",  PyStats->rare_event_stats.func_modification);}
 if (PyStats->rare_event_stats.watched_dict_modification != 0) {fprintf(out, "PyStats.rare_event_stats.watched_dict_modification: %" PRIu64 "\n",  PyStats->rare_event_stats.watched_dict_modification);}
 if (PyStats->rare_event_stats.watched_globals_modification != 0) {fprintf(out, "PyStats.rare_event_stats.watched_globals_modification: %" PRIu64 "\n",  PyStats->rare_event_stats.watched_globals_modification);}
-if (PyStats->gc_stats->collections != 0) {fprintf(out, "PyStats.gc_stats.collections: %" PRIu64 "\n",  PyStats->gc_stats->collections);}
-if (PyStats->gc_stats->object_visits != 0) {fprintf(out, "PyStats.gc_stats.object_visits: %" PRIu64 "\n",  PyStats->gc_stats->object_visits);}
-if (PyStats->gc_stats->objects_collected != 0) {fprintf(out, "PyStats.gc_stats.objects_collected: %" PRIu64 "\n",  PyStats->gc_stats->objects_collected);}
-if (PyStats->gc_stats->objects_transitively_reachable != 0) {fprintf(out, "PyStats.gc_stats.objects_transitively_reachable: %" PRIu64 "\n",  PyStats->gc_stats->objects_transitively_reachable);}
-if (PyStats->gc_stats->objects_not_transitively_reachable != 0) {fprintf(out, "PyStats.gc_stats.objects_not_transitively_reachable: %" PRIu64 "\n",  PyStats->gc_stats->objects_not_transitively_reachable);}
+for (int i = 0; i < NUM_GENERATIONS; i++){
+if (PyStats->gc_stats[i].collections != 0) {fprintf(out, "PyStats.gc_stats[%d].collections: %" PRIu64 "\n", i, PyStats->gc_stats[i].collections);}
+if (PyStats->gc_stats[i].object_visits != 0) {fprintf(out, "PyStats.gc_stats[%d].object_visits: %" PRIu64 "\n", i, PyStats->gc_stats[i].object_visits);}
+if (PyStats->gc_stats[i].objects_collected != 0) {fprintf(out, "PyStats.gc_stats[%d].objects_collected: %" PRIu64 "\n", i, PyStats->gc_stats[i].objects_collected);}
+if (PyStats->gc_stats[i].objects_transitively_reachable != 0) {fprintf(out, "PyStats.gc_stats[%d].objects_transitively_reachable: %" PRIu64 "\n", i, PyStats->gc_stats[i].objects_transitively_reachable);}
+if (PyStats->gc_stats[i].objects_not_transitively_reachable != 0) {fprintf(out, "PyStats.gc_stats[%d].objects_not_transitively_reachable: %" PRIu64 "\n", i, PyStats->gc_stats[i].objects_not_transitively_reachable);}
+}
 
 }
