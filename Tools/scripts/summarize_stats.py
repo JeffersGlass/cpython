@@ -690,14 +690,6 @@ class Stats:
         rows.sort()
         return rows
 
-    def get_rare_events(self) -> list[tuple[str, int]]:
-        prefix = "Rare event "
-        return [
-            (key[len(prefix) + 1 : -1].replace("_", " "), val)
-            for key, val in self._data.items()
-            if key.startswith(prefix)
-        ]
-
 
 class JoinMode(enum.Enum):
     # Join using the first column as a key
@@ -848,7 +840,7 @@ def get_unseen_keys(stats: Stats, keys: KeyTypes = None, mark_seen=True) -> Gene
 def unvisited_stats_section(keys: KeyTypes) -> Section:
     def make_rows(base_stats: Stats) -> RowCalculator:
         rows = []
-        for k, v in get_unseen_keys(base_stats, keys):
+        for k, v in get_unseen_keys(base_stats, keys, mark_seen=True):
             rows.append((k, v))
         return rows
 
@@ -856,7 +848,7 @@ def unvisited_stats_section(keys: KeyTypes) -> Section:
 
     return Section(
         title = f"Unvisited Stats",
-        summary = f"""The following stats appear in the exported statistics for the struct '{".".join(Stats.keyval_to_list(keys))}' but were not printed by any other table or chart""",
+        summary = f"""The following stats appear in the exported statistics for the struct '{dotted_name}' but were not printed by any other table or chart""",
         part_iter=[
             Table(
                 ("Statistic", "Value"),
@@ -1479,8 +1471,6 @@ def optimization_section() -> Section:
         yield unvisited_stats_section("PyStats.optimization_stats")
 
 
-
-
     return Section(
         "Optimization (Tier 2) stats",
         "statistics about the Tier 2 optimizer",
@@ -1490,19 +1480,22 @@ def optimization_section() -> Section:
 
 def rare_event_section() -> Section:
     def calc_rare_event_table(stats: Stats) -> Table:
+
         DOCS = {
-            "set class": "Setting an object's class, `obj.__class__ = ...`",
-            "set bases": "Setting the bases of a class, `cls.__bases__ = ...`",
-            "set eval frame func": (
+            "set_class": "Setting an object's class, `obj.__class__ = ...`",
+            "set_bases": "Setting the bases of a class, `cls.__bases__ = ...`",
+            "set_eval_frame_func": (
                 "Setting the PEP 523 frame eval function "
                 "`_PyInterpreterState_SetFrameEvalFunc()`"
             ),
-            "builtin dict": "Modifying the builtins, `__builtins__.__dict__[var] = ...`",
-            "func modification": "Modifying a function, e.g. `func.__defaults__ = ...`, etc.",
-            "watched dict modification": "A watched dict has been modified",
-            "watched globals modification": "A watched `globals()` dict has been modified",
+            "builtin_dict": "Modifying the builtins, `__builtins__.__dict__[var] = ...`",
+            "func_modification": "Modifying a function, e.g. `func.__defaults__ = ...`, etc.",
+            "watched_dict_modification": "A watched dict has been modified",
+            "watched_globals_modification": "A watched `globals()` dict has been modified",
         }
-        return [(Doc(x, DOCS[x]), Count(y)) for x, y in stats.get_rare_events()]
+        return [(DOCS[x], Count(y)) for x, y in stats.get_dict("PyStats.rare_event_stats").items()]
+        # There is no 'Unvisited Stats' section for rare events,
+        # since all stats are picked up by the line above
 
     return Section(
         "Rare events",
@@ -1534,7 +1527,7 @@ LAYOUT = [
     #object_stats_section(),
     #gc_stats_section(),
     optimization_section(),
-    #rare_event_section(),
+    rare_event_section(),
     #meta_stats_section(),
     unvisited_stats_section("PyStats")
 ]
