@@ -828,7 +828,7 @@ class Section:
             self.part_iter = part_iter
         self.comparative = comparative
 
-def get_unseen_keys(stats: Stats, keys: KeyTypes = None) -> Generator[tuple[str, int]]:
+def get_unseen_keys(stats: Stats, keys: KeyTypes = None, mark_seen=True) -> Generator[tuple[str, int]]:
             """Given a path to an internal dictionary, return all values from it and its
             children that have not yet been marked as seen (and are not internal)"""
             if keys:
@@ -839,22 +839,24 @@ def get_unseen_keys(stats: Stats, keys: KeyTypes = None) -> Generator[tuple[str,
                 if not k.startswith("_"):
                     if isinstance(v, StatRecord):
                         if v.seen: continue
-                        dotted_name = ".".join(Stats.keyval_to_list(keys + [k]))
+                        v.seen = mark_seen
+                        dotted_name = ".".join(Stats.keyval_to_list(keys)) + "." + k
                         yield (f"{dotted_name}", v)
                     else:
                         yield from get_unseen_keys(stats, stats.keyval_to_list(keys) + [k])
 
-def unvisited_stats_section() -> Section:
+def unvisited_stats_section(keys: KeyTypes) -> Section:
     def make_rows(base_stats: Stats) -> RowCalculator:
         rows = []
-        for k, v in get_unseen_keys(base_stats, "PyStats"):
+        for k, v in get_unseen_keys(base_stats, keys):
             rows.append((k, v))
         return rows
 
+    dotted_name = ".".join(Stats.keyval_to_list(keys))
 
     return Section(
         title = f"Unvisited Stats",
-        summary = f"""The following stats appear in the exported statistics but were not printed by any other table or chart""",
+        summary = f"""The following stats appear in the exported statistics for the struct '{".".join(Stats.keyval_to_list(keys))}' but were not printed by any other table or chart""",
         part_iter=[
             Table(
                 ("Statistic", "Value"),
@@ -1474,6 +1476,7 @@ def optimization_section() -> Section:
             "Optimization stopped after encountering this opcode",
             [Table(("Opcode", "Count:"), calc_error_in_opcodes_table, JoinMode.CHANGE)],
         )
+        yield unvisited_stats_section("PyStats.optimization_stats")
 
 
 
@@ -1533,7 +1536,7 @@ LAYOUT = [
     optimization_section(),
     #rare_event_section(),
     #meta_stats_section(),
-    unvisited_stats_section()
+    unvisited_stats_section("PyStats")
 ]
 
 
