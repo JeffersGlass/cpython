@@ -488,39 +488,37 @@ class Stats:
         return result
 
     def get_object_stats(self) -> dict[str, tuple[int, int]]:
-        total_materializations = self._data.get("Object inline values", 0)
-        total_allocations = self._data.get("Object allocations", 0) + self._data.get(
-            "Object allocations from freelist", 0
+        total_materializations = self.get("PyStats.object_stats.inline_values", mark_seen=True)
+        total_allocations = self.get("PyStats.object_stats.allocations", mark_seen=True) + self.get("PyStats.object_stats.from_freelist", mark_seen=True
         )
         total_increfs = (
-            self._data.get("Object interpreter mortal increfs", 0) +
-            self._data.get("Object mortal increfs", 0) +
-            self._data.get("Object interpreter immortal increfs", 0) +
-            self._data.get("Object immortal increfs", 0)
+            self.get("PyStats.object_stats.interpreter_mortal_increfs", mark_seen=True) +
+            self.get("PyStats.object_stats.mortal_increfs", mark_seen=True) +
+            self.get("PyStats.object_stats.interpreter_immortal_increfs", mark_seen=True) +
+            self.get("PyStats.object_stats.immortal_increfs", mark_seen=True)
         )
         total_decrefs = (
-            self._data.get("Object interpreter mortal decrefs", 0) +
-            self._data.get("Object mortal decrefs", 0) +
-            self._data.get("Object interpreter immortal decrefs", 0) +
-            self._data.get("Object immortal decrefs", 0)
+            self.get("PyStats.object_stats.interpreter_mortal_decrefs", mark_seen=True) +
+            self.get("PyStats.object_stats.mortal_decrefs", mark_seen=True) +
+            self.get("PyStats.object_stats.interpreter_immortal_decrefs", mark_seen=True) +
+            self.get("PyStats.object_stats.immortal_decrefs", mark_seen=True)
         )
 
         result = {}
-        for key, value in self._data.items():
-            if key.startswith("Object"):
-                if "materialize" in key:
-                    den = total_materializations
-                elif "allocations" in key:
-                    den = total_allocations
-                elif "increfs" in key:
-                    den = total_increfs
-                elif "decrefs" in key:
-                    den = total_decrefs
-                else:
-                    den = None
-                label = key[6:].strip()
-                label = label[0].upper() + label[1:]
-                result[label] = (value, den)
+        for key in self.get_dict("PyStats.object_stats"):
+            if "materialize" in key:
+                den = total_materializations
+            elif "allocations" in key:
+                den = total_allocations
+            elif "increfs" in key:
+                den = total_increfs
+            elif "decrefs" in key:
+                den = total_decrefs
+            else:
+                den = None
+            label = key
+            label = label[0].upper() + label[1:]
+            result[label] = (self.get(f"PyStats.object_stats.{key}", mark_seen=True), den)
         return result
 
     def get_gc_stats(self) -> list[dict[str, int]]:
@@ -1253,6 +1251,10 @@ def object_stats_section() -> Section:
         "Object stats",
         "Allocations, frees and dict materializatons",
         [
+        Section(
+        "Object stats",
+        "Allocations, frees and dict materializatons",
+        [
             Table(
                 ("", "Count:", "Ratio:"),
                 calc_object_stats_table,
@@ -1268,6 +1270,8 @@ def object_stats_section() -> Section:
         The cache hit/miss numbers are for the MRO cache, split into dunder and
         other names.
         """,
+        ),
+        unvisited_stats_section("PyStats.object_stats")]
     )
 
 
@@ -1516,8 +1520,6 @@ def meta_stats_section() -> Section:
         [Table(("", "Count:"), calc_rows, JoinMode.CHANGE)],
     )
 
-def unseen_keys_subsection(stats: Stats, keys: KeyTypes):
-    ...
 
 LAYOUT = [
     #execution_count_section(),
@@ -1526,7 +1528,7 @@ LAYOUT = [
     ##specialization_section(),
     #specialization_effectiveness_section(),
     #call_stats_section(),
-    #object_stats_section(),
+    object_stats_section(),
     gc_stats_section(),
     optimization_section(),
     rare_event_section(),
