@@ -119,7 +119,7 @@ def load_raw_data(input: Path) -> RawDataStructured:
                     search_dict = stats
                     for key in keys[:-1]:
                         search_dict = search_dict[key]
-                    if keys[-1] in search_dict: search_dict[keys[-1]] += int(value.strip())
+                    if keys[-1] in search_dict: search_dict[keys[-1]] = StatRecord(search_dict[keys[-1]]+ int(value.strip()))
                     else: search_dict[keys[-1]] = StatRecord(int(value.strip()))
 
             if not "__nfiles__" in stats:
