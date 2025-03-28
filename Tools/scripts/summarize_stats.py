@@ -456,22 +456,6 @@ class Stats:
             search_dict = search_dict.__getitem__(k)
         return search_dict
 
-    def get_unseen_keys(self, keys: KeyTypes | None = None) -> Generator[tuple[str, int]]:
-        """Given a path to an internal dictionary, return all values from it and its
-        children that have not yet been marked as seen (and are not internal)"""
-        if keys:
-            search_dict = self.get_dict(keys)
-        else: search_dict = self._data
-
-
-        for k, v in search_dict.items():
-            if not k.startswith("_"):
-                if isinstance(v, StatRecord):
-                    if v.seen: continue
-                    yield (f"{k}", v)
-                else:
-                    yield from self.get_unseen_keys(self.keyval_to_list(keys) + [k])
-
     @functools.cache
     def get_opcode_stats(self, prefix: str) -> OpcodeStats:
         opcode_stats = collections.defaultdict[str, dict](dict)
@@ -844,6 +828,40 @@ class Section:
             self.part_iter = part_iter
         self.comparative = comparative
 
+def get_unseen_keys(stats: Stats, keys: KeyTypes = None) -> Generator[tuple[str, int]]:
+            """Given a path to an internal dictionary, return all values from it and its
+            children that have not yet been marked as seen (and are not internal)"""
+            if keys:
+                search_dict = stats.get_dict(keys)
+            else: search_dict = stats._data
+
+            for k, v in search_dict.items():
+                if not k.startswith("_"):
+                    if isinstance(v, StatRecord):
+                        if v.seen: continue
+                        dotted_name = ".".join(Stats.keyval_to_list(keys + [k]))
+                        yield (f"{dotted_name}", v)
+                    else:
+                        yield from get_unseen_keys(stats, stats.keyval_to_list(keys) + [k])
+
+def unvisited_stats_section() -> Section:
+    def make_rows(base_stats: Stats) -> RowCalculator:
+        rows = []
+        for k, v in get_unseen_keys(base_stats, "PyStats"):
+            rows.append((k, v))
+        return rows
+
+
+    return Section(
+        title = f"Unvisited Stats",
+        summary = f"""The following stats appear in the exported statistics but were not printed by any other table or chart""",
+        part_iter=[
+            Table(
+                ("Statistic", "Value"),
+                make_rows,
+            )
+        ]
+    )
 
 def calc_execution_count_table(prefix: str) -> RowCalculator:
     def calc(stats: Stats) -> Rows:
@@ -1515,6 +1533,7 @@ LAYOUT = [
     optimization_section(),
     #rare_event_section(),
     #meta_stats_section(),
+    unvisited_stats_section()
 ]
 
 
@@ -1530,6 +1549,8 @@ def output_markdown(
             return x.markdown()
         elif isinstance(x, str):
             return x
+        elif isinstance(x, int):
+            return str(x)
         elif x is None:
             return ""
         else:
@@ -1599,6 +1620,8 @@ def output_markdown(
 
             print("---", file=out)
             print("Stats gathered on:", date.today(), file=out)
+        case _:
+            print(obj)
 
 
 def output_stats(inputs: list[Path], json_output=str | None):
