@@ -174,7 +174,7 @@ typedef struct _stats {
     ObjectStats object_stats;
     OptimizationStats optimization_stats;
     RareEventStats rare_event_stats;
-    GCStats *gc_stats;
+    GCStats *gc_stats; // arraysize: NUM_GENERATIONS
 } PyStats;
 
 

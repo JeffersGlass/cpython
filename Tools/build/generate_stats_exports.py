@@ -58,10 +58,11 @@ def parse_structs(content: str) -> List[Struct]:
                 continue
 
             # match field type, name, array size (if any), and index namer (if any)
-            parts_pattern = re.compile(r"(?P<type>.+?)\s+(?P<name>[*\w]+)\s*(\[(?P<array_size>[\d\w\s+_]+)\])?;(\s*//\s*index:\s*(?P<indexname>\w+))?")
+            parts_pattern = re.compile(r"\s*(?P<type>.+?)\s+(?P<name>[*\w]+)\s*(\[(?P<array_size>[\d\w\s+_]+)\])?;\s*(\/\/)?\s*(index:\s*(?P<indexname>\w+))?(arraysize:\s*(?P<array_size_literal>\w+))?")
+            #parts_pattern = re.compile(r"(?P<type>.+?)\s+(?P<name>[*\w]+)\s*(\[(?P<array_size>[\d\w\s+_]+)\])?;(\s*//\s*index:\s*(?P<indexname>\w+))?")
             parts_match = re.search(parts_pattern, line)
             if not parts_match: continue
-            if array_match:= parts_match.group("array_size"):
+            if array_match:= parts_match.group("array_size_literal") or (array_match := parts_match.group("array_size")):
                 field_type = parts_match.group("type").strip()
                 field_name = parts_match.group("name")
                 array_size = array_match
@@ -145,7 +146,9 @@ def generate_print_from_path(field_path: List[HasName], loop_index:int=0, loop_n
     loop_vars: list[str] = []
     for i, field in enumerate(field_path[1:]):
         previous_field_name = field_path[i].name
-        if "*" in previous_field_name or previous_field_name == DEFAULT_ROOT_NAME:
+        if "gc" in previous_field_name: # TODO this is a hack around the gc_stats construction
+            stat_path += "."
+        elif "*" in previous_field_name or previous_field_name == DEFAULT_ROOT_NAME:
             stat_path += "->"
         else:
             stat_path += "."
