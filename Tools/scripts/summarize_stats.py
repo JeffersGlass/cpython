@@ -89,9 +89,9 @@ def load_raw_data(input: Path) -> RawData:
         return data
 
     elif input.is_dir():
-        stats = collections.Counter[str]()
+        stats = dict[str, StatRecord]()
 
-        for filename in input.iterdir():
+        for filename in (p for p in input.iterdir() if p.is_file()):
             with open(filename) as fd:
                 for line in fd:
                     try:
@@ -106,7 +106,15 @@ def load_raw_data(input: Path) -> RawData:
                     # are missing an underscore prefix in their name
                     if key.startswith("uops[") and key[5:6] != "_":
                         key = "uops[_" + key[5:]
-                    stats[key.strip()] += int(value)
+
+                    key = key.strip()
+                    if not key in stats:
+                        stats[key] = StatRecord(int(value))
+                    else:
+                        stats[key] = StatRecord(int(value) + stats[key])
+
+            if not "__nfiles__" in stats:
+                stats["__nfiles__"] = 0
             stats["__nfiles__"] += 1
 
         data = dict(stats)
@@ -178,7 +186,17 @@ class DiffRatio(Ratio):
         else:
             super().__init__(head - base, base)
 
+class StatRecord(int):
+    def __new__(cls, value, seen=False):
+        s = int.__new__(cls, value)
+        s.seen = seen
+        return s
 
+class TrackingDict(collections.UserDict):
+    def get(self, key, default=None, mark_seen=False):
+        value = super().get(key, default)
+        if isinstance(value, StatRecord) and mark_seen: value.seen = True
+        return value
 class OpcodeStats:
     """
     Manages the data related to specific set of opcodes, e.g. tier1 (with prefix
@@ -357,10 +375,15 @@ class OpcodeStats:
 
 class Stats:
     def __init__(self, data: RawData):
-        self._data = data
+        self._data = TrackingDict(data)
 
-    def get(self, key: str) -> int:
-        return self._data.get(key, 0)
+    def get(self, key: str, mark_seen=False) -> int:
+        return self._data.get(key, 0, mark_seen=mark_seen)
+
+    def get_univisited_stats(self, prefix) -> dict[str, Any]:
+        return {s: self._data[s] for s in self._data if s.startswith(prefix) and
+                isinstance(self._data[s], StatRecord) and
+                not self._data[s].seen}
 
     @functools.cache
     def get_opcode_stats(self, prefix: str) -> OpcodeStats:
@@ -443,22 +466,22 @@ class Stats:
         return gc_stats
 
     def get_optimization_stats(self) -> dict[str, tuple[int, int | None]]:
-        if "Optimization attempts" not in self._data:
+        if not self.get("PyStats.optimization_stats.attempts"):
             return {}
 
-        attempts = self._data["Optimization attempts"]
-        created = self._data["Optimization traces created"]
-        executed = self._data["Optimization traces executed"]
-        uops = self._data["Optimization uops executed"]
-        trace_stack_overflow = self._data["Optimization trace stack overflow"]
-        trace_stack_underflow = self._data["Optimization trace stack underflow"]
-        trace_too_long = self._data["Optimization trace too long"]
-        trace_too_short = self._data["Optimization trace too short"]
-        inner_loop = self._data["Optimization inner loop"]
-        recursive_call = self._data["Optimization recursive call"]
-        low_confidence = self._data["Optimization low confidence"]
-        unknown_callee = self._data["Optimization unknown callee"]
-        executors_invalidated = self._data["Executors invalidated"]
+        attempts = self.get("PyStats.optimization_stats.attempts", mark_seen=True)
+        created = self.get("PyStats.optimization_stats.traces_created", mark_seen=True)
+        executed = self.get("PyStats.optimization_stats.traces_executed", mark_seen=True)
+        uops = self.get("PyStats.optimization_stats.uops_executed", mark_seen=True)
+        trace_stack_overflow = self.get("PyStats.optimization_stats.trace_stack_overflow", mark_seen=True)
+        trace_stack_underflow = self.get("PyStats.optimization_stats.trace_stack_underflow", mark_seen=True)
+        trace_too_long = self.get("PyStats.optimization_stats.trace_too_long", mark_seen=True)
+        trace_too_short = self.get("PyStats.optimization_stats.trace_too_short", mark_seen=True)
+        inner_loop = self.get("PyStats.optimization_stats.inner_loop", mark_seen=True)
+        recursive_call = self.get("PyStats.optimization_stats.recursive_call", mark_seen=True)
+        low_confidence = self.get("PyStats.optimization_stats.low_confidence", mark_seen=True)
+        unknown_callee = self.get("PyStats.optimization_stats.unknown_callee", mark_seen=True)
+        executors_invalidated = self.get("PyStats.optimization_stats.executors_invalidated", mark_seen=True)
 
         return {
             Doc(
@@ -521,11 +544,11 @@ class Stats:
         }
 
     def get_optimizer_stats(self) -> dict[str, tuple[int, int | None]]:
-        attempts = self._data["Optimization optimizer attempts"]
-        successes = self._data["Optimization optimizer successes"]
-        no_memory = self._data["Optimization optimizer failure no memory"]
-        builtins_changed = self._data["Optimizer remove globals builtins changed"]
-        incorrect_keys = self._data["Optimizer remove globals incorrect keys"]
+        attempts = self.get("PyStats.optimization_stats.optimizer_attempts", mark_seen=True)
+        successes = self.get("PyStats.optimization_stats.optimizer_successes", mark_seen=True)
+        no_memory = self.get("PyStats.optimization_stats.optimizer_failure_reason_no_memory", mark_seen=True)
+        builtins_changed = self.get("PyStats.optimization_stats.remove_globals_builtins_changed", mark_seen=True)
+        incorrect_keys = self.get("PyStats.optimization_stats.remove_globals_incorrect_keys", mark_seen=True)
 
         return {
             Doc(
@@ -551,12 +574,12 @@ class Stats:
         }
 
     def get_jit_memory_stats(self) -> dict[Doc, tuple[int, int | None]]:
-        jit_total_memory_size = self._data["JIT total memory size"]
-        jit_code_size = self._data["JIT code size"]
-        jit_trampoline_size = self._data["JIT trampoline size"]
-        jit_data_size = self._data["JIT data size"]
-        jit_padding_size = self._data["JIT padding size"]
-        jit_freed_memory_size = self._data["JIT freed memory size"]
+        jit_total_memory_size = self.get("PyStats.optimization_stats.jit_total_memory_size", mark_seen=True)
+        jit_code_size = self.get("PyStats.optimization_stats.jit_code_size", mark_seen=True)
+        jit_trampoline_size = self.get("PyStats.optimization_stats.jit_data_size", mark_seen=True)
+        jit_data_size = self.get("PyStats.optimization_stats.jit_padding_size", mark_seen=True)
+        jit_padding_size = self.get("PyStats.optimization_stats.jit_freed_memory_size", mark_seen=True)
+        jit_freed_memory_size = self.get("PyStats.optimization_stats.trace_total_memory_hist[15", mark_seen=True)
 
         return {
             Doc(
@@ -1271,6 +1294,14 @@ def optimization_section() -> Section:
             reverse=True,
         )
 
+    def calc_unused_stat_table(stats: Stats) -> Rows:
+        return sorted(
+            [
+                (key, Count(value))
+                for key, value in stats.get_univisited_stats("PyStats.optimization_stats").items()
+            ]
+        )
+
     def iter_optimization_tables(base_stats: Stats, head_stats: Stats | None = None):
         if not base_stats.get_optimization_stats() or (
             head_stats is not None and not head_stats.get_optimization_stats()
@@ -1345,6 +1376,12 @@ def optimization_section() -> Section:
             "Optimization stopped after encountering this opcode",
             [Table(("Opcode", "Count:"), calc_error_in_opcodes_table, JoinMode.CHANGE)],
         )
+        yield Section(
+            "Unvisited Stats",
+            "Stats that have the same prefix as this section but are not read by any other stat",
+            [Table(("Stat Name", "Value:"), calc_unused_stat_table, JoinMode.SIMPLE)],
+        )
+
 
     return Section(
         "Optimization (Tier 2) stats",
@@ -1388,17 +1425,17 @@ def meta_stats_section() -> Section:
 
 
 LAYOUT = [
-    execution_count_section(),
-    pair_count_section("opcode"),
-    pre_succ_pairs_section(),
-    specialization_section(),
-    specialization_effectiveness_section(),
-    call_stats_section(),
-    object_stats_section(),
-    gc_stats_section(),
+    #execution_count_section(),
+    #pair_count_section("opcode"),
+    #pre_succ_pairs_section(),
+    #specialization_section(),
+    #specialization_effectiveness_section(),
+    #call_stats_section(),
+    #object_stats_section(),
+    #gc_stats_section(),
     optimization_section(),
-    rare_event_section(),
-    meta_stats_section(),
+    #rare_event_section(),
+    #meta_stats_section(),
 ]
 
 
