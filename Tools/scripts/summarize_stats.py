@@ -619,9 +619,9 @@ class Stats:
         return rows
 
     def get_rare_events(self) -> list[tuple[str, int]]:
-        prefix = "Rare event "
+        prefix = "PyStats.rare_event_stats."
         return [
-            (key[len(prefix) + 1 : -1].replace("_", " "), val)
+            (key.removeprefix(prefix), val)
             for key, val in self._data.items()
             if key.startswith(prefix)
         ]
@@ -1393,16 +1393,16 @@ def optimization_section() -> Section:
 def rare_event_section() -> Section:
     def calc_rare_event_table(stats: Stats) -> Table:
         DOCS = {
-            "set class": "Setting an object's class, `obj.__class__ = ...`",
-            "set bases": "Setting the bases of a class, `cls.__bases__ = ...`",
-            "set eval frame func": (
+            "set_class": "Setting an object's class, `obj.__class__ = ...`",
+            "set_bases": "Setting the bases of a class, `cls.__bases__ = ...`",
+            "set_eval_frame_func": (
                 "Setting the PEP 523 frame eval function "
                 "`_PyInterpreterState_SetFrameEvalFunc()`"
             ),
-            "builtin dict": "Modifying the builtins, `__builtins__.__dict__[var] = ...`",
-            "func modification": "Modifying a function, e.g. `func.__defaults__ = ...`, etc.",
-            "watched dict modification": "A watched dict has been modified",
-            "watched globals modification": "A watched `globals()` dict has been modified",
+            "builtin_dict": "Modifying the builtins, `__builtins__.__dict__[var] = ...`",
+            "func_modification": "Modifying a function, e.g. `func.__defaults__ = ...`, etc.",
+            "watched_dict_modification": "A watched dict has been modified",
+            "watched_globals_modification": "A watched `globals()` dict has been modified",
         }
         return [(Doc(x, DOCS[x]), Count(y)) for x, y in stats.get_rare_events()]
 
@@ -1434,7 +1434,7 @@ LAYOUT = [
     #object_stats_section(),
     #gc_stats_section(),
     optimization_section(),
-    #rare_event_section(),
+    rare_event_section(),
     #meta_stats_section(),
 ]
 
