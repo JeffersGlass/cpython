@@ -1435,7 +1435,7 @@ LAYOUT = [
     #gc_stats_section(),
     optimization_section(),
     rare_event_section(),
-    #meta_stats_section(),
+    meta_stats_section(),
 ]
 
 
