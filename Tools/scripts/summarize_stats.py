@@ -756,6 +756,16 @@ class Section:
             self.part_iter = part_iter
         self.comparative = comparative
 
+def make_unvisited_stat_calc(prefix: str) -> Callable[[Stats,], Rows]:
+    def calc_table(stats: Stats) -> Rows:
+            return sorted(
+                [
+                    (key, Count(value))
+                    for key, value in stats.get_univisited_stats(prefix).items()
+                ]
+            )
+    return calc_table
+
 
 def calc_execution_count_table(prefix: str) -> RowCalculator:
     def calc(stats: Stats) -> Rows:
@@ -1379,7 +1389,7 @@ def optimization_section() -> Section:
         yield Section(
             "Unvisited Stats",
             "Stats that have the same prefix as this section but are not read by any other stat",
-            [Table(("Stat Name", "Value:"), calc_unused_stat_table, JoinMode.SIMPLE)],
+            [Table(("Stat Name", "Value:"), make_unvisited_stat_calc("PyStats.optimization_stats"), JoinMode.SIMPLE)],
         )
 
 
