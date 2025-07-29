@@ -3389,8 +3389,8 @@ def _connect(
 
 
 def attach(pid, commands=()):
-    print(f"Attaching to {pid=}")
     """Attach to a running process with the given PID."""
+    print(f"(python) Attaching to {pid=}")
     with ExitStack() as stack:
         server = stack.enter_context(
             closing(socket.create_server(("localhost", 0)))
@@ -3421,12 +3421,12 @@ def attach(pid, commands=()):
             )
         )
         connect_script.close()
-        print("connect_script written")
+        print("(python) connect_script written")
         orig_mode = os.stat(connect_script.name).st_mode
         os.chmod(connect_script.name, orig_mode | stat.S_IROTH | stat.S_IRGRP)
-        print("Chmoded")
+        print("(python) Chmoded")
         sys.remote_exec(pid, connect_script.name)
-        print("Remote exec go")
+        print("(python) Remote exec go")
 
         # TODO Add a timeout? Or don't bother since the user can ^C?
         client_sock, _ = server.accept()

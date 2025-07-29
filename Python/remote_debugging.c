@@ -21,7 +21,7 @@ cleanup_proc_handle(proc_handle_t *handle) {
 static int
 read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* dst)
 {
-    printf("%s:%d read_memory, for remote address %ld\n", __FILE__, __LINE__, remote_address);
+    printf("%s:%d Reading %lu bytes from address %ld \n", __FILE__, __LINE__,  len, remote_address);
     return _Py_RemoteDebug_ReadRemoteMemory(handle, remote_address, len, dst);
 }
 
@@ -241,7 +241,9 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         PyErr_SetString(PyExc_RuntimeError, "Can't find a running interpreter in the remote process,");
         return -1;
     }
-    printf("Passed the interpreter address check\n");
+
+    printf("%s:%d Passed the interpreter address check\n", __FILE__, __LINE__);
+    printf("%s:%d Reading whether debug is enabled:\n", __FILE__, __LINE__);
     int is_remote_debugging_enabled = 0;
     if (0 != read_memory(
             handle,
@@ -251,7 +253,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     {
         return -1;
     }
-    printf("Remote debugging value read from remote process\n");
+    printf("%s:%dRemote debugging value read from remote process\n", __FILE__, __LINE__);
 
     if (is_remote_debugging_enabled != 1) {
         PyErr_SetString(
@@ -264,6 +266,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     unsigned long this_tid = 0;
 
     if (tid != 0) {
+        printf("%s:%d tid is not zero: %lu\n", __FILE__, __LINE__, tid);
         if (0 != read_memory(
                 handle,
                 interpreter_state_addr + debug_offsets.interpreter_state.threads_head,
@@ -272,7 +275,11 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         {
             return -1;
         }
+
+        printf("%s:%d interpreter_state_addr + debug_offsets.interpreter_state.threads_head =  %lu\n", __FILE__, __LINE__, thread_state_addr);
+
         while (thread_state_addr != 0) {
+            printf("%s:%d Examining thread_state_addr = %lu\n", __FILE__, __LINE__, thread_state_addr);
             if (0 != read_memory(
                     handle,
                     thread_state_addr + debug_offsets.thread_state.native_thread_id,
@@ -281,6 +288,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
             {
                 return -1;
             }
+            printf("%s:%d Thread ID = %lu\n", __FILE__, __LINE__, this_tid);
 
             if (this_tid == (unsigned long)tid) {
                 break;
@@ -303,6 +311,10 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
             return -1;
         }
     } else {
+        printf("%s:%d Found main thread location %lu\n", __FILE__, __LINE__, interpreter_state_addr);
+        printf("%s:%d + thread main offset is %lu\n", __FILE__, __LINE__, debug_offsets.interpreter_state.threads_main);
+        printf("%s:%d Reading threads_main offset from debug_offsets.interpreter_state.threads_main\n", __FILE__, __LINE__);
+        printf("%s:%d     at address %lu\n", __FILE__, __LINE__, interpreter_state_addr + debug_offsets.interpreter_state.threads_main);
         if (0 != read_memory(
                 handle,
                 interpreter_state_addr + debug_offsets.interpreter_state.threads_main,
@@ -311,15 +323,17 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         {
             return -1;
         }
-        printf("Found main thread location %lu\n", interpreter_state_addr);
 
         if (thread_state_addr == 0) {
+            printf("%s:%d !!!! thread_state_addr is zero: %lu\n", __FILE__, __LINE__, thread_state_addr);
             PyErr_SetString(
                 PyExc_RuntimeError,
                 "Can't find the main thread in the remote process");
             return -1;
         }
     }
+
+    printf("%s:%d Found main thread location %lu\n", __FILE__, __LINE__, interpreter_state_addr);
 
     // Ensure our path is not too long
     if (debug_offsets.debugger_support.debugger_script_path_size <= strlen(debugger_script_path)) {
