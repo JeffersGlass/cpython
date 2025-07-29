@@ -2538,7 +2538,7 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
         goto error;
     }
 #endif // MS_WINDOWS
-    if (_PySysRemoteDebug_SendExec(pid, 1, debugger_script_path) < 0) {
+    if (_PySysRemoteDebug_SendExec(pid, pid, debugger_script_path) < 0) {
         goto error;
     }
 
