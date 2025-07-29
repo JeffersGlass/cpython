@@ -2481,6 +2481,7 @@ static PyObject *
 sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
 /*[clinic end generated code: output=7d94c56afe4a52c0 input=39908ca2c5fe1eb0]*/
 {
+    printf("In sys_remote_exec_impl:");
     PyObject *path;
     const char *debugger_script_path;
 
@@ -2492,6 +2493,8 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
         return NULL;
     }
 
+    printf(PyBytes_AS_STRING(path));
+    printf("\n");
     debugger_script_path = PyBytes_AS_STRING(path);
 #ifdef MS_WINDOWS
     PyObject *unicode_path;

@@ -940,6 +940,7 @@ open_proc_mem_fd(proc_handle_t *handle)
 static int
 read_remote_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
 {
+    printf("%s:%d in read_remote_memory_fallback\n", __FILE__, __LINE__);
     if (handle->memfd == -1) {
         if (open_proc_mem_fd(handle) < 0) {
             return -1;
@@ -976,6 +977,7 @@ read_remote_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, siz
 static int
 _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
 {
+printf("%s:%d In _Py_RemoteDebug_ReadRemoteMemory, reading %lu units from remote address %ld\n", __FILE__, __LINE__, len, remote_address);
 #ifdef MS_WINDOWS
     SIZE_T read_bytes = 0;
     SIZE_T result = 0;
@@ -1007,7 +1009,14 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
         remote[0].iov_base = (void*)(remote_address + result);
         remote[0].iov_len = len - result;
 
+        //(Pid, address of local arrea, count, address of remote array, count, f;ags=0  )
         read_bytes = process_vm_readv(handle->pid, local, 1, remote, 1, 0);
+        printf("%s:%d read_bytes: %ld : [", __FILE__, __LINE__, read_bytes);
+        for(int offset = 0; offset < read_bytes; offset++){
+            char* pointer = (local[0].iov_base + offset);
+            printf("%hhx, ", *pointer);
+        }
+        printf("]\n");
         if (read_bytes < 0) {
             if (errno == ENOSYS) {
                 return read_remote_memory_fallback(handle, remote_address, len, dst);
@@ -1022,6 +1031,12 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
 
         result += read_bytes;
     } while ((size_t)read_bytes != local[0].iov_len);
+    printf("%s:%d Full read: %ld : [", __FILE__, __LINE__, read_bytes);
+    for(int offset = 0; offset < result; offset++){
+        char* pointer = (dst + offset);
+        printf("%hhx, ", *pointer);
+    }
+    printf("]\n");
     return 0;
 #elif defined(__APPLE__) && defined(TARGET_OS_OSX) && TARGET_OS_OSX
     Py_ssize_t result = -1;

@@ -21,6 +21,7 @@ cleanup_proc_handle(proc_handle_t *handle) {
 static int
 read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* dst)
 {
+    printf("%s:%d read_memory, for remote address %ld\n", __FILE__, __LINE__, remote_address);
     return _Py_RemoteDebug_ReadRemoteMemory(handle, remote_address, len, dst);
 }
 
@@ -208,15 +209,23 @@ read_offsets(
 static int
 send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_script_path)
 {
+    printf("%s:%d send_exec_to_proc_handle for: %s\n", __FILE__, __LINE__, debugger_script_path);
+    printf("%s:%d handle->pid is : %d\n", __FILE__, __LINE__, handle->pid);
     uintptr_t runtime_start_address;
     struct _Py_DebugOffsets debug_offsets;
 
+    
+    // First call to _Py_RemoteDebug_ReadRemoteMemory is in here:
+    printf("Read offsets:");
     if (read_offsets(handle, &runtime_start_address, &debug_offsets)) {
         return -1;
     }
+    printf("%s:%d runtime_start_address %ld\n", __FILE__, __LINE__, runtime_start_address);
 
     uintptr_t interpreter_state_list_head = (uintptr_t)debug_offsets.runtime_state.interpreters_head;
+    printf("%s:%d interpreter_state_list_head %ld\n", __FILE__, __LINE__, interpreter_state_list_head);
 
+    // Read interpreter state
     uintptr_t interpreter_state_addr;
     if (0 != read_memory(
             handle,
@@ -226,12 +235,13 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     {
         return -1;
     }
+    printf("%s:%d interpreter_state_addr: %ld\n", __FILE__, __LINE__, interpreter_state_addr);
 
     if (interpreter_state_addr == 0) {
-        PyErr_SetString(PyExc_RuntimeError, "Can't find a running interpreter in the remote process");
+        PyErr_SetString(PyExc_RuntimeError, "Can't find a running interpreter in the remote process,");
         return -1;
     }
-
+    printf("Passed the interpreter address check\n");
     int is_remote_debugging_enabled = 0;
     if (0 != read_memory(
             handle,
@@ -241,6 +251,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     {
         return -1;
     }
+    printf("Remote debugging value read from remote process\n");
 
     if (is_remote_debugging_enabled != 1) {
         PyErr_SetString(
@@ -300,6 +311,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         {
             return -1;
         }
+        printf("Found main thread location %lu\n", interpreter_state_addr);
 
         if (thread_state_addr == 0) {
             PyErr_SetString(
@@ -315,6 +327,8 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         return -1;
     }
 
+    printf("Path not too long %s\n", debugger_script_path);
+
     uintptr_t debugger_script_path_addr = (uintptr_t)(
         thread_state_addr +
         debug_offsets.debugger_support.remote_debugger_support +
@@ -327,6 +341,8 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     {
         return -1;
     }
+
+    printf("Wrote debugger script path to remote process");
 
     int pending_call = 1;
     uintptr_t debugger_pending_call_addr = (uintptr_t)(
@@ -342,6 +358,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     {
         return -1;
     }
+    printf("Wrote debugger pending call to %lu\n", debugger_pending_call_addr);
 
     uintptr_t eval_breaker;
     if (0 != read_memory(
