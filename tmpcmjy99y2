@@ -1,0 +1,14 @@
+import os
+import asyncio
+import datetime
+async def foo():
+    x = 0
+    while True:
+        x += 1
+        print(f"{x: <4} : {os.getpid()}")
+        with open("/home/jglass/Documents/tdb/foo.txt", "w") as h:
+            h.write(f"\t Async Hello @ {datetime.datetime.now()}\n")
+        await asyncio.sleep(1)
+with open("/home/jglass/Documents/tdb/foo.txt", "w") as g:
+    g.write("Hello\n")
+task = asyncio.run(foo())                       

@@ -977,7 +977,7 @@ read_remote_memory_fallback(proc_handle_t *handle, uintptr_t remote_address, siz
 static int
 _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
 {
-printf("%s:%d In _Py_RemoteDebug_ReadRemoteMemory, reading %lu bytes from remote address %ld\n", __FILE__, __LINE__, len, remote_address);
+printf("\t%s:%d In _Py_RemoteDebug_ReadRemoteMemory, reading %lu bytes from remote address %ld\n", __FILE__, __LINE__, len, remote_address);
 #ifdef MS_WINDOWS
     SIZE_T read_bytes = 0;
     SIZE_T result = 0;
@@ -1011,7 +1011,7 @@ printf("%s:%d In _Py_RemoteDebug_ReadRemoteMemory, reading %lu bytes from remote
 
         //(Pid, address of local arrea, count, address of remote array, count, f;ags=0  )
         read_bytes = process_vm_readv(handle->pid, local, 1, remote, 1, 0);
-        printf("%s:%d read_bytes: %ld : [", __FILE__, __LINE__, read_bytes);
+        printf("\t\t%s:%d read_bytes: %ld : [", __FILE__, __LINE__, read_bytes);
         for(int offset = 0; offset < read_bytes; offset++){
             char* pointer = (local[0].iov_base + offset);
             printf("%hhx, ", *pointer);

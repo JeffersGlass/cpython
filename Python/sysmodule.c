@@ -2538,7 +2538,14 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
         goto error;
     }
 #endif // MS_WINDOWS
-    if (_PySysRemoteDebug_SendExec(pid, pid, debugger_script_path) < 0) {
+    // Uncomment exactly one of these lines - JG
+    int tid = 0;
+    //int tid = pid;
+
+    if (tid == 0) printf("%s:%d Using default thread id of 0\n", __FILE__, __LINE__);
+    else printf("%s:%d Using OVERWRITTEN THREAD ID of %u\n", __FILE__, __LINE__, tid);
+    
+    if (_PySysRemoteDebug_SendExec(pid, tid, debugger_script_path) < 0) {
         goto error;
     }
 

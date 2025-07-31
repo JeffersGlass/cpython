@@ -266,7 +266,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     unsigned long this_tid = 0;
 
     if (tid != 0) {
-        printf("%s:%d tid is not zero: %lu\n", __FILE__, __LINE__, tid);
+        printf("%s:%d tid is not zero: %u\n", __FILE__, __LINE__, tid);
         if (0 != read_memory(
                 handle,
                 interpreter_state_addr + debug_offsets.interpreter_state.threads_head,
@@ -291,6 +291,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
             printf("%s:%d Thread ID = %lu\n", __FILE__, __LINE__, this_tid);
 
             if (this_tid == (unsigned long)tid) {
+                printf("%s:%d this_tid [%lu] matched found thread id [%lu]\n", __FILE__, __LINE__, this_tid, (unsigned long)tid);
                 break;
             }
 
@@ -312,7 +313,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         }
     } else {
         printf("%s:%d Found main thread location %lu\n", __FILE__, __LINE__, interpreter_state_addr);
-        printf("%s:%d + thread main offset is %lu\n", __FILE__, __LINE__, debug_offsets.interpreter_state.threads_main);
+        printf("%s:%d + thread main offset is %lu\n", __FILE__, __LINE__, interpreter_state_addr + debug_offsets.interpreter_state.threads_main);
         printf("%s:%d Reading threads_main offset from debug_offsets.interpreter_state.threads_main\n", __FILE__, __LINE__);
         printf("%s:%d     at address %lu\n", __FILE__, __LINE__, interpreter_state_addr + debug_offsets.interpreter_state.threads_main);
         if (0 != read_memory(
@@ -341,7 +342,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         return -1;
     }
 
-    printf("Path not too long %s\n", debugger_script_path);
+    printf("%s:%d Path not too long %s\n", __FILE__, __LINE__, debugger_script_path);
 
     uintptr_t debugger_script_path_addr = (uintptr_t)(
         thread_state_addr +
@@ -356,7 +357,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         return -1;
     }
 
-    printf("Wrote debugger script path to remote process");
+    printf("%s:%d Wrote debugger script path to remote process\n", __FILE__, __LINE__);
 
     int pending_call = 1;
     uintptr_t debugger_pending_call_addr = (uintptr_t)(
@@ -372,7 +373,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     {
         return -1;
     }
-    printf("Wrote debugger pending call to %lu\n", debugger_pending_call_addr);
+    printf("%s:%d Wrote debugger pending call to %lu\n", __FILE__, __LINE__, debugger_pending_call_addr);
 
     uintptr_t eval_breaker;
     if (0 != read_memory(
